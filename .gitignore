@@ -1,0 +1,26 @@
+# Xcode generated files
+.DerivedData/
+DerivedData/
+build/
+*.xcresult
+
+# User-specific Xcode state
+*.xcuserstate
+xcuserdata/
+*.moved-aside
+
+# Swift Package Manager local state
+.build/
+.swiftpm/
+
+# macOS metadata
+.DS_Store
+
+# Local secrets and machine config
+.env
+.env.*
+*.p8
+*.p12
+*.mobileprovision
+*.provisionprofile
+secrets/

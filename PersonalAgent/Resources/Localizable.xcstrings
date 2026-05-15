@@ -1,0 +1,70 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "app.next_step" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Next: local configuration and key boundaries"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "下一步：本地配置与密钥边界"
+          }
+        }
+      }
+    },
+    "app.scope" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "T02 only creates the clean SwiftUI app skeleton. Screenshot, OCR, LLM, translation, TTS, and history storage are reserved for later tasks."
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "T02 只创建干净的 SwiftUI App 骨架。截图、OCR、LLM、翻译、TTS 和历史记录留给后续任务。"
+          }
+        }
+      }
+    },
+    "app.stage" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "M1 - SwiftUI App Skeleton"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "M1 - SwiftUI App 骨架"
+          }
+        }
+      }
+    },
+    "app.title" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personal Agent"
+          }
+        },
+        "zh-Hans" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Personal Agent"
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

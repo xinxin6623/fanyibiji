@@ -1,0 +1,275 @@
+{
+  "project_name": "Personal_Agent_MVP",
+  "project_goal": "参考 Easydict 的架构和能力边界，重写一个个人使用的 macOS 助理型 App。前期只做核心闭环：截屏、划线取词、OCR、LLM 查询、免费翻译、指定 TTS API。",
+  "reference_repo": {
+    "url": "https://github.com/tisfeng/Easydict",
+    "checked_branch": "dev",
+    "checked_commit": "4bbb942",
+    "checked_commit_date": "2026-05-11 21:34:21 +0800",
+    "latest_release_observed": "2.19.0 beta, 2026-05-05",
+    "license": "GPL-3.0"
+  },
+  "manual_alignment_status": {
+    "status": "aligned",
+    "main_corrections": [
+      "新功能开发应以 Swift/SwiftUI 为主，macOS 13.0+，不要把新能力继续放进 legacy Objective-C。",
+      "截屏模块不在 Easydict/Feature/Screenshot，而主要在 Easydict/Swift/Utility/Screenshot。",
+      "OCR 对齐 Apple OCREngine 与 AppleService 的 Vision OCR 逻辑，不应笼统写成 Easydict/Service/OCR。",
+      "划线取词不是单纯剪贴板轮询；Easydict 的完整链路是 Accessibility API、AppleScript、强制复制兜底，MVP 才能临时降级为全局快捷键读取剪贴板。",
+      "LLM 查询应沿用 QueryService/StreamService/BaseOpenAIService 风格，不要新建孤立 HTTP 调用层。",
+      "免费翻译与 TTS 要按服务适配器拆开，避免把逆向 Web API、官方 API、系统 TTS 混在一个实现里。",
+      "如果直接复用 Easydict 代码，发布或分发时要按 GPL-3.0 处理；若想保持闭源，只能做干净重写并避免复制源码。"
+    ]
+  },
+  "development_standards": {
+    "language_and_platform": {
+      "primary_language": "Swift",
+      "ui": "SwiftUI first, AppKit only where macOS integration requires it",
+      "minimum_macos": "13.0",
+      "swift_version": "5.9",
+      "xcode": "Xcode 15+ recommended because Easydict dev branch uses String Catalogs",
+      "legacy_objc_policy": "只读参考或修 bug；新功能不扩展 Objective-C"
+    },
+    "workspace_and_dependencies": {
+      "open_project": "Easydict.xcworkspace, not Easydict.xcodeproj",
+      "dependency_shape": [
+        "Swift Package Manager for most Swift dependencies",
+        "CocoaPods for legacy dependencies such as Masonry, ReactiveObjC, JLRoutes",
+        "Use Bundler/CocoaPods from the repo; do not install global packages unless explicitly required"
+      ],
+      "sensitive_files": [
+        "不要提交 API key",
+        "不要覆盖或删除 .env",
+        "不要提交本机签名配置和个人 Apple Team ID"
+      ]
+    },
+    "code_style": {
+      "format": "SwiftFormat config exists in .swiftformat, max width 120",
+      "lint": "SwiftLint config exists in .swiftlint.yml, xcode reporter",
+      "file_size": "源文件理想情况下小于 300 行，超过 500 行必须有充分理由",
+      "async": "新异步逻辑优先 async/await，避免新增 callback 风格",
+      "networking": "网络请求优先使用现有 QueryService/StreamService 抽象；需要 Alamofire 时使用 async/await API",
+      "settings": "用户设置优先使用 Defaults，不要新增直接 UserDefaults 访问",
+      "symbols": "SwiftUI 图标优先 SFSafeSymbols，不硬编码 systemName 字符串",
+      "localization": "所有用户可见文案进入 Localizable.xcstrings，不拼接动态 key"
+    },
+    "xcode_project_policy": {
+      "rule": "新增、移动、删除工程文件时同步更新 Easydict.xcodeproj/project.pbxproj。",
+      "notes": [
+        "开发文档需要 PBXFileReference，但不要默认加入 Resources build phase。",
+        "新增源码、资源、String Catalog 需要在 Xcode navigator 中可见。"
+      ]
+    },
+    "validation_commands": {
+      "install_dependencies_when_needed": [
+        "bundle install",
+        "bundle exec pod install"
+      ],
+      "build": "xcodebuild build -workspace Easydict.xcworkspace -scheme Easydict | xcbeautify",
+      "targeted_test": "xcodebuild test -workspace Easydict.xcworkspace -scheme Easydict -only-testing:EasydictTests/<TestClass>/<testMethod> | xcbeautify",
+      "rule": "代码实质改动超过 100 行或用户要求时再跑 xcodebuild；不要并发跑多个 xcodebuild。"
+    }
+  },
+  "license_strategy": {
+    "personal_local_demo": "个人本地学习和验证可以参考实现思路，但仍要保留来源记录。",
+    "direct_code_reuse": "如果复制、改写或派生 Easydict 源码并对外分发，必须按 GPL-3.0 开源对应派生代码并保留版权和许可证。",
+    "clean_rewrite": "若希望未来闭源或商业化，开发时只能参考功能行为和公开接口，不能复制 Easydict 源码、资源、提示词、逆向细节实现。",
+    "practical_decision": "当前 MVP 建议先按 GPL 风险可控的个人工具推进；等要分发前再决定是 GPL 派生还是干净重写。"
+  },
+  "architecture_strategy": {
+    "target": "Modular monolith first, event-pipeline ready later",
+    "reason": "前期目标是个人可用 demo，不应提前引入重型 Event Bus；但数据结构要保留未来接知识库、任务看板、历史记录的扩展口。",
+    "core_pipeline": [
+      "InputSource: screenshot, selected text, clipboard, manual input",
+      "Recognition: OCR or direct text normalization",
+      "QueryContext: source, language, timestamp, request id, user action",
+      "ProviderAdapter: LLM, translate, dictionary, TTS",
+      "ResultModel: structured result with id, content, provider, tags, errors",
+      "Persistence: MVP can be file or local database; future can subscribe to events"
+    ],
+    "state_policy": {
+      "mvp": "查询过程可无状态，但每次结果必须生成结构化记录。",
+      "future": "知识库、笔记、任务看板只订阅 ResultModel，不反向耦合 OCR 或服务适配器。"
+    }
+  },
+  "core_features": [
+    {
+      "user_term": "截屏",
+      "technical_term": "Screenshot capture and region selection",
+      "priority": "P0",
+      "easydict_alignment": {
+        "actual_modules": [
+          "Easydict/Swift/Utility/Screenshot/Screenshot",
+          "Easydict/Swift/Utility/Screenshot/Screencapture"
+        ],
+        "correction": "原 JSON 写成 Easydict/Feature/Screenshot 不准确。"
+      },
+      "implementation_guide": "MVP 先做全局快捷键触发区域截图，保留上次截图区域。可参考 Easydict 的 Screenshot overlay 和 NSScreen 截图逻辑；是否使用 ScreenCaptureKit 视 macOS 权限和窗口捕获需求决定。",
+      "dev_notes": [
+        "需要处理多屏、Retina 坐标、权限失败、取消截图。",
+        "截图模块不要直接调用 LLM；只返回 NSImage/Data 和元信息。"
+      ],
+      "difficulty": "中等"
+    },
+    {
+      "user_term": "识别",
+      "technical_term": "Apple Vision OCR",
+      "priority": "P0",
+      "easydict_alignment": {
+        "actual_modules": [
+          "Easydict/Swift/Service/Apple/AppleOCREngine",
+          "Easydict/objc/Service/Apple/EZAppleService.m"
+        ],
+        "correction": "原 JSON 写成 AppleVisionService 不贴合当前目录；Swift 新代码应优先参考 AppleOCREngine，ObjC 只作为 legacy 行为参考。"
+      },
+      "implementation_guide": "使用 Vision VNRecognizeTextRequest 做本地 OCR，输出统一 OCRResult，包括文本、置信度、语言、行块信息和原始图片引用。",
+      "dev_notes": [
+        "OCR 层只负责识别和文本整理，不做翻译。",
+        "识别语言列表、自动检测、空结果和二维码/非文本图片要有明确失败状态。"
+      ],
+      "difficulty": "中等"
+    },
+    {
+      "user_term": "划线",
+      "technical_term": "Selected text extraction",
+      "priority": "P0",
+      "easydict_alignment": {
+        "actual_modules": [
+          "docs/select_text_flow.md",
+          "Easydict/Swift/Utility/EventMonitor",
+          "Easydict/Swift/Feature/Shortcut",
+          "Easydict/Swift/Feature/ActionManager"
+        ],
+        "correction": "原 JSON 的 System Clipboard Polling 只能作为 MVP 兜底，不是最终对齐方案。"
+      },
+      "implementation_guide": "MVP 可先用全局快捷键读取 NSPasteboard；正式实现要按 Easydict 链路补齐 Accessibility API、浏览器 AppleScript、模拟复制兜底，并提示用户授权。",
+      "dev_notes": [
+        "不能破坏用户剪贴板内容；如必须模拟复制，要保存并恢复剪贴板。",
+        "取词失败要返回明确错误，不要静默触发空查询。"
+      ],
+      "difficulty": "中高"
+    },
+    {
+      "user_term": "llm 调用查询",
+      "technical_term": "LLM provider adapter with streaming support",
+      "priority": "P0",
+      "easydict_alignment": {
+        "actual_modules": [
+          "Easydict/Swift/Service/Model/QueryService.swift",
+          "Easydict/Swift/Service/Model/QueryServiceFactory.swift",
+          "Easydict/Swift/Service/OpenAI/BaseOpenAIService.swift",
+          "Easydict/Swift/Service/OpenAI/StreamService.swift",
+          "Easydict/Swift/Service/Gemini/GeminiService.swift",
+          "Easydict/Swift/Service/Claude/ClaudeService.swift"
+        ],
+        "correction": "不要只写一个裸 HTTP helper；要对齐 service adapter、query result、stream/cancel/validate 这些边界。"
+      },
+      "implementation_guide": "定义 LLMProvider 或复用 QueryService 风格，统一处理 endpoint、api key、model、stream、timeout、cancel、validate、错误模型和结果结构化。",
+      "dev_notes": [
+        "API key 只走本地配置或 Keychain，不写进代码和仓库。",
+        "OpenAI-compatible endpoint 可以作为第一优先级，Gemini/Claude 再做专用适配。",
+        "Prompt 输入必须保留来源类型：OCR、选中文本、剪贴板或手输。"
+      ],
+      "difficulty": "中等"
+    },
+    {
+      "user_term": "原本的免费翻译",
+      "technical_term": "Free translation service adapters",
+      "priority": "P1",
+      "easydict_alignment": {
+        "actual_modules": [
+          "Easydict/Swift/Service/Google",
+          "Easydict/Swift/Service/Bing",
+          "Easydict/Swift/Service/Youdao",
+          "Easydict/Swift/Service/Apple",
+          "Easydict/Swift/Service/Dictionary"
+        ],
+        "correction": "免费翻译不是单一能力；每个服务有独立限流、语言码、错误和接口稳定性问题。"
+      },
+      "implementation_guide": "MVP 优先系统翻译、系统词典、Google/Bing/Youdao 中稳定性较高的一个；每个服务做独立 adapter，统一返回 TranslationResult。",
+      "dev_notes": [
+        "逆向 Web API 可能随时失效，必须隔离在 provider 层。",
+        "不要把 cookie、token、User-Agent 绕过逻辑写成核心业务依赖。",
+        "需要清楚标注官方 API、系统 API、非官方 Web 接口的风险等级。"
+      ],
+      "difficulty": "中高"
+    },
+    {
+      "user_term": "tts 接专用指定的 api",
+      "technical_term": "Configurable TTS provider adapter",
+      "priority": "P1",
+      "easydict_alignment": {
+        "actual_modules": [
+          "Easydict/Swift/Service/Model/TTSServiceType.swift",
+          "Easydict/objc/Service/AudioPlayer/EZAudioPlayer.m",
+          "Easydict/Swift/Service/Apple/AppleService.swift",
+          "Easydict/Swift/Service/Bing",
+          "Easydict/Swift/Service/Google",
+          "Easydict/Swift/Service/Youdao",
+          "Easydict/Swift/Service/Baidu"
+        ],
+        "correction": "SystemTTSService.swift 不是当前可对齐的准确路径；播放链路和默认 TTS 仍有 legacy ObjC。"
+      },
+      "implementation_guide": "定义 TTSProvider，支持指定 endpoint、鉴权、文本长度限制、流式或完整音频返回；播放层用 AVAudioPlayer/AVAudioEngine，并保留系统 TTS fallback。",
+      "dev_notes": [
+        "TTS API 参数、鉴权、音色、采样率放配置，不写死。",
+        "长文本要分段或提示限制。",
+        "播放失败要能回退并展示错误。"
+      ],
+      "difficulty": "中等"
+    }
+  ],
+  "mvp_scope": {
+    "must_have": [
+      "全局快捷键截图 OCR",
+      "全局快捷键读取选中文本或剪贴板",
+      "一个 OpenAI-compatible LLM provider",
+      "一个免费翻译 provider",
+      "一个指定 TTS API provider",
+      "统一 QueryResult/OCRResult/TranslationResult/TTSResult",
+      "本地配置 API key，不提交敏感信息"
+    ],
+    "defer": [
+      "完整 Event Bus",
+      "知识库和任务看板 UI",
+      "多服务并发聚合",
+      "复杂设置页",
+      "跨设备同步",
+      "对外分发和签名公证"
+    ],
+    "not_recommended_for_mvp": [
+      "一开始复制完整 Easydict 工程再大删改",
+      "一开始实现所有翻译服务",
+      "一开始做插件系统",
+      "一开始依赖不稳定逆向接口作为唯一翻译能力"
+    ]
+  },
+  "implementation_difficulty_estimate": {
+    "overall": "中高",
+    "reason": "单个能力都可做，但 macOS 权限、全局快捷键、取词、截图坐标、OCR 质量、流式 LLM、TTS 播放和 GPL 边界叠加后复杂度明显上升。",
+    "rough_order": [
+      "第 1 阶段：干净 SwiftUI App 骨架、配置、快捷键、QueryResult 模型。",
+      "第 2 阶段：截图区域选择 + Vision OCR。",
+      "第 3 阶段：选中文本/剪贴板查询 + LLM provider。",
+      "第 4 阶段：免费翻译 provider + TTS provider。",
+      "第 5 阶段：结果历史、简单知识库入口、错误和权限引导。"
+    ],
+    "recommended_start": "不要直接 fork 后全量改 Easydict；建议先新建最小 SwiftUI App，按模块参考 Easydict，实现可控 MVP。"
+  },
+  "future_extensions": {
+    "features": [
+      "Knowledge Base Notes",
+      "Task Kanban",
+      "Query History",
+      "Prompt Templates",
+      "Local Provider Routing"
+    ],
+    "architectural_requirement": "LLM 输出和翻译/OCR/TTS 结果必须结构化保存，至少包含 id、source、content、provider、created_at、tags、error，方便未来模块订阅和落库。"
+  },
+  "open_questions_for_manual_decision": [
+    "这个 App 只个人本地使用，还是未来要分发给别人？这决定 GPL 处理方式。",
+    "指定 TTS API 是 OpenAI-compatible、MiniMax、火山、Azure，还是自定义 HTTP？这决定音频流播放实现。",
+    "是否要求保留 Easydict 风格的多服务同屏结果，还是只做一个助理式回答窗口？",
+    "是否接受 MVP 阶段划线取词先用剪贴板兜底？如果不接受，第一阶段就要投入 Accessibility/AppleScript。"
+  ]
+}
