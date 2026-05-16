@@ -40,7 +40,7 @@
 | P-1 | 文档与工程骨架 | 文档、可构建 SwiftUI 工程 | DONE |
 | P0 | 核心契约层 | 纯类型与协议、统一错误模型 | DONE |
 | P1 | 最薄垂直闭环 | 剪贴板→LLM→JSONL→展示 跑通 | DONE |
-| P2 | 截屏/OCR 重路径 | 快捷键、截屏、OCR、取词入口 | DONE（待真机验收）|
+| P2 | 截屏/OCR 重路径 | 快捷键、截屏、OCR、取词入口 | DONE（真机验收通过）|
 | P3 | 次要 Provider | 免费翻译、指定 TTS | TODO |
 | P4 | 收敛与硬化 | 容灾矩阵、本地化、历史读取 | TODO |
 
@@ -60,7 +60,7 @@
 | T05 | P2 | 截屏区域选择 | DONE | T04 | 截屏区域选择与图片输出 |
 | T06 | P2 | Vision OCR | DONE | T05 | OCRResult 与 Vision OCR pipeline |
 | T08 | P2 | 划线/剪贴板取词 | DONE | T04 | 选中文本或剪贴板输入链路 |
-| T-INT2 | P2 | P2 整合与可视化验收 | DONE（待真机验收）| T04,T05,T06,T08 | overlay+热键+截屏→OCR→查询 App 接线 |
+| T-INT2 | P2 | P2 整合与可视化验收 | DONE（真机验收通过）| T04,T05,T06,T08 | overlay+热键+截屏→OCR→翻译 App 接线 |
 | T09 | P3 | 免费翻译 Provider | DONE | T03、TC | 一个稳定翻译 provider |
 | T10 | P3 | 指定 TTS Provider | BLOCKED | T03、TC | 可配置 TTS provider 与播放链路 |
 | T07b | P3 | LLM Provider 硬化 | DONE | T07a | 多模型配置已由 T03/T07a 承载；新增重试装饰器；流式推迟 |
@@ -280,18 +280,42 @@ T00 文档骨架、T01 MVP PRD、T02 SwiftUI 骨架均已 DONE 并通过构建�
 - 验收标准（代码层已满足）：编排链 headless 单测全绿；取消/权限/空
   OCR 分类可区分；文案本地化；逻辑层回归全绿；`xcodebuild build/test`
   通过无告警。
-- 待办（非代码，需 James 真机）：热键→框选→截屏→OCR→查询→落盘端到端
-  可视化；辅助功能/录屏首次授权弹窗与引导跳转；带真实 LLM key 的实跑
-  （key 由 James 稍后提供，验收前查询走降级失败态，OCR/采集链已可单独
-  验证）。
+- **真机验收结果（2026-05-16，James 在场逐条通过）**：
+  - 手动查询、截屏→框选→OCR→LLM 翻译→落盘端到端通（英文 conf 1.0）。
+  - 中文 OCR：初验漏识，修 `VisionTextRecognizer` 默认
+    `zh-Hans/zh-Hant/en-US`（Vision 默认仅英文）后通过。
+  - 截屏坐标：初验截到空白图（OCR 报无文字）。根因
+    `SCScreenCapturer` 把 AppKit overlay 坐标（原点左下、Y 上）直接
+    喂 `SCStreamConfiguration.sourceRect`（CG 坐标、原点左上、Y 下），
+    修 Y 翻转 `cgY=display.height-y-h` 后通过。**防御机制（空图检测+
+    坐标纯函数单测）James 确认记 T12，见下方 T12 条目。**
+  - 全局热键：⌘⇧A 与 James 常用 App 冲突 → 默认改 ⌘⇧D。
+    `AXIsProcessTrusted()` 对自签开发构建持续 false → 加
+    `promptIfNeeded()`（`AXIsProcessTrustedWithOptions` 主动弹窗登记
+    二进制）+ `didBecomeActiveNotification` 自愈重试（授权后切回即生效，
+    不重启）。
+  - 后台截屏交互：原实现热键触发会把主窗口抢到前台；改为框选阶段不
+    `NSApp.activate`（`OverlayPanel` `.nonactivatingPanel`+`canBecomeKey`
+    收 ESC 不抢焦点），仅成功/非取消失败时才激活主窗口。
+  - 环境踩坑（已记 feedback 记忆）：`tccutil reset ScreenCapture`
+    无 bundle id 连累 Easydict；此后只用带 bundle id 的精准 reset。
+    Keychain ACL 随重签反复弹框 → 用 `-A` 宽松 ACL（仅本机开发）。
+    ad-hoc 签名每次变 TCC 认不出 → 本地自签证书
+    `PersonalAgent Local Dev`（**不入仓库**，构建参数
+    `CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY=... DEVELOPMENT_TEAM=""`）。
 - 落点：`Features/Integration/P2IntegrationCoordinator.swift`、
   `UI/RegionSelectionController.swift`、`App/AppController.swift`、
+  `App/PersonalAgentApp.swift`、`Core/Input/{AccessibilityAuthorizing,
+  HotkeyMonitoring}.swift`、`Features/Input/SCScreenCapturer.swift`、
+  `Features/Recognition/VisionTextRecognizer.swift`、
   `UI/{ContentQueryViewModel,MainWindowView}.swift`、
-  `App/PersonalAgentApp.swift`、`Resources/Localizable.xcstrings`、
+  `Resources/Localizable.xcstrings`、
   `PersonalAgentTests/TINT2IntegrationTests.swift`。
-- 诚实约束：NSEvent 全局热键非独占，无冲突检测（沿用 T04 决策）；
+- 诚实约束：NSEvent 全局热键非独占，无冲突检测（沿用 T04 决策，
+  ⌘⇧D 仍可能与其它 App 撞，彻底解决需 Carbon RegisterEventHotKey）；
   单帧截图依赖 macOS 14 `SCScreenshotManager`（沿用 T05 约束）；
-  系统设置面板用根 deep link 而非脆弱子面板深链。
+  系统设置面板用根 deep link 而非脆弱子面板深链；本地自签证书
+  非正式签名，分发需正式 Developer ID + 公证。
 
 ### T09 免费翻译 Provider（P3，已完成）
 

@@ -1,6 +1,6 @@
 # Relay Task
 
-_updated: 2026-05-16 (T-INT2 代码完成)_
+_updated: 2026-05-16 (T-INT2 真机验收通过)_
 _project: /Users/macmini/Documents/fanyibiji (PersonalAgent macOS App)_
 _branch: main_
 
@@ -34,27 +34,28 @@ T10 TTS（BLOCKED 待 James 决策）、T12 收敛硬化。
 - [x] P3 T07b LLM Provider 硬化：DONE，5 单测绿。
   `RetryingLLMProvider` 装饰器只对可重试 `AgentError` 重试，取消不重试；
   多模型由 `ResolvedProviderConfig.model` 承载，流式推迟到确有需求。
-- [x] P2 T-INT2 整合（代码层）：DONE，7 单测绿，全量回归绿，无告警。
-  `P2IntegrationCoordinator`（headless 编排链）+ `RegionSelectionController`
-  （多屏 overlay 框选）+ `AppController`（组合根 + 热键生命周期 + 权限
-  引导）+ `ContentQueryViewModel` 扩展（外部文本注入 + 采集失败透传）+
-  `MainWindowView`/`PersonalAgentApp` 重构 + 4 本地化键。**真机
-  GUI/授权/带 key 端到端手动验收待 James。**
+- [x] P2 T-INT2 整合：**真机验收通过**（2026-05-16，James 在场）。
+  代码层 8 单测绿、全量回归绿、无告警；真机逐条通过：截屏→框选→OCR
+  →LLM 翻译→落盘（中英文均可），热键 ⌘⇧D 从任意 App 触发不抢窗口，
+  ESC 取消不打扰，权限引导。提交 e9c8474/a923c4c/7ac00d8/de05763/
+  f2df335。详见看板 T-INT2「真机验收结果」。
+  关键修复：中文 OCR 默认语言、截屏坐标系 Y 翻转、辅助功能主动
+  prompt+自愈、后台截屏不抢焦点、本地自签证书稳定签名。
 
 ## 下一步（具体到能直接动手）
 1. 按序读 `AGENTS.md` → `relay-task.md` → `project-board.md` → `prd-mvp.md`。
-2. **T-INT2 真机验收（待 James 在场）**：构建运行 App →（a）首次触发
-   截屏取词会弹辅助功能/录屏授权，授权后走通 ⌘⇧A 或按钮→全屏框选
-   →截屏→OCR→查询；（b）ESC/右键取消应回 idle 不报错；（c）未授权时
-   显示权限引导横幅 + "打开系统设置"按钮；（d）带真实 LLM key
-   （Keychain account=`llm.apiKey`, service=`com.james.personalagent`）
-   验证查询真实返回，无 key 时停在降级失败态（OCR/采集链仍可单独看）。
-3. 真机验收通过后：T08 取词入口、T09 翻译动作的 UI 动作分发（当前
-   仅逻辑层就绪，未接 UI 按钮）可作独立小任务；或进 T12 收敛硬化
-   纯逻辑部分。T10 TTS 仍 BLOCKED 待 James 决策（供应商/鉴权/格式/流式）。
-4. 每个任务完成后验证：
+2. **P2 已全部完成（T-INT2 真机验收通过）**。下一步候选：
+   - T08 取词入口、T09 翻译动作的 UI 动作分发（仅逻辑层就绪，未接
+     UI 按钮）作独立小任务。
+   - **T12 收敛硬化**，其中明确含 T-INT2 暴露的：截屏空图/坐标防御
+     机制（空图检测报专用诊断 + AppKit↔CG 坐标翻转纯函数单测，覆盖
+     多屏/高分/边界）——见看板 T12 条目，James 已确认记录待做。
+   - T10 TTS 仍 BLOCKED 待 James 决策（供应商/鉴权/格式/流式）。
+3. 每个任务完成后验证（**本机用稳定签名构建参数**）：
    ```bash
-   xcodebuild build -project PersonalAgent.xcodeproj -scheme PersonalAgent
+   xcodebuild build -project PersonalAgent.xcodeproj -scheme PersonalAgent \
+     -destination 'platform=macOS' CODE_SIGN_STYLE=Manual \
+     CODE_SIGN_IDENTITY="PersonalAgent Local Dev" DEVELOPMENT_TEAM=""
    xcodebuild test  -project PersonalAgent.xcodeproj -scheme PersonalAgent
    ```
 
@@ -111,3 +112,14 @@ T10 TTS（BLOCKED 待 James 决策）、T12 收敛硬化。
   不拼接 provider 私有错误。
 - 复杂任务 Admin → Worker → Overseer；Admin 输出路径后必须等 James 确认。
 - 默认干净重写，不复制 Easydict 源码/资源/提示词/逆向实现。
+- **本机签名**：`pbxproj` 保持 ad-hoc/Automatic（不污染仓库），开发
+  构建靠参数 `CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY="PersonalAgent
+  Local Dev" DEVELOPMENT_TEAM=""` 用本地自签证书（TCC 授权按签名身份
+  记，ad-hoc 每次重建变会失效）。证书已在 login keychain + 系统信任根。
+- **TCC 重置铁律**：绝不用全局 `tccutil reset <svc>`（会连累 Easydict
+  等），必须带 bundle id：`tccutil reset <svc> com.james.personalagent`。
+- LLM key 在 Keychain（account=`llm.apiKey`,
+  service=`com.james.personalagent`），用 `-A` 宽松 ACL 避免重签反复
+  弹框（仅本机开发）。OpenRouter key 调试期多次泄露，**需作废重建**。
+- 截屏坐标 AppKit↔CG 必须 Y 翻转（见 `SCScreenCapturer`）；防御机制
+  待 T12。Vision OCR 默认语言须含中文（见 `VisionTextRecognizer`）。
