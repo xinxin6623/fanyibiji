@@ -26,10 +26,17 @@ final class ContentQueryViewModel: ObservableObject {
         self.store = store
     }
 
-    /// 运行一次查询。落盘失败不丢结果：结果仍展示，state 仍为 success
-    /// （记录已进 store 的内存缓冲），持久化错误属非阻断降级。
+    /// 运行一次查询（手动输入框，来源记为 `.manualInput`）。
     func runQuery() async {
-        let trimmed = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
+        await runQuery(with: inputText, sourceKind: .manualInput)
+    }
+
+    /// 用外部采集到的文本运行查询（截屏 OCR / 剪贴板取词注入）。
+    /// 把文本回填输入框便于用户查看与二次编辑，再走同一条管线，
+    /// 保留真实 `sourceKind` 供 `ResultModel` 溯源。
+    func runQuery(with text: String, sourceKind: InputSourceKind) async {
+        inputText = text
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
             state = .failure(.invalidInput)
             return
@@ -37,7 +44,7 @@ final class ContentQueryViewModel: ObservableObject {
 
         state = .loading
         let context = QueryContext(
-            sourceKind: .clipboard,
+            sourceKind: sourceKind,
             inputText: trimmed,
             userAction: .query
         )
@@ -57,5 +64,12 @@ final class ContentQueryViewModel: ObservableObject {
         } catch {
             state = .failure(.unknown)
         }
+    }
+
+    /// 采集链（截屏/OCR）尚未进入 LLM 就失败时，由编排层把分类透传到
+    /// UI 状态。取消属用户主动行为，回到 idle 不显示错误横幅；其余分类
+    /// （如 `.permission`）显示对应本地化文案，引导用户处理。
+    func reportCaptureFailure(_ category: AgentError.Category) {
+        state = category == .cancelled ? .idle : .failure(category)
     }
 }

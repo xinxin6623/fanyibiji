@@ -1,13 +1,22 @@
 import SwiftUI
 
 struct MainWindowView: View {
-    @StateObject private var viewModel = AppComposition.makeViewModel()
+    @EnvironmentObject private var controller: AppController
+    @ObservedObject private var viewModel: ContentQueryViewModel
+
+    init(viewModel: ContentQueryViewModel) {
+        self.viewModel = viewModel
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Text("app.title")
                 .font(.largeTitle)
                 .fontWeight(.semibold)
+
+            if let category = controller.captureFailure {
+                permissionBanner(category)
+            }
 
             Text("query.prompt")
                 .font(.headline)
@@ -19,7 +28,7 @@ struct MainWindowView: View {
                 .overlay(RoundedRectangle(cornerRadius: 6)
                     .stroke(Color.secondary.opacity(0.3)))
 
-            HStack {
+            HStack(spacing: 12) {
                 Button {
                     Task { await viewModel.runQuery() }
                 } label: {
@@ -28,10 +37,22 @@ struct MainWindowView: View {
                 .keyboardShortcut(.return, modifiers: .command)
                 .disabled(isLoading)
 
+                Button {
+                    controller.triggerCapture()
+                } label: {
+                    Text("capture.run")
+                }
+                .keyboardShortcut("a", modifiers: [.command, .shift])
+                .disabled(isLoading)
+
                 if isLoading {
                     ProgressView().controlSize(.small)
                 }
             }
+
+            Text("capture.hint")
+                .font(.caption)
+                .foregroundStyle(.secondary)
 
             Divider()
 
@@ -41,12 +62,34 @@ struct MainWindowView: View {
             Spacer()
         }
         .padding(28)
-        .frame(minWidth: 560, minHeight: 420)
+        .frame(minWidth: 560, minHeight: 460)
     }
 
     private var isLoading: Bool {
         if case .loading = viewModel.state { return true }
         return false
+    }
+
+    @ViewBuilder
+    private func permissionBanner(_ category: AgentError.Category) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label {
+                Text(category == .permission
+                     ? "permission.guide"
+                     : Self.messageKey(for: category))
+            } icon: {
+                Image(systemName: "lock.shield")
+                    .foregroundStyle(.orange)
+            }
+            if category == .permission {
+                Button("permission.open_settings") {
+                    controller.openPrivacySettings()
+                }
+            }
+        }
+        .padding(12)
+        .background(Color.orange.opacity(0.12))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
     }
 
     @ViewBuilder

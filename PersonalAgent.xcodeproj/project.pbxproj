@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		B200000000000000000021 /* P2IntegrationCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000020 /* P2IntegrationCoordinator.swift */; };
+		B200000000000000000023 /* RegionSelectionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000022 /* RegionSelectionController.swift */; };
+		B200000000000000000025 /* AppController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000024 /* AppController.swift */; };
+		B200000000000000000027 /* TINT2IntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000026 /* TINT2IntegrationTests.swift */; };
 		A10000000000000000000001 /* PersonalAgentApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000011 /* PersonalAgentApp.swift */; };
 		A10000000000000000000002 /* MainWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000012 /* MainWindowView.swift */; };
 		A10000000000000000000003 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000013 /* Assets.xcassets */; };
@@ -57,6 +61,10 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		B200000000000000000020 /* P2IntegrationCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = P2IntegrationCoordinator.swift; sourceTree = "<group>"; };
+		B200000000000000000022 /* RegionSelectionController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionSelectionController.swift; sourceTree = "<group>"; };
+		B200000000000000000024 /* AppController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppController.swift; sourceTree = "<group>"; };
+		B200000000000000000026 /* TINT2IntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TINT2IntegrationTests.swift; sourceTree = "<group>"; };
 		A10000000000000000000011 /* PersonalAgentApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalAgentApp.swift; sourceTree = "<group>"; };
 		A10000000000000000000012 /* MainWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainWindowView.swift; sourceTree = "<group>"; };
 		A10000000000000000000013 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -170,6 +178,7 @@
 			children = (
 				A10000000000000000000011 /* PersonalAgentApp.swift */,
 				B200000000000000000000C7 /* AppComposition.swift */,
+				B200000000000000000024 /* AppController.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -179,6 +188,7 @@
 			children = (
 				A10000000000000000000012 /* MainWindowView.swift */,
 				B200000000000000000000C5 /* ContentQueryViewModel.swift */,
+				B200000000000000000022 /* RegionSelectionController.swift */,
 			);
 			path = UI;
 			sourceTree = "<group>";
@@ -254,6 +264,7 @@
 				A10000000000000000000039 /* Input */,
 				A1000000000000000000003A /* Recognition */,
 				A1000000000000000000003B /* Providers */,
+				B200000000000000000000A0 /* Integration */,
 			);
 			path = Features;
 			sourceTree = "<group>";
@@ -290,6 +301,14 @@
 			path = Providers;
 			sourceTree = "<group>";
 		};
+		B200000000000000000000A0 /* Integration */ = {
+			isa = PBXGroup;
+			children = (
+				B200000000000000000020 /* P2IntegrationCoordinator.swift */,
+			);
+			path = Integration;
+			sourceTree = "<group>";
+		};
 		A1000000000000000000003C /* Resources */ = {
 			isa = PBXGroup;
 			children = (
@@ -314,6 +333,7 @@
 				B200000000000000000000BA /* T06OCRTests.swift */,
 				B200000000000000000000B0 /* T08ClipboardGrabTests.swift */,
 				B200000000000000000000A8 /* T09TranslateProviderTests.swift */,
+				B200000000000000000026 /* TINT2IntegrationTests.swift */,
 			);
 			path = PersonalAgentTests;
 			sourceTree = "<group>";
@@ -460,6 +480,9 @@
 				B200000000000000000000A1 /* TranslateHTTPClient.swift in Sources */,
 				B200000000000000000000A2 /* FreeWebTranslateProvider.swift in Sources */,
 				B200000000000000000000A4 /* RetryingLLMProvider.swift in Sources */,
+				B200000000000000000021 /* P2IntegrationCoordinator.swift in Sources */,
+				B200000000000000000023 /* RegionSelectionController.swift in Sources */,
+				B200000000000000000025 /* AppController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -479,6 +502,7 @@
 				B200000000000000000000B5 /* T06OCRTests.swift in Sources */,
 				B200000000000000000000BD /* T08ClipboardGrabTests.swift in Sources */,
 				B200000000000000000000A3 /* T09TranslateProviderTests.swift in Sources */,
+				B200000000000000000027 /* TINT2IntegrationTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

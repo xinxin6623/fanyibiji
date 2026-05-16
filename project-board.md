@@ -40,7 +40,7 @@
 | P-1 | 文档与工程骨架 | 文档、可构建 SwiftUI 工程 | DONE |
 | P0 | 核心契约层 | 纯类型与协议、统一错误模型 | DONE |
 | P1 | 最薄垂直闭环 | 剪贴板→LLM→JSONL→展示 跑通 | DONE |
-| P2 | 截屏/OCR 重路径 | 快捷键、截屏、OCR、取词入口 | READY |
+| P2 | 截屏/OCR 重路径 | 快捷键、截屏、OCR、取词入口 | DONE（待真机验收）|
 | P3 | 次要 Provider | 免费翻译、指定 TTS | TODO |
 | P4 | 收敛与硬化 | 容灾矩阵、本地化、历史读取 | TODO |
 
@@ -60,7 +60,7 @@
 | T05 | P2 | 截屏区域选择 | DONE | T04 | 截屏区域选择与图片输出 |
 | T06 | P2 | Vision OCR | DONE | T05 | OCRResult 与 Vision OCR pipeline |
 | T08 | P2 | 划线/剪贴板取词 | DONE | T04 | 选中文本或剪贴板输入链路 |
-| T-INT2 | P2 | P2 整合与可视化验收 | TODO | T04,T05,T06,T08 | overlay+热键+截屏→OCR→查询 App 接线 |
+| T-INT2 | P2 | P2 整合与可视化验收 | DONE（待真机验收）| T04,T05,T06,T08 | overlay+热键+截屏→OCR→查询 App 接线 |
 | T09 | P3 | 免费翻译 Provider | DONE | T03、TC | 一个稳定翻译 provider |
 | T10 | P3 | 指定 TTS Provider | BLOCKED | T03、TC | 可配置 TTS provider 与播放链路 |
 | T07b | P3 | LLM Provider 硬化 | DONE | T07a | 多模型配置已由 T03/T07a 承载；新增重试装饰器；流式推迟 |
@@ -252,19 +252,46 @@ T00 文档骨架、T01 MVP PRD、T02 SwiftUI 骨架均已 DONE 并通过构建�
 - 备注：Accessibility/AppleScript/模拟复制（含剪贴板快照恢复）属正式版，
   按 AGENTS「不提前造系统」推迟；接入 UI 在 T-INT2。
 
-### T-INT2 P2 整合与可视化验收（P2）
+### T-INT2 P2 整合与可视化验收（P2，代码完成，待真机验收）
 
 - 目标：把 T04/T05/T06/T08 的逻辑层接成可用功能，做一次真机可视化验收。
-- 状态：TODO。
+- 状态：DONE（代码层，2026-05-16，`** TEST SUCCEEDED **`，T-INT2 7 单测
+  绿，全量回归全绿，无编译告警）。**真机 GUI/系统授权手动验收待 James**。
 - 依赖：T04、T05、T06、T08。
-- 交付物：区域选择 overlay 窗口（全屏拖拽框选，复用 `CaptureRegion`）；
-  `HotkeyMonitoring`/`InputRouter` 接 App 生命周期；权限引导 UI（辅助
-  功能/录屏未授权→引导系统设置，复用 `.permission` 文案）；
-  截屏→`OCRCoordinator`→`ContentQueryViewModel` 端到端串联。
-- 验收标准：真机走通 热键→框选→截屏→OCR→查询→落盘；取消/权限失败
-  在 UI 可区分；文案本地化；逻辑层回归单测全绿。
-- 备注：本任务是前述被刻意推迟的"零散造无法测 UI"的集中兑现点；
-  GUI/系统授权需手动验收，James 在场或提供验收反馈。
+- 交付物：
+  - `P2IntegrationCoordinator`（headless 编排：路由授权门→区域选择→截屏
+    →OCR→产出查询文本；复用 T04/T05/T06 协调器，错误分类原样透传，
+    7 单测覆盖 happy/未授权短路/取消/空 OCR/采集失败透传/VM 注入）。
+  - `RegionSelectionController` + 私有 `RegionSelectionView`（多屏全屏
+    borderless overlay，拖拽框选，ESC/右键/空拖拽→`.cancelled`，复用
+    `CaptureRegion.fromDrag` 不重写几何；局部→全局屏幕坐标换算）。
+  - `AppController`（P2 组合根 + 生命周期：装配真实
+    `SCScreenCapturer`/`VisionTextRecognizer`；`onAppear` 接
+    `GlobalHotkeyMonitor`（⌘⇧A），未授权不崩溃记 `.permission`；
+    串行触发，进行中忽略二次触发避免叠 overlay；`openPrivacySettings`
+    落到隐私与安全性根面板——deep link 不稳定故用诚实可达兜底）。
+  - `ContentQueryViewModel` 扩展：`runQuery(with:sourceKind:)` 接外部
+    OCR 文本并保留真实 `sourceKind`；`reportCaptureFailure` 把采集链
+    失败透传 UI（取消回 idle 不报错，其余显示分类文案）。
+  - `MainWindowView` 重构：共享 VM + 截屏取词按钮（⌘⇧A）+ 权限引导
+    横幅（`.permission` 时显示"打开系统设置"）；新增 `capture.run`/
+    `capture.hint`/`permission.open_settings`/`permission.guide` 中英键。
+  - `PersonalAgentApp` 持有 `AppController`、注入共享 VM、`start()`。
+- 验收标准（代码层已满足）：编排链 headless 单测全绿；取消/权限/空
+  OCR 分类可区分；文案本地化；逻辑层回归全绿；`xcodebuild build/test`
+  通过无告警。
+- 待办（非代码，需 James 真机）：热键→框选→截屏→OCR→查询→落盘端到端
+  可视化；辅助功能/录屏首次授权弹窗与引导跳转；带真实 LLM key 的实跑
+  （key 由 James 稍后提供，验收前查询走降级失败态，OCR/采集链已可单独
+  验证）。
+- 落点：`Features/Integration/P2IntegrationCoordinator.swift`、
+  `UI/RegionSelectionController.swift`、`App/AppController.swift`、
+  `UI/{ContentQueryViewModel,MainWindowView}.swift`、
+  `App/PersonalAgentApp.swift`、`Resources/Localizable.xcstrings`、
+  `PersonalAgentTests/TINT2IntegrationTests.swift`。
+- 诚实约束：NSEvent 全局热键非独占，无冲突检测（沿用 T04 决策）；
+  单帧截图依赖 macOS 14 `SCScreenshotManager`（沿用 T05 约束）；
+  系统设置面板用根 deep link 而非脆弱子面板深链。
 
 ### T09 免费翻译 Provider（P3，已完成）
 

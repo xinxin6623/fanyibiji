@@ -1,15 +1,15 @@
 # Relay Task
 
-_updated: 2026-05-16 15:58_
+_updated: 2026-05-16 (T-INT2 代码完成)_
 _project: /Users/macmini/Documents/fanyibiji (PersonalAgent macOS App)_
 _branch: main_
 
 ## 任务
 参考 Easydict、干净重写个人用 macOS 助理 App MVP。2026-05-16 经 James
 确认执行策略为 P0→P4（先定契约 → 最薄垂直闭环 → 再扩重路径 → 收敛
-硬化）。**P0 + P1 + P2 全部逻辑层 + P3 的 T09/T07b 已完成**
-（单测全绿）。剩 T-INT2 P2 整合（GUI/授权，需真机验收）、T10 TTS
-（BLOCKED 待 James 决策）、T12 收敛硬化。
+硬化）。**P0 + P1 + P2（含 T-INT2 整合代码层）+ P3 的 T09/T07b
+已完成**（单测全绿）。剩 T-INT2 真机 GUI/授权验收（待 James 在场）、
+T10 TTS（BLOCKED 待 James 决策）、T12 收敛硬化。
 
 `relay-task.md` 是唯一交接文件；`handoff.md` 已废弃。
 
@@ -34,17 +34,24 @@ _branch: main_
 - [x] P3 T07b LLM Provider 硬化：DONE，5 单测绿。
   `RetryingLLMProvider` 装饰器只对可重试 `AgentError` 重试，取消不重试；
   多模型由 `ResolvedProviderConfig.model` 承载，流式推迟到确有需求。
+- [x] P2 T-INT2 整合（代码层）：DONE，7 单测绿，全量回归绿，无告警。
+  `P2IntegrationCoordinator`（headless 编排链）+ `RegionSelectionController`
+  （多屏 overlay 框选）+ `AppController`（组合根 + 热键生命周期 + 权限
+  引导）+ `ContentQueryViewModel` 扩展（外部文本注入 + 采集失败透传）+
+  `MainWindowView`/`PersonalAgentApp` 重构 + 4 本地化键。**真机
+  GUI/授权/带 key 端到端手动验收待 James。**
 
 ## 下一步（具体到能直接动手）
 1. 按序读 `AGENTS.md` → `relay-task.md` → `project-board.md` → `prd-mvp.md`。
-2. **T-INT2 P2 整合**（看板已登记，需真机可视化验收，建议 James 在场/
-   给反馈）：区域选择 overlay 全屏框选（复用 `CaptureRegion`）+
-   `HotkeyMonitoring`/`InputRouter` 接 App 生命周期 + 权限引导 UI +
-   截屏→`SCScreenCapturer`→`OCRCoordinator`→`ContentQueryViewModel`
-   端到端 + T08 取词入口 + T09 翻译动作。逻辑层已全就绪，本任务主要
-   是接线与可视化/授权验收——刻意推迟的"无法 headless 测 GUI"兑现点。
-3. 可 headless 的备选：T12 收敛硬化的纯逻辑部分。T10 TTS 仍 BLOCKED
-   待 James 决策（供应商/鉴权/格式/流式）。
+2. **T-INT2 真机验收（待 James 在场）**：构建运行 App →（a）首次触发
+   截屏取词会弹辅助功能/录屏授权，授权后走通 ⌘⇧A 或按钮→全屏框选
+   →截屏→OCR→查询；（b）ESC/右键取消应回 idle 不报错；（c）未授权时
+   显示权限引导横幅 + "打开系统设置"按钮；（d）带真实 LLM key
+   （Keychain account=`llm.apiKey`, service=`com.james.personalagent`）
+   验证查询真实返回，无 key 时停在降级失败态（OCR/采集链仍可单独看）。
+3. 真机验收通过后：T08 取词入口、T09 翻译动作的 UI 动作分发（当前
+   仅逻辑层就绪，未接 UI 按钮）可作独立小任务；或进 T12 收敛硬化
+   纯逻辑部分。T10 TTS 仍 BLOCKED 待 James 决策（供应商/鉴权/格式/流式）。
 4. 每个任务完成后验证：
    ```bash
    xcodebuild build -project PersonalAgent.xcodeproj -scheme PersonalAgent
@@ -65,6 +72,9 @@ _branch: main_
   `Features/Providers/FreeWebTranslateProvider.swift`
 - 垂直闭环 UI：`UI/ContentQueryViewModel.swift`、`UI/MainWindowView.swift`、
   `App/AppComposition.swift`、`Resources/Localizable.xcstrings`
+- P2 整合（T-INT2）：`Features/Integration/P2IntegrationCoordinator.swift`、
+  `UI/RegionSelectionController.swift`、`App/AppController.swift`、
+  `App/PersonalAgentApp.swift`、`PersonalAgentTests/TINT2IntegrationTests.swift`
 - 输入路由层：`PersonalAgent/Core/Input/{InputEntry,
   AccessibilityAuthorizing,InputRouter,HotkeyMonitoring,
   PasteboardReading,ClipboardTextGrabber}.swift`

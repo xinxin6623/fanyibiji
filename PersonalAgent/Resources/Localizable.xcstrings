@@ -1,84 +1,278 @@
 {
-  "sourceLanguage" : "en",
-  "strings" : {
-    "app.title" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Personal Agent" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "Personal Agent" } }
+  "sourceLanguage": "en",
+  "strings": {
+    "app.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personal Agent"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Personal Agent"
+          }
+        }
       }
     },
-    "query.prompt" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Paste or type text, then run a query" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "粘贴或输入文本，然后发起查询" } }
+    "query.prompt": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Paste or type text, then run a query"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "粘贴或输入文本，然后发起查询"
+          }
+        }
       }
     },
-    "query.run" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Run Query" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "发起查询" } }
+    "query.run": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Run Query"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "发起查询"
+          }
+        }
       }
     },
-    "query.idle" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Result will appear here." } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "结果将显示在这里。" } }
+    "query.idle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Result will appear here."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "结果将显示在这里。"
+          }
+        }
       }
     },
-    "query.loading" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Querying…" } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "查询中…" } }
+    "query.loading": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Querying…"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查询中…"
+          }
+        }
       }
     },
-    "error.invalid_input" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Invalid input or missing configuration." } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "输入无效或配置缺失。" } }
+    "error.invalid_input": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invalid input or missing configuration."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "输入无效或配置缺失。"
+          }
+        }
       }
     },
-    "error.network" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Network error. Please retry." } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "网络错误，请重试。" } }
+    "error.network": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Network error. Please retry."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "网络错误，请重试。"
+          }
+        }
       }
     },
-    "error.timeout" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Request timed out. Please retry." } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "请求超时，请重试。" } }
+    "error.timeout": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Request timed out. Please retry."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请求超时，请重试。"
+          }
+        }
       }
     },
-    "error.cancelled" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Request cancelled." } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "请求已取消。" } }
+    "error.cancelled": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Request cancelled."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "请求已取消。"
+          }
+        }
       }
     },
-    "error.permission" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Permission denied." } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "权限被拒绝。" } }
+    "error.permission": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permission denied."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "权限被拒绝。"
+          }
+        }
       }
     },
-    "error.persistence" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Failed to save result locally." } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "本地保存结果失败。" } }
+    "error.persistence": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Failed to save result locally."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本地保存结果失败。"
+          }
+        }
       }
     },
-    "error.provider_rejected" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "The provider rejected the request." } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "服务方拒绝了请求。" } }
+    "error.provider_rejected": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The provider rejected the request."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "服务方拒绝了请求。"
+          }
+        }
       }
     },
-    "error.unknown" : {
-      "localizations" : {
-        "en" : { "stringUnit" : { "state" : "translated", "value" : "Unknown error." } },
-        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "未知错误。" } }
+    "error.unknown": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unknown error."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "未知错误。"
+          }
+        }
+      }
+    },
+    "capture.run": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Capture & Recognize"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "截屏取词"
+          }
+        }
+      }
+    },
+    "capture.hint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Press the button or ⌘⇧A to select a screen region."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "点按按钮或按 ⌘⇧A 框选屏幕区域。"
+          }
+        }
+      }
+    },
+    "permission.open_settings": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open System Settings"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "打开系统设置"
+          }
+        }
+      }
+    },
+    "permission.guide": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Screen Recording / Accessibility permission is required. Grant it in System Settings, then retry."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "需要屏幕录制 / 辅助功能权限。请在系统设置中开启后重试。"
+          }
+        }
       }
     }
   },
-  "version" : "1.0"
+  "version": "1.0"
 }
