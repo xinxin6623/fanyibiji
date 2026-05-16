@@ -19,6 +19,7 @@
 		B200000000000000000025 /* AppController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000024 /* AppController.swift */; };
 		B200000000000000000031 /* TTSConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000030 /* TTSConfig.swift */; };
 		B200000000000000000033 /* TTSWebSocketClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000032 /* TTSWebSocketClient.swift */; };
+		B20000000000000000003F /* SuperTTSWebSocketClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000003E /* SuperTTSWebSocketClient.swift */; };
 		B200000000000000000035 /* XunfeiTTSProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000034 /* XunfeiTTSProvider.swift */; };
 		B200000000000000000037 /* TTSPlaybackViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000036 /* TTSPlaybackViewModel.swift */; };
 		B200000000000000000039 /* TTSPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000038 /* TTSPanelView.swift */; };
@@ -87,6 +88,7 @@
 		B200000000000000000024 /* AppController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppController.swift; sourceTree = "<group>"; };
 		B200000000000000000030 /* TTSConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TTSConfig.swift; sourceTree = "<group>"; };
 		B200000000000000000032 /* TTSWebSocketClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TTSWebSocketClient.swift; sourceTree = "<group>"; };
+		B20000000000000000003E /* SuperTTSWebSocketClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuperTTSWebSocketClient.swift; sourceTree = "<group>"; };
 		B200000000000000000034 /* XunfeiTTSProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XunfeiTTSProvider.swift; sourceTree = "<group>"; };
 		B200000000000000000036 /* TTSPlaybackViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TTSPlaybackViewModel.swift; sourceTree = "<group>"; };
 		B200000000000000000038 /* TTSPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TTSPanelView.swift; sourceTree = "<group>"; };
@@ -254,6 +256,7 @@
 				B200000000000000000000FE /* LLMHTTPClient.swift */,
 				B200000000000000000000A6 /* TranslateHTTPClient.swift */,
 				B200000000000000000032 /* TTSWebSocketClient.swift */,
+				B20000000000000000003E /* SuperTTSWebSocketClient.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -507,6 +510,7 @@
 				B200000000000000000000C4 /* ContentQueryViewModel.swift in Sources */,
 				B200000000000000000031 /* TTSConfig.swift in Sources */,
 				B200000000000000000033 /* TTSWebSocketClient.swift in Sources */,
+				B20000000000000000003F /* SuperTTSWebSocketClient.swift in Sources */,
 				B200000000000000000035 /* XunfeiTTSProvider.swift in Sources */,
 				B200000000000000000037 /* TTSPlaybackViewModel.swift in Sources */,
 				B200000000000000000039 /* TTSPanelView.swift in Sources */,

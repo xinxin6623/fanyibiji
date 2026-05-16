@@ -353,13 +353,17 @@ T00 文档骨架、T01 MVP PRD、T02 SwiftUI 骨架均已 DONE 并通过构建�
 ### T10 指定 TTS Provider（P3，DONE）
 
 - 目标：接入指定 TTS API 并完成播放链路。
-- 状态：**DONE**（2026-05-16，`T10TTSTests` 21 单测绿、全量回归绿、
-  无告警）。
+- 状态：**DONE**（2026-05-16，`T10TTSTests` 30 单测绿、全量回归绿、
+  无告警）。**双引擎**：普通 v2/tts + 超拟人 super-tts，UI 下拉切换，
+  共用同一套三件套密钥（鉴权完全相同），默认超拟人·聪小璇。
 - 依赖：T03、TC。
-- James 决策（解阻塞）：供应商=科大讯飞在线语音合成（WebSocket
-  `wss://tts-api.xfyun.cn/v2/tts`）；鉴权=HMAC-SHA256（host+date+
-  request-line → base64 authorization）；音频格式=`aue=lame`(MP3)，
-  AVAudioPlayer 直接解码；非流式「攒整段」（收齐 `data.status==2`）。
+- James 决策（解阻塞）：供应商=科大讯飞（两套接口：普通在线
+  `wss://tts-api.xfyun.cn/v2/tts`；超拟人
+  `wss://cbm01.cn-huabei-1.xf-yun.com/v1/private/mcd9m97e6`）；鉴权=
+  HMAC-SHA256（host+date+request-line → base64 authorization，两接口
+  相同）；音频格式=lame(MP3)，AVAudioPlayer 直接解码；非流式「攒整
+  段」；超拟人额外支持口语化程度（高/中/低，UI 下拉）。引擎/发音人
+  /口语化均持久化随设置。
 - 交付物：
   - `Core/Config/TTSConfig.swift`：`TTSConfig`(Codable) /
     `ResolvedTTSConfig`(不 Codable) / `TTSConfigStore.resolve`。

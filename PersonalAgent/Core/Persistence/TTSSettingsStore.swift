@@ -61,19 +61,20 @@ final class TTSSettingsStore: @unchecked Sendable {
         }
     }
 
-    /// 把可能越界的值夹回合法范围，host/vcn 空则回默认。
+    /// 把可能越界的值夹回合法范围，host/vcn 空则回**该引擎**默认。
     /// 确保读到的配置不会让后续 `TTSConfigStore.resolve` 因脏数据失败。
     private static func sanitized(_ c: TTSConfig) -> TTSConfig {
-        let d = TTSConfig()
         let host = c.hostUrl.trimmingCharacters(in: .whitespacesAndNewlines)
         let vcn = c.vcn.trimmingCharacters(in: .whitespacesAndNewlines)
         func clamp(_ v: Int) -> Int { min(max(v, 0), 100) }
         return TTSConfig(
-            hostUrl: host.isEmpty ? d.hostUrl : host,
-            vcn: vcn.isEmpty ? d.vcn : vcn,
+            engine: c.engine,
+            hostUrl: host.isEmpty ? c.engine.defaultHost : host,
+            vcn: vcn.isEmpty ? c.engine.defaultVcn : vcn,
             speed: clamp(c.speed),
             volume: clamp(c.volume),
             pitch: clamp(c.pitch),
-            timeoutSeconds: c.timeoutSeconds > 0 ? c.timeoutSeconds : d.timeoutSeconds)
+            oralLevel: c.oralLevel,
+            timeoutSeconds: c.timeoutSeconds > 0 ? c.timeoutSeconds : 30)
     }
 }

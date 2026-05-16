@@ -142,11 +142,13 @@ final class T10TTSTests: XCTestCase {
 
     // MARK: - Provider 失败映射
 
-    private func resolved() -> ResolvedTTSConfig {
+    private func resolved(engine: TTSEngine = .standard) -> ResolvedTTSConfig {
         ResolvedTTSConfig(
-            hostUrl: URL(string: "wss://tts-api.xfyun.cn/v2/tts")!,
-            vcn: "xiaoyan", speed: 50, volume: 50, pitch: 50,
-            timeoutSeconds: 5, appId: "A", apiKey: "K", apiSecret: "S")
+            engine: engine,
+            hostUrl: URL(string: engine.defaultHost)!,
+            vcn: engine.defaultVcn, speed: 50, volume: 50, pitch: 50,
+            oralLevel: .mid, timeoutSeconds: 5,
+            appId: "A", apiKey: "K", apiSecret: "S")
     }
 
     func testProviderReturnsMP3OnSuccess() async throws {
@@ -260,6 +262,132 @@ final class T10TTSTests: XCTestCase {
         try await Task.sleep(nanoseconds: 600_000_000)
         XCTAssertEqual(store.load().vcn, "aisjiuxu")
         XCTAssertEqual(store.load().speed, 88)
+    }
+
+    // MARK: - 引擎切换 / 超拟人接口
+
+    func testDefaultEngineIsSuperHuman() {
+        let c = TTSConfig()
+        XCTAssertEqual(c.engine, .superHuman)
+        XCTAssertEqual(c.vcn, "x5_lingxiaoxuan_flow")
+        XCTAssertTrue(c.hostUrl.contains("xf-yun.com"))
+    }
+
+    func testOldConfigWithoutEngineDecodesToSuperDefault() throws {
+        // 模拟 T10 旧版本写的配置（无 engine/oral_level）。
+        let legacy = #"{"host_url":"wss://tts-api.xfyun.cn/v2/tts","vcn":"xiaoyan","speed":55,"volume":50,"pitch":50,"timeout_seconds":30}"#
+        let dec = JSONDecoder()
+        dec.keyDecodingStrategy = .convertFromSnakeCase
+        let c = try dec.decode(TTSConfig.self, from: Data(legacy.utf8))
+        XCTAssertEqual(c.engine, .superHuman)   // 缺字段回默认
+        XCTAssertEqual(c.speed, 55)             // 旧字段保留
+        XCTAssertEqual(c.oralLevel, .mid)
+    }
+
+    func testConfigStoreResolveCarriesEngineAndOral() throws {
+        let store = TTSConfigStore(secrets: InMemorySecretStore([
+            "tts.appId": "A", "tts.apiKey": "K", "tts.apiSecret": "S"]))
+        let r = try store.resolve(TTSConfig(engine: .superHuman,
+                                            oralLevel: .high))
+        XCTAssertEqual(r.engine, .superHuman)
+        XCTAssertEqual(r.oralLevel, .high)
+        XCTAssertTrue(r.hostUrl.absoluteString.contains("xf-yun.com"))
+    }
+
+    func testSuperRequestFrameShape() throws {
+        let data = try SuperTTSRequest.frame(
+            appId: "APP", vcn: "x5_lingxiaoxuan_flow",
+            speed: 50, volume: 50, pitch: 50,
+            oralLevel: .high, text: "你好")
+        let root = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        let header = root["header"] as! [String: Any]
+        let param = root["parameter"] as! [String: Any]
+        let oral = param["oral"] as! [String: Any]
+        let tts = param["tts"] as! [String: Any]
+        let audio = tts["audio"] as! [String: Any]
+        let payloadText = (root["payload"] as! [String: Any])["text"] as! [String: Any]
+        XCTAssertEqual(header["app_id"] as? String, "APP")
+        XCTAssertEqual(header["status"] as? Int, 2)
+        XCTAssertEqual(oral["oral_level"] as? String, "high")
+        XCTAssertEqual(tts["vcn"] as? String, "x5_lingxiaoxuan_flow")
+        XCTAssertEqual(audio["encoding"] as? String, "lame")
+        XCTAssertEqual(audio["sample_rate"] as? Int, 24000)
+        let decoded = Data(base64Encoded: payloadText["text"] as! String)!
+        XCTAssertEqual(String(decoding: decoded, as: UTF8.self), "你好")
+    }
+
+    func testSuperRequestFrameRejectsEmptyText() {
+        XCTAssertThrowsError(try SuperTTSRequest.frame(
+            appId: "A", vcn: "v", speed: 0, volume: 0, pitch: 0,
+            oralLevel: .mid, text: "  ")) {
+            XCTAssertEqual(($0 as? AgentError)?.category, .invalidInput)
+        }
+    }
+
+    func testSuperCollectorConcatenatesUntilStatus2() throws {
+        var c = SuperTTSFrameCollector()
+        func frame(_ o: [String: Any]) -> Data {
+            try! JSONSerialization.data(withJSONObject: o)
+        }
+        let p1 = Data([0xAA]).base64EncodedString()
+        let p2 = Data([0xBB]).base64EncodedString()
+        try c.ingest(frame(["header": ["code": 0, "status": 1],
+                            "payload": ["audio": ["audio": p1, "status": 1]]]))
+        XCTAssertFalse(c.isComplete)
+        try c.ingest(frame(["header": ["code": 0, "status": 2],
+                            "payload": ["audio": ["audio": p2, "status": 2]]]))
+        XCTAssertTrue(c.isComplete)
+        XCTAssertEqual(c.audioData, Data([0xAA, 0xBB]))
+    }
+
+    func testSuperCollectorMapsErrorCode() {
+        var c = SuperTTSFrameCollector()
+        let f = try! JSONSerialization.data(withJSONObject:
+            ["header": ["code": 10005, "message": "auth failed"]])
+        XCTAssertThrowsError(try c.ingest(f)) {
+            let e = $0 as? AgentError
+            XCTAssertEqual(e?.category, .providerRejected)
+            XCTAssertEqual(e?.providerErrorCode, "XF_10005")
+        }
+    }
+
+    func testSuperProviderReturnsMP3() async throws {
+        let provider = SuperTTSProvider(
+            config: resolved(engine: .superHuman),
+            client: StubSuperTTSClient(.success(Data([0x49, 0x44, 0x33]))),
+            now: { Date() })
+        let r = try await provider.synthesize("你好")
+        XCTAssertEqual(r.format, "mp3")
+        XCTAssertEqual(r.data, Data([0x49, 0x44, 0x33]))
+    }
+
+    @MainActor
+    func testViewModelEngineSwitchResetsVcnAndRebuilds() async throws {
+        var built: [TTSConfig] = []
+        let vm = TTSPlaybackViewModel(
+            settings: TTSConfig(engine: .standard, vcn: "xiaoyan"),
+            settingsStore: TTSSettingsStore(fileURL: tempSettingsURL()),
+            makeProvider: { c in built.append(c)
+                return FailingTTSProvider(error: AgentError(category: .invalidInput)) })
+        XCTAssertEqual(built.count, 1)
+        vm.engine = .superHuman
+        // engine.didSet → vcn 重置为超拟人默认 → vcn.didSet 触发一次重建
+        XCTAssertEqual(vm.vcn, "x5_lingxiaoxuan_flow")
+        XCTAssertEqual(built.last?.engine, .superHuman)
+        XCTAssertTrue(built.last!.hostUrl.contains("xf-yun.com"))
+    }
+}
+
+/// 超拟人桩：一次性返回预置结果或错误，不触网。
+private struct StubSuperTTSClient: SuperTTSWebSocketClient {
+    let outcome: Result<Data, AgentError>
+    init(_ outcome: Result<Data, AgentError>) { self.outcome = outcome }
+    func synthesize(url: URL, requestFrame: Data,
+                    timeoutSeconds: Double) async throws -> Data {
+        switch outcome {
+        case let .success(d): return d
+        case let .failure(e): throw e
+        }
     }
 }
 

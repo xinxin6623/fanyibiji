@@ -35,7 +35,8 @@ enum AppComposition {
             .appendingPathComponent("tts-config.json")
     }
 
-    /// 按给定 `TTSConfig` 解析三件套密钥并造 provider；缺 key/非法配置
+    /// 按给定 `TTSConfig` 解析三件套密钥并造 provider；按 `engine` 选
+    /// 普通 / 超拟人接口（**同一套 Keychain key**）。缺 key/非法配置
     /// → `FailingTTSProvider` 降级（UI 可见，不崩）。供 ViewModel 在
     /// 设置变更时按新 config 重建。
     @Sendable
@@ -43,8 +44,14 @@ enum AppComposition {
         let configStore = TTSConfigStore(secrets: KeychainSecretStore())
         do {
             let resolved = try configStore.resolve(config)
-            return XunfeiTTSProvider(
-                config: resolved, client: URLSessionTTSWebSocketClient())
+            switch resolved.engine {
+            case .standard:
+                return XunfeiTTSProvider(
+                    config: resolved, client: URLSessionTTSWebSocketClient())
+            case .superHuman:
+                return SuperTTSProvider(
+                    config: resolved, client: URLSessionSuperTTSWebSocketClient())
+            }
         } catch let error as AgentError {
             return FailingTTSProvider(error: error)
         } catch {

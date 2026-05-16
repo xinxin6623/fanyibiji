@@ -104,6 +104,106 @@ struct XunfeiTTSProvider: TTSProvider {
     }
 }
 
+/// 讯飞**超拟人**语音合成 provider（WebSocket，攒整段，输出 MP3）。
+///
+/// 与 `XunfeiTTSProvider` 同结构、同 `AgentError` 映射、同零网络
+/// `validate()`，仅走超拟人接口（不同 host/path、header/parameter/
+/// payload 结构、口语化参数）。鉴权复用 `XunfeiTTSAuth.signedURL`。
+struct SuperTTSProvider: TTSProvider {
+    let id = "xunfei-super-tts"
+
+    private let config: ResolvedTTSConfig
+    private let client: SuperTTSWebSocketClient
+    private let now: @Sendable () -> Date
+
+    init(config: ResolvedTTSConfig,
+         client: SuperTTSWebSocketClient,
+         now: @escaping @Sendable () -> Date = { Date() }) {
+        self.config = config
+        self.client = client
+        self.now = now
+    }
+
+    func validate() throws {
+        guard config.hostUrl.scheme?.hasPrefix("ws") == true,
+              config.hostUrl.host != nil else {
+            throw AgentError(category: .invalidInput,
+                             diagnosticMessage: "invalid host_url")
+        }
+        guard !config.vcn.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            throw AgentError(category: .invalidInput,
+                             diagnosticMessage: "missing vcn")
+        }
+        guard !config.appId.isEmpty,
+              !config.apiKey.isEmpty,
+              !config.apiSecret.isEmpty else {
+            throw AgentError(category: .invalidInput,
+                             diagnosticMessage: "missing tts credentials")
+        }
+    }
+
+    func synthesize(_ text: String) async throws -> AudioResult {
+        try validate()
+
+        let signedURL = try XunfeiTTSAuth.signedURL(
+            host: config.hostUrl,
+            apiKey: config.apiKey,
+            apiSecret: config.apiSecret,
+            date: now())
+
+        let frame = try SuperTTSRequest.frame(
+            appId: config.appId,
+            vcn: config.vcn,
+            speed: config.speed,
+            volume: config.volume,
+            pitch: config.pitch,
+            oralLevel: config.oralLevel,
+            text: text)
+
+        let audio: Data
+        do {
+            try Task.checkCancellation()
+            audio = try await client.synthesize(
+                url: signedURL,
+                requestFrame: frame,
+                timeoutSeconds: config.timeoutSeconds)
+            try Task.checkCancellation()
+        } catch let error as AgentError {
+            throw error
+        } catch is CancellationError {
+            throw AgentError(category: .cancelled,
+                             diagnosticMessage: "super tts cancelled")
+        } catch let urlError as URLError {
+            throw SuperTTSProvider.mapURLError(urlError)
+        } catch {
+            throw AgentError(category: .network,
+                             isRetriable: true,
+                             diagnosticMessage: "super tts transport failure")
+        }
+
+        guard !audio.isEmpty else {
+            throw AgentError(category: .providerRejected,
+                             diagnosticMessage: "super tts returned empty audio")
+        }
+        return AudioResult(data: audio, format: "mp3", durationMs: nil)
+    }
+
+    private static func mapURLError(_ error: URLError) -> AgentError {
+        switch error.code {
+        case .cancelled:
+            return AgentError(category: .cancelled,
+                              diagnosticMessage: "super tts cancelled")
+        case .timedOut:
+            return AgentError(category: .timeout, isRetriable: true,
+                              diagnosticMessage: "super tts timed out")
+        default:
+            return AgentError(category: .network, isRetriable: true,
+                              diagnosticMessage: "super tts network failure",
+                              providerErrorCode: "URLError_\(error.code.rawValue)")
+        }
+    }
+}
+
 /// 当配置/密钥缺失时的降级 provider：调用即抛预置 `AgentError`，
 /// 让失败态在 UI 可见（避免静默卡死）。与 `FailingLLMProvider` 同策略。
 struct FailingTTSProvider: TTSProvider {

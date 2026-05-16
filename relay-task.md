@@ -27,10 +27,12 @@ _branch: t10-tts-impl（从 main 切出，待合并）_
   +11 单测）、B 失败落盘+重试 §8-4（+8）、C 统一取消+超时恢复 §8-8
   （+4）、D 历史读取+本地化完整性（+4，25 键齐全）。逻辑层全单测
   覆盖，真机点验按 James"继续"跳过。
-- [x] **T10 讯飞 TTS 全完成**（本轮，分支 `t10-tts-impl`）：WebSocket
-  攒整段、HMAC-SHA256 鉴权、aue=lame(MP3)、AVAudioPlayer 播放（进度
-  条+播放/暂停）、发音人下拉+三滑块且改动持久化。`T10TTSTests` 21
-  单测绿，§8-6 失败路径随此收口（看板 T12 已更新为闭环）。
+- [x] **T10 讯飞 TTS 全完成**（本轮，分支 `t10-tts-impl`）：**双引擎**
+  （普通 v2/tts + 超拟人 super-tts，UI 下拉切换，共用同一套三件套
+  密钥，默认超拟人·聪小璇）；WebSocket 攒整段、HMAC-SHA256 鉴权、
+  lame(MP3)、AVAudioPlayer 播放（进度条+播放/暂停）；引擎/发音人
+  （随引擎联动两套）/口语化（仅超拟人）/三滑块均持久化。
+  `T10TTSTests` 30 单测绿，§8-6 失败路径随此收口（看板 T12 已闭环）。
 - 全量回归绿、无告警；本轮提交见分支 `t10-tts-impl`（上一轮 → 4438a7c）。
 
 ## 下一步（具体到能直接动手）
@@ -64,8 +66,10 @@ _branch: t10-tts-impl（从 main 切出，待合并）_
   TTSConfig}.swift`
 - 持久化：`Core/Persistence/{JSONLResultStore,TTSSettingsStore}.swift`
 - providers：`Features/Providers/{OpenAICompatibleLLMProvider,
-  RetryingLLMProvider,FreeWebTranslateProvider,XunfeiTTSProvider}.swift`、
-  `Core/Services/{LLMHTTPClient,TranslateHTTPClient,TTSWebSocketClient}.swift`
+  RetryingLLMProvider,FreeWebTranslateProvider}.swift`、
+  `Features/Providers/XunfeiTTSProvider.swift`（含 `SuperTTSProvider`
+  +`FailingTTSProvider`）、`Core/Services/{LLMHTTPClient,
+  TranslateHTTPClient,TTSWebSocketClient,SuperTTSWebSocketClient}.swift`
 - UI/编排：`UI/{ContentQueryViewModel,MainWindowView,
   RegionSelectionController,TTSPlaybackViewModel,TTSPanelView}.swift`、
   `App/{AppComposition,AppController,PersonalAgentApp}.swift`、

@@ -61,18 +61,37 @@ struct TTSPanelView: View {
         }
     }
 
-    /// 发音人下拉 + 语速/音量/音调三滑块。改动经 ViewModel 即时重建
-    /// provider 并 debounce 存盘（下次开 App 保留）。
+    /// 引擎下拉 + 发音人下拉（随引擎联动两套）+ 超拟人口语化下拉
+    /// + 语速/音量/音调三滑块。改动经 ViewModel 即时重建 provider 并
+    /// debounce 存盘（下次开 App 保留）。
     @ViewBuilder
     private var settingsControls: some View {
         VStack(alignment: .leading, spacing: 8) {
+            Picker("tts.engine", selection: $viewModel.engine) {
+                Text("tts.engine.super").tag(TTSEngine.superHuman)
+                Text("tts.engine.standard").tag(TTSEngine.standard)
+            }
+            .pickerStyle(.menu)
+            .fixedSize()
+
             Picker("tts.voice", selection: $viewModel.vcn) {
-                ForEach(TTSPlaybackViewModel.vcnOptions, id: \.value) { opt in
+                ForEach(TTSPlaybackViewModel.vcnOptions(for: viewModel.engine),
+                        id: \.value) { opt in
                     Text(opt.label).tag(opt.value)
                 }
             }
             .pickerStyle(.menu)
             .fixedSize()
+
+            if viewModel.engine == .superHuman {
+                Picker("tts.oral", selection: $viewModel.oralLevel) {
+                    Text("tts.oral.high").tag(TTSOralLevel.high)
+                    Text("tts.oral.mid").tag(TTSOralLevel.mid)
+                    Text("tts.oral.low").tag(TTSOralLevel.low)
+                }
+                .pickerStyle(.menu)
+                .fixedSize()
+            }
 
             sliderRow("tts.speed", value: $viewModel.speed)
             sliderRow("tts.volume", value: $viewModel.volume)

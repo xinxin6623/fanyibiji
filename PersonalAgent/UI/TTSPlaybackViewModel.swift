@@ -27,22 +27,47 @@ final class TTSPlaybackViewModel: NSObject, ObservableObject {
 
     // MARK: - 可调设置（UI 绑定；改动即重建 provider 并存盘）
 
-    /// 发音人。需在讯飞控制台开通；UI 给预置下拉，见 `vcnOptions`。
+    /// 引擎：普通 / 超拟人。切换时 vcn 自动落到该引擎默认发音人
+    /// （两套发音人不通用，沿用旧 vcn 会「服务方拒绝」）。
+    @Published var engine: TTSEngine {
+        didSet {
+            guard engine != oldValue else { return }
+            // 引擎变 → vcn 重置为该引擎默认；vcn 的 didSet 会触发
+            // settingsChanged()（含 host 随新引擎），无需此处重复调用。
+            vcn = engine.defaultVcn
+        }
+    }
+    /// 发音人。两套预置见 `vcnOptions(for:)`；切引擎时被重置。
     @Published var vcn: String { didSet { settingsChanged() } }
     @Published var speed: Double { didSet { settingsChanged() } }
     @Published var volume: Double { didSet { settingsChanged() } }
     @Published var pitch: Double { didSet { settingsChanged() } }
+    /// 口语化程度，仅 `superHuman` 引擎生效（standard 忽略）。
+    @Published var oralLevel: TTSOralLevel { didSet { settingsChanged() } }
 
-    /// 预置常用发音人（label 给人看，value=vcn 传讯飞）。
+    /// 按引擎给预置发音人列表（label 给人看，value=vcn 传讯飞）。
     /// 控制台开通的冷门发音人不在此列也可用——但 UI 走预置下拉，
     /// 避免手输拼错导致「服务方拒绝」（经 James 确认走下拉）。
-    static let vcnOptions: [(label: String, value: String)] = [
-        ("讯飞小燕·女声", "xiaoyan"),
-        ("讯飞许久·男声", "aisjiuxu"),
-        ("讯飞小萍·女声", "aisxping"),
-        ("讯飞小婧·女声", "aisjinger"),
-        ("讯飞许小宝·童声", "aisbabyxu")
-    ]
+    static func vcnOptions(for engine: TTSEngine) -> [(label: String, value: String)] {
+        switch engine {
+        case .standard:
+            return [
+                ("讯飞小燕·女声", "xiaoyan"),
+                ("讯飞许久·男声", "aisjiuxu"),
+                ("讯飞小萍·女声", "aisxping"),
+                ("讯飞小婧·女声", "aisjinger"),
+                ("讯飞许小宝·童声", "aisbabyxu")
+            ]
+        case .superHuman:
+            return [
+                ("聪小璇·女声", "x5_lingxiaoxuan_flow"),
+                ("聪飞逸·男声", "x5_lingfeiyi_flow"),
+                ("聪小玥·女声", "x5_lingxiaoyue_flow"),
+                ("聪玉昭·女声", "x5_lingyuzhao_flow"),
+                ("聪玉言·女声", "x5_lingyuyan_flow")
+            ]
+        }
+    }
 
     private let makeProvider: @Sendable (TTSConfig) -> TTSProvider
     private let settingsStore: TTSSettingsStore
@@ -64,21 +89,26 @@ final class TTSPlaybackViewModel: NSObject, ObservableObject {
         self.baseConfig = settings
         self.settingsStore = settingsStore
         self.makeProvider = makeProvider
+        self.engine = settings.engine
         self.vcn = settings.vcn
         self.speed = Double(settings.speed)
         self.volume = Double(settings.volume)
         self.pitch = Double(settings.pitch)
+        self.oralLevel = settings.oralLevel
         self.provider = makeProvider(settings)
         super.init()
     }
 
-    /// 把当前 UI 值合回完整 `TTSConfig`（保留 host/timeout 等非 UI 字段）。
+    /// 把当前 UI 值合回完整 `TTSConfig`。host 随 engine（不沿用旧
+    /// baseConfig.hostUrl，否则切引擎后还连旧 host）；timeout 保留。
     private var currentConfig: TTSConfig {
-        TTSConfig(hostUrl: baseConfig.hostUrl,
+        TTSConfig(engine: engine,
+                  hostUrl: engine.defaultHost,
                   vcn: vcn,
                   speed: Int(speed.rounded()),
                   volume: Int(volume.rounded()),
                   pitch: Int(pitch.rounded()),
+                  oralLevel: oralLevel,
                   timeoutSeconds: baseConfig.timeoutSeconds)
     }
 
