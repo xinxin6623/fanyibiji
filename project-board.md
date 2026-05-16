@@ -41,8 +41,8 @@
 | P0 | 核心契约层 | 纯类型与协议、统一错误模型 | DONE |
 | P1 | 最薄垂直闭环 | 剪贴板→LLM→JSONL→展示 跑通 | DONE |
 | P2 | 截屏/OCR 重路径 | 快捷键、截屏、OCR、取词入口 | DONE（真机验收通过）|
-| P3 | 次要 Provider | 免费翻译、指定 TTS | 翻译 DONE；TTS(T10) BLOCKED |
-| P4 | 收敛与硬化 | 容灾矩阵、本地化、历史读取 | DONE（T12 A/B/C/D，TTS 路径随 T10）|
+| P3 | 次要 Provider | 免费翻译、指定 TTS | 翻译 DONE；TTS(T10) DONE |
+| P4 | 收敛与硬化 | 容灾矩阵、本地化、历史读取 | DONE（T12 A/B/C/D，TTS 路径已随 T10 收口）|
 
 ## 任务看板
 
@@ -62,9 +62,9 @@
 | T08 | P2 | 划线/剪贴板取词 | DONE（UI 已接，真机验收通过）| T04 | 选中文本或剪贴板输入链路 |
 | T-INT2 | P2 | P2 整合与可视化验收 | DONE（真机验收通过）| T04,T05,T06,T08 | overlay+热键+截屏→OCR→翻译 App 接线 |
 | T09 | P3 | 免费翻译 Provider | DONE（UI 已接为主翻译通道，真机验收通过）| T03、TC | 一个稳定翻译 provider |
-| T10 | P3 | 指定 TTS Provider | BLOCKED | T03、TC | 可配置 TTS provider 与播放链路 |
+| T10 | P3 | 指定 TTS Provider | DONE（讯飞 WebSocket，21 单测绿） | T03、TC | 可配置 TTS provider、播放链路、设置持久化 |
 | T07b | P3 | LLM Provider 硬化 | DONE | T07a | 多模型配置已由 T03/T07a 承载；新增重试装饰器；流式推迟 |
-| T12 | P4 | 收敛与硬化 | DONE（A/B/C/D 四项，TTS 路径随 T10）| P1–P3 | 容灾矩阵、本地化完整性、历史读取接口 |
+| T12 | P4 | 收敛与硬化 | DONE（A/B/C/D 四项；TTS §8-6 已随 T10 收口）| P1–P3 | 容灾矩阵、本地化完整性、历史读取接口 |
 
 ## 任务详情
 
@@ -350,15 +350,41 @@ T00 文档骨架、T01 MVP PRD、T02 SwiftUI 骨架均已 DONE 并通过构建�
   VM 构造点迁移到共享 `makeTestViewModel`。空/纯空白剪贴板→
   `.invalidInput` 不触发空 provider 调用。
 
-### T10 指定 TTS Provider（P3，BLOCKED）
+### T10 指定 TTS Provider（P3，DONE）
 
 - 目标：接入指定 TTS API 并完成播放链路。
-- 状态：BLOCKED。
+- 状态：**DONE**（2026-05-16，`T10TTSTests` 30 单测绿、全量回归绿、
+  无告警）。**双引擎**：普通 v2/tts + 超拟人 super-tts，UI 下拉切换，
+  共用同一套三件套密钥（鉴权完全相同），默认超拟人·聪小璇。
 - 依赖：T03、TC。
-- 阻塞：等 James 决策 TTS 供应商、鉴权方式、音频格式、是否流式。
-- 交付物：`TTSProvider`、播放层、失败兜底。
-- 验收标准：按配置请求音频并播放；鉴权/网络/格式/文本过长错误可区分。
-- 备注：可先做占位接口与配置，不阻塞 P1/P2。
+- James 决策（解阻塞）：供应商=科大讯飞（两套接口：普通在线
+  `wss://tts-api.xfyun.cn/v2/tts`；超拟人
+  `wss://cbm01.cn-huabei-1.xf-yun.com/v1/private/mcd9m97e6`）；鉴权=
+  HMAC-SHA256（host+date+request-line → base64 authorization，两接口
+  相同）；音频格式=lame(MP3)，AVAudioPlayer 直接解码；非流式「攒整
+  段」；超拟人额外支持口语化程度（高/中/低，UI 下拉）。引擎/发音人
+  /口语化均持久化随设置。
+- 交付物：
+  - `Core/Config/TTSConfig.swift`：`TTSConfig`(Codable) /
+    `ResolvedTTSConfig`(不 Codable) / `TTSConfigStore.resolve`。
+  - `Core/Services/TTSWebSocketClient.swift`：协议 + URLSession
+    WebSocket 生产实现 + `TTSFrameCollector`(纯) + `XunfeiTTSAuth`
+    (纯，注入 date 可复现签名)。
+  - `Features/Providers/XunfeiTTSProvider.swift` + `FailingTTSProvider`
+    降级（缺 key/非法配置 UI 可见不崩）。
+  - `UI/TTSPlaybackViewModel.swift`（AVAudioPlayer，progress/seek，
+    注入 provider 工厂）+ `UI/TTSPanelView.swift`（发音人下拉 +
+    语速/音量/音调三滑块），挂 MainWindowView 底部。
+  - `Core/Persistence/TTSSettingsStore.swift`：发音人/语速/音量/音调
+    改动 debounce 落盘 `tts-config.json`，下次开 App 恢复；损坏/缺失
+    /越界回默认（不阻断功能）。
+- 密钥位：三个独立 Keychain 项，service=`com.james.personalagent`，
+  account=`tts.appId`/`tts.apiKey`/`tts.apiSecret`，`-A` 宽松 ACL；
+  James 自行写入（敏感信息不由 AI 代填）。
+- 验收标准达成：按配置请求音频并播放；鉴权/网络/超时/服务方拒绝/
+  文本过长/取消错误经 `AgentError` 统一可区分（讯飞码进
+  `providerErrorCode` 仅诊断）；签名/帧拼接/错误码/配置/失败映射/
+  设置持久化/ViewModel 重建均零网络单测覆盖。
 
 ### T07b LLM Provider 硬化（P3）
 
@@ -376,7 +402,11 @@ T00 文档骨架、T01 MVP PRD、T02 SwiftUI 骨架均已 DONE 并通过构建�
 
 - 目标：补齐容灾矩阵与交付质量。
 - 状态：**DONE**（2026-05-16，A/B/C/D 四项，James 确认范围，逐项
-  单测全绿、全量回归绿、无告警）。TTS 相关失败路径随 T10 解阻塞。
+  单测全绿、全量回归绿、无告警）。**§8-6 TTS 失败路径已随 T10
+  收口**：讯飞错误经 `XunfeiTTSProvider`/`TTSFrameCollector` 统一映射
+  `AgentError`（流控 11201/11202/10200 标 `isRetriable`，鉴权/授权类
+  不可重试），缺 key/非法配置 `FailingTTSProvider` 降级，UI 只按
+  category 显本地化文案。
 - 依赖：P1–P3。
 - 拆分与落地：
   - **T12-A 截屏空图/坐标防御**（commit ba4c5fa）：`ScreenGeometry`
@@ -398,7 +428,7 @@ T00 文档骨架、T01 MVP PRD、T02 SwiftUI 骨架均已 DONE 并通过构建�
     →`.persistence` 不崩）；MainWindowView「历史」面板（provider/
     时间/内容/失败标记）。全 25 本地化键 en+zh-Hans 齐全、无硬编码
     UI 字面量。4 单测。
-- 验收标准达成：§8 失败路径（除 TTS 随 T10）全覆盖且有失败注入
+- 验收标准达成：§8 失败路径（含 §8-6 TTS，已随 T10 收口）全覆盖且有失败注入
   单测；§10 逐条满足（取消/超时可恢复、失败可区分不空查询、key 不
   入仓库/日志、每次查询≥1 记录、Apple Silicon 可构建运行、无 Easydict
   源码复制）。

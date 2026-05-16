@@ -1,14 +1,15 @@
 # Relay Task
 
-_updated: 2026-05-16 (收尾：P0–P4 主体完成，仅余 T10 TTS)_
-_project: /Users/macmini/Documents/fanyibiji (PersonalAgent macOS App)_
-_branch: main_
+_updated: 2026-05-16 (收尾：P0–P4 + T10 TTS 全部完成，MVP 收口)_
+_project: /Users/qoragufimo390gmail.com/Documents/New project 3 (PersonalAgent macOS App)_
+_branch: t10-tts-impl（从 main 切出，待合并）_
 
 ## 任务
 参考 Easydict、干净重写个人用 macOS 助理 App MVP。执行策略 P0→P4
 （先定契约 → 最薄垂直闭环 → 再扩重路径 → 收敛硬化）。
-**P0–P4 主体全部完成并真机验收，唯一剩余 T10 TTS（BLOCKED）。**
+**P0–P4 + T10 TTS 全部完成，MVP 无剩余 TODO**（其余属 PRD §9 Defer）。
 `relay-task.md` 是唯一交接文件；`handoff.md` 已废弃。
+注：项目已迁到 `New project 3`，旧 relay 写的 `/Users/macmini/...` 作废。
 
 ## 当前进度
 - [x] P-1 骨架 / P0 契约层 / P1 垂直闭环（T03/T07a/T11a/T-UI1）。
@@ -26,22 +27,28 @@ _branch: main_
   +11 单测）、B 失败落盘+重试 §8-4（+8）、C 统一取消+超时恢复 §8-8
   （+4）、D 历史读取+本地化完整性（+4，25 键齐全）。逻辑层全单测
   覆盖，真机点验按 James"继续"跳过。
-- 全量回归绿、无告警；仓库干净；本轮提交 e9c8474 → 4438a7c。
+- [x] **T10 讯飞 TTS 全完成**（本轮，分支 `t10-tts-impl`）：**双引擎**
+  （普通 v2/tts + 超拟人 super-tts，UI 下拉切换，共用同一套三件套
+  密钥，默认超拟人·聪小璇）；WebSocket 攒整段、HMAC-SHA256 鉴权、
+  lame(MP3)、AVAudioPlayer 播放（进度条+播放/暂停）；引擎/发音人
+  （随引擎联动两套）/口语化（仅超拟人）/三滑块均持久化。
+  `T10TTSTests` 30 单测绿，§8-6 失败路径随此收口（看板 T12 已闭环）。
+- 全量回归绿、无告警；本轮提交见分支 `t10-tts-impl`（上一轮 → 4438a7c）。
 
 ## 下一步（具体到能直接动手）
 1. 按序读 `AGENTS.md` → `relay-task.md` → `project-board.md` → `prd-mvp.md`。
-2. **唯一剩余 = T10 TTS**（BLOCKED）。2026-05-16 James 去准备 TTS key。
-   接手时先向 James 确认/收集四个决策点：**供应商、鉴权方式、音频
-   格式、是否流式**。然后：
-   - key 写 Keychain（仿 LLM：account 自定，
-     service=`com.james.personalagent`，用 `-A` 宽松 ACL 避免重签
-     反复弹框）。
-   - 沿 `TTSProvider` 协议（`Core/Services/ProviderAdapter.swift` 已定
-     `synthesize(_:)->AudioResult`），仿 T07a/T09 结构：`TTSHTTPClient`
-     协议 + URLSession 生产 + 桩；错误统一 `AgentError`；`validate()`
-     零网络；播放层用 AVFoundation。
-   - 完成后把 §8-6 TTS 失败路径补进 T12 容灾矩阵（看板 T12 已注）。
-3. 除 T10 外无 TODO；后续多为打磨/分发（非 MVP，PRD §9 Defer）。
+2. **MVP 已无剩余任务**。接手后只剩两件「需 James 拍板」的事：
+   - 把分支 `t10-tts-impl` 合回 `main`（本轮没合，等 James 验收）。
+   - James 自行写入讯飞三件套 Keychain（敏感信息不由 AI 代填）：
+     ```bash
+     security add-generic-password -A -s com.james.personalagent -a tts.appId    -w <APPID>
+     security add-generic-password -A -s com.james.personalagent -a tts.apiKey   -w <APIKey>
+     security add-generic-password -A -s com.james.personalagent -a tts.apiSecret -w <APISecret>
+     ```
+     未写入时 TTS 面板显示「无效输入」橙字（`FailingTTSProvider`
+     降级，预期非 bug）；选的发音人须在讯飞控制台开通否则「服务方
+     拒绝」。
+3. 其余均 PRD §9 Defer（分发/签名公证/插件等，非 MVP）。
 4. 验证（**本机必带稳定签名构建参数**）：
    ```bash
    xcodebuild build -project PersonalAgent.xcodeproj -scheme PersonalAgent \
@@ -55,14 +62,18 @@ _branch: main_
 ## 关键文件 / 路径
 - 规则/看板/PRD：`AGENTS.md`、`project-board.md`、`prd-mvp.md`
 - 契约层：`PersonalAgent/Core/Models/*.swift`、`Core/Services/ProviderAdapter.swift`
-- 配置/密钥：`Core/Config/{ProviderConfig,SecretStore,ConfigStore}.swift`
-- 持久化：`Core/Persistence/JSONLResultStore.swift`
+- 配置/密钥：`Core/Config/{ProviderConfig,SecretStore,ConfigStore,
+  TTSConfig}.swift`
+- 持久化：`Core/Persistence/{JSONLResultStore,TTSSettingsStore}.swift`
 - providers：`Features/Providers/{OpenAICompatibleLLMProvider,
   RetryingLLMProvider,FreeWebTranslateProvider}.swift`、
-  `Core/Services/{LLMHTTPClient,TranslateHTTPClient}.swift`
+  `Features/Providers/XunfeiTTSProvider.swift`（含 `SuperTTSProvider`
+  +`FailingTTSProvider`）、`Core/Services/{LLMHTTPClient,
+  TranslateHTTPClient,TTSWebSocketClient,SuperTTSWebSocketClient}.swift`
 - UI/编排：`UI/{ContentQueryViewModel,MainWindowView,
-  RegionSelectionController}.swift`、`App/{AppComposition,AppController,
-  PersonalAgentApp}.swift`、`Resources/Localizable.xcstrings`
+  RegionSelectionController,TTSPlaybackViewModel,TTSPanelView}.swift`、
+  `App/{AppComposition,AppController,PersonalAgentApp}.swift`、
+  `Resources/Localizable.xcstrings`（36 键，含 7 TTS + 4 设置）
 - P2 整合：`Features/Integration/P2IntegrationCoordinator.swift`
 - 截屏/OCR：`Features/Input/{ScreenCapture,ScreenCaptureAuthorizing,
   ScreenCaptureCoordinator,SCScreenCapturer,ScreenGeometry}.swift`、
@@ -70,15 +81,17 @@ _branch: main_
   VisionTextRecognizer,BlankImageDetector}.swift`
 - 输入路由：`Core/Input/{InputEntry,AccessibilityAuthorizing,
   InputRouter,HotkeyMonitoring,PasteboardReading,ClipboardTextGrabber}.swift`
-- 单测：`PersonalAgentTests/*.swift`（18 文件，含 TINT2/TClipboard
-  Dispatch/T12{ScreenDefense,FailurePersistRetry,CancelTimeout,History}）
+- 单测：`PersonalAgentTests/*.swift`（19 文件，含 TINT2/TClipboard
+  Dispatch/T12{ScreenDefense,FailurePersistRetry,CancelTimeout,History}/
+  T10TTS 21 用例）
 - 本轮存档（详细背景去这里翻）：
   `/Users/qoragufimo390gmail.com/baidu/Archives/2026-05-16-personalagent-p2-t12-impl.md`
 - 相关 auto memory：`project_2026-05-16_*.md`、`feedback_2026-05-16_*.md`
 
 ## 阻塞 / 风险 / 待用户决策
-- **T10 TTS BLOCKED**：供应商/鉴权/音频格式/是否流式待 James 决策；
-  James 已去准备 key。
+- **T10 已解阻塞完成**：四个决策 James 已拍板（讯飞 WebSocket /
+  HMAC-SHA256 / lame-MP3 / 非流式攒整段），见 board T10 与
+  `project_2026-05-16_t10-tts-done.md`。剩 James 写 key + 合分支。
 - **OpenRouter key 泄露**：`sk-or-v1-35ff...` 调试期多次明文进对话
   历史，**James 需去 openrouter.ai/keys 作废重建**（多次提醒未确认）。
 - T09 用隔离的逆向公开端点；后续可整体替换 provider。
