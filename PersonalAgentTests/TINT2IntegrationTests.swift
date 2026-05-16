@@ -47,17 +47,16 @@ final class TINT2IntegrationTests: XCTestCase {
     }
 
     private func makeCoordinator(
-        accessTrusted: Bool = true,
         screenAuthorized: Bool = true,
         capture: Result<ScreenshotResult, Error>,
         ocr: Result<[OCRLine], Error>
     ) -> P2IntegrationCoordinator {
-        P2IntegrationCoordinator(
-            router: InputRouter(
-                authorizer: StaticAccessibilityAuthorizer(isTrusted: accessTrusted)),
+        let screenAuth = StaticScreenCaptureAuthorizer(
+            isAuthorized: screenAuthorized)
+        return P2IntegrationCoordinator(
+            screenAuth: screenAuth,
             capture: ScreenCaptureCoordinator(
-                authorizer: StaticScreenCaptureAuthorizer(
-                    isAuthorized: screenAuthorized),
+                authorizer: screenAuth,
                 capturer: StubCapturer(result: capture)),
             ocr: OCRCoordinator(recognizer: StubRecognizer(result: ocr)))
     }
@@ -79,9 +78,11 @@ final class TINT2IntegrationTests: XCTestCase {
         XCTAssertEqual(captured.ocr.fullText, "hello world")
     }
 
-    func testUnauthorizedEntryReturnsPermissionBeforeCapture() async {
+    func testUnauthorizedScreenRecordingShortCircuitsBeforeSelection() async {
+        // 未授权录屏：在区域选择前短路返回 .permission（不再依赖辅助
+        // 功能门；截屏链只看录屏权限）。
         let coord = makeCoordinator(
-            accessTrusted: false,
+            screenAuthorized: false,
             capture: .success(makeShot()),
             ocr: .success([OCRLine(text: "x", confidence: 1, boundingBox: .zero)]))
         let regionAsked = LockedFlag()
@@ -93,7 +94,7 @@ final class TINT2IntegrationTests: XCTestCase {
             return XCTFail("expected permission failure")
         }
         XCTAssertEqual(err.category, .permission)
-        XCTAssertFalse(regionAsked.value, "授权失败应在区域选择前短路")
+        XCTAssertFalse(regionAsked.value, "录屏未授权应在区域选择前短路")
     }
 
     func testCancelledSelectionMapsToCancelled() async {

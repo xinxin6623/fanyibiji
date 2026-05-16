@@ -5,7 +5,7 @@ import SwiftUI
 ///
 /// 职责：
 ///  - 组装 `P2IntegrationCoordinator`（路由/截屏/OCR 真实适配）；
-///  - 在 App 启动接入 `GlobalHotkeyMonitor`（⌘⇧A），触发截屏取词链；
+///  - 在 App 启动接入 `GlobalHotkeyMonitor`（⌘⇧D），触发截屏取词链；
 ///  - 把采集链结果灌进 `ContentQueryViewModel`（复用 P1 已验证查询管线）；
 ///  - 把 `.permission` 失败暴露给 UI，引导用户去系统设置。
 ///
@@ -30,7 +30,7 @@ final class AppController: ObservableObject {
 
         self.queryViewModel = AppComposition.makeViewModel()
         self.coordinator = P2IntegrationCoordinator(
-            router: InputRouter(authorizer: accessibility),
+            screenAuth: screenAuth,
             capture: ScreenCaptureCoordinator(
                 authorizer: screenAuth,
                 capturer: SCScreenCapturer()),

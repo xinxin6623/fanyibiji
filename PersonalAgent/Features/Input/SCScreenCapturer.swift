@@ -36,8 +36,21 @@ struct SCScreenCapturer: ScreenCapturer {
 
         let filter = SCContentFilter(display: display, excludingWindows: [])
         let scale = displayScaleFactor(region.displayID)
+
+        // 坐标系翻转（关键）：region.rect 来自 AppKit overlay
+        // （NSView 坐标：原点左下、Y 向上），而 SCStreamConfiguration
+        // .sourceRect 用 CoreGraphics 显示坐标（原点左上、Y 向下，单位
+        // point）。直接传会上下镜像，截到错误区域（空白）→ OCR 无文字。
+        // cgY = 显示高度 - appKitY - 选区高度。
+        let displayHeight = CGFloat(display.height)
+        let cgRect = CGRect(
+            x: region.rect.origin.x,
+            y: displayHeight - region.rect.origin.y - region.rect.height,
+            width: region.rect.width,
+            height: region.rect.height)
+
         let config = SCStreamConfiguration()
-        config.sourceRect = region.rect
+        config.sourceRect = cgRect
         config.width = Int(region.rect.width * scale)
         config.height = Int(region.rect.height * scale)
 

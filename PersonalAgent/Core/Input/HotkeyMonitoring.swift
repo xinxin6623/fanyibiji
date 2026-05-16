@@ -23,9 +23,11 @@ final class GlobalHotkeyMonitor: HotkeyMonitoring, @unchecked Sendable {
     private var globalToken: Any?
     private var localToken: Any?
 
-    /// 默认快捷键：⌘⇧A（可配置 UI 属后续任务）。
+    /// 默认快捷键：⌘⇧D（经 James 确认，⌘⇧A 与其常用 App 冲突；
+    /// NSEvent 全局监听非独占、无法检测冲突，故改默认值规避。
+    /// 可配置 UI 属后续任务）。
     private let requiredModifiers: NSEvent.ModifierFlags = [.command, .shift]
-    private let requiredKey = "a"
+    private let requiredKey = "d"
 
     init(authorizer: AccessibilityAuthorizing) {
         self.authorizer = authorizer

@@ -21,14 +21,19 @@ struct P2IntegrationCoordinator: Sendable {
     /// 属 UI 层；本层不依赖 AppKit）。
     typealias RegionProvider = @Sendable () async -> RegionSelection
 
-    private let router: InputRouter
+    private let screenAuth: ScreenCaptureAuthorizing
     private let capture: ScreenCaptureCoordinator
     private let ocr: OCRCoordinator
 
-    init(router: InputRouter,
+    /// 注意（职责归位）：截屏链**只**依赖录屏权限
+    /// （`CGPreflightScreenCaptureAccess`），不再经 `InputRouter` 的辅助
+    /// 功能门——辅助功能（`AXIsProcessTrusted`）仅全局热键 `⌘⇧D` 需要，
+    /// 由 `GlobalHotkeyMonitor.start()` 单独检查；按钮触发截屏不需要
+    /// "控制电脑"权限。此前把 T04 的热键入口门套在截屏链上是接线缺陷。
+    init(screenAuth: ScreenCaptureAuthorizing,
          capture: ScreenCaptureCoordinator,
          ocr: OCRCoordinator) {
-        self.router = router
+        self.screenAuth = screenAuth
         self.capture = capture
         self.ocr = ocr
     }
@@ -41,12 +46,15 @@ struct P2IntegrationCoordinator: Sendable {
     func captureText(selectRegion: RegionProvider)
         async -> Result<CapturedText, AgentError> {
 
-        // 1. 入口授权门（截屏入口需录屏/辅助功能授权）。
-        switch router.route(.screenshot) {
-        case .failure(let error):
-            return .failure(error)
-        case .success:
-            break
+        // 1. 录屏授权门。首次未授权时主动 requestAccess() 触发系统授权
+        //    对话框（协调器自身纯逻辑不弹窗，故在此显式触发，给用户授权
+        //    机会而非直接死在 .permission）。授权后本进程仍需重启才生效
+        //    （macOS 录屏权限硬限制），故仍返回 .permission 引导用户。
+        if !screenAuth.isAuthorized {
+            _ = screenAuth.requestAccess()
+            return .failure(AgentError(
+                category: .permission,
+                diagnosticMessage: "screen recording not authorized"))
         }
 
         // 2. 区域选择（UI overlay；用户 ESC/空拖拽 → cancelled）。

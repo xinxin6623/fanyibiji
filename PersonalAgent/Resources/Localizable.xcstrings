@@ -230,13 +230,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Press the button or ⌘⇧A to select a screen region."
+            "value": "Press the button or ⌘⇧D to select a screen region."
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "点按按钮或按 ⌘⇧A 框选屏幕区域。"
+            "value": "点按按钮或按 ⌘⇧D 框选屏幕区域。"
           }
         }
       }

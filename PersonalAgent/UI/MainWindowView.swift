@@ -42,7 +42,7 @@ struct MainWindowView: View {
                 } label: {
                     Text("capture.run")
                 }
-                .keyboardShortcut("a", modifiers: [.command, .shift])
+                .keyboardShortcut("d", modifiers: [.command, .shift])
                 .disabled(isLoading)
 
                 if isLoading {
