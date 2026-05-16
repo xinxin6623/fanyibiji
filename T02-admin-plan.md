@@ -71,7 +71,7 @@ PersonalAgentTests/
 - 创建测试 target 占位。
 - 确认不复制 Easydict 源码、资源或逆向实现。
 - 运行一次构建验证。
-- 更新 `handoff.md` 和 `project-board.md`。
+- 更新 `relay-task.md` 和 `project-board.md`。
 
 ### 不做
 

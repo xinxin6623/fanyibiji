@@ -11,12 +11,12 @@ Agent 必须使用第一性原理和辩证法思考：先拆开需求的真实�
 架构冗余、GPL 风险、权限设计缺陷、敏感信息泄露风险，必须先提出批判性
 建议。
 
-当前项目阶段是 MVP PRD 已完成、准备进入 SwiftUI App 骨架规划。目录中
-主要资产为：
+当前项目阶段是 SwiftUI App 骨架已完成、准备进入 `T03 本地配置与密钥边界`。
+目录中主要资产为：
 
 - `AGENTS.md`：Codex 默认入口，记录项目级 Agent 行为规则、架构边界和
   禁止事项。
-- `handoff.md`：新会话接续入口，只记录当前状态、关键决策、风险和下一步。
+- `relay-task.md`：新会话接续入口，只记录当前状态、关键决策、风险和下一步。
 - `project-board.md`：项目规划进度看板，记录总体规划、任务拆分和状态。
 - `prd-mvp.md`：MVP PRD，记录需求、数据流、容灾设计和验收标准。
 - `T02-admin-plan.md`：SwiftUI App 骨架的推荐 Admin 执行规划。
@@ -200,7 +200,7 @@ Worker 只能做 Admin 阶段确认过的范围。遇到边界变化，回到 Ad
 新会话开始时必须按以下顺序读取项目文档：
 
 1. `AGENTS.md`：确认 Agent 行为规则、边界和禁止事项。
-2. `handoff.md`：确认当前阶段、关键决策、阻塞项和下一步。
+2. `relay-task.md`：确认当前阶段、关键决策、阻塞项和下一步。
 3. `project-board.md`：确认总体规划、任务拆分、状态和验收标准。
 4. `prd-mvp.md`：确认 MVP 需求、数据流、容灾设计和验收标准。
 5. `T02-admin-plan.md`：仅在进入 SwiftUI App 骨架任务时读取。
@@ -209,11 +209,12 @@ Worker 只能做 Admin 阶段确认过的范围。遇到边界变化，回到 Ad
 
 文档维护规则：
 
-- `handoff.md` 只记录当前事实、关键决策、阻塞项和下一步，不写长过程日志。
+- `relay-task.md` 是唯一项目交接文件，只记录当前事实、关键决策、阻塞项和下一步，不写长过程日志。
+- `handoff.md` 已废弃，不再作为新会话入口；如保留文件，只能写跳转说明，不能维护并行状态。
 - `project-board.md` 负责长期任务拆分、状态和验收标准。
 - `T02-admin-plan.md` 只记录 SwiftUI App 骨架的执行规划，不替代看板。
 - 完成任务后同步更新交接文档和看板，避免新会话重新解析完整历史。
-- 如果文档内容冲突，优先级为 `AGENTS.md`、`handoff.md`、`project-board.md`、
+- 如果文档内容冲突，优先级为 `AGENTS.md`、`relay-task.md`、`project-board.md`、
   `prd-mvp.md`、任务专项计划、`gemini-code-1778814575509.json`、`想法.md`。
 
 ## 9. 验证与交付

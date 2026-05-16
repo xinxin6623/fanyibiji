@@ -9,7 +9,7 @@
 ## 当前里程碑
 
 - 当前里程碑：M2 本地配置与密钥边界准备。
-- 当前状态：基础规则、交接文档、项目看板、MVP PRD 和 SwiftUI 工程骨架
+- 当前状态：基础规则、`relay-task.md` 交接文档、项目看板、MVP PRD 和 SwiftUI 工程骨架
   已建立；T02 已完成构建和测试验证。
 - 下一推荐任务：进入 `T03 本地配置与密钥边界`。
 - 当前待确认项：TTS API 供应商、免费翻译 provider 和未来分发策略；这些
@@ -27,7 +27,7 @@
 
 | ID | 任务 | 状态 | 依赖 | 交付物 |
 | --- | --- | --- | --- | --- |
-| T00 | 项目文档骨架 | DONE | 无 | `AGENTS.md`、`handoff.md`、`project-board.md` |
+| T00 | 项目文档骨架 | DONE | 无 | `AGENTS.md`、`relay-task.md`、`project-board.md` |
 | T01 | MVP PRD | DONE | T00 | `prd-mvp.md` |
 | T02 | SwiftUI App 骨架 | DONE | T01 | 可构建的 macOS App 工程 |
 | T03 | 本地配置与密钥边界 | READY | T02 | 本地配置模型、Keychain/API key 边界 |
@@ -47,9 +47,9 @@
 - 目标：建立 Agent 规则、交接文档和项目看板。
 - 状态：DONE。
 - 依赖：无。
-- 交付物：`AGENTS.md`、`handoff.md`、`project-board.md`。
+- 交付物：`AGENTS.md`、`relay-task.md`、`project-board.md`。
 - 验收标准：新会话能按固定顺序理解项目状态；看板能看到下一任务。
-- 备注：文档只记录当前事实，不堆长过程日志。
+- 备注：`relay-task.md` 是唯一项目交接文件；`handoff.md` 已废弃，只能作为旧入口跳转说明，不维护并行状态。
 
 ### T01 MVP PRD
 
