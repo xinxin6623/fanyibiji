@@ -56,7 +56,7 @@
 | T07a | P1 | 最小 LLM Provider | DONE | TC、T03 | OpenAI-compatible provider（validate/timeout/cancel）|
 | T11a | P1 | 最小 JSONL 持久化 | DONE | TC | ResultModel 的 JSONL 写入与读取 |
 | T-UI1 | P1 | 主窗口接入垂直闭环 | DONE | T07a、T11a | 粘贴文本→查询→展示→落盘 UI |
-| T04 | P2 | 全局快捷键与输入入口 | READY | TC | 快捷键注册、入口路由 |
+| T04 | P2 | 全局快捷键与输入入口 | DONE | TC | 快捷键注册、入口路由 |
 | T05 | P2 | 截屏区域选择 | TODO | T04 | 截屏区域选择与图片输出 |
 | T06 | P2 | Vision OCR | TODO | T05 | OCRResult 与 Vision OCR pipeline |
 | T08 | P2 | 划线/剪贴板取词 | TODO | T04 | 选中文本或剪贴板输入链路 |
@@ -172,13 +172,28 @@ T00 文档骨架、T01 MVP PRD、T02 SwiftUI 骨架均已 DONE 并通过构建�
   `App/AppComposition.swift`、`Resources/Localizable.xcstrings`、
   `PersonalAgentTests/TUI1QueryFlowTests.swift`。
 
-### T04 全局快捷键与输入入口（P2）
+### T04 全局快捷键与输入入口（P2，已完成）
 
 - 目标：建立全局快捷键和输入路由。
-- 状态：TODO。
+- 状态：DONE（2026-05-16，`** TEST SUCCEEDED **`，T04 6 单测绿，
+  回归全绿）。James 决策热键用 NSEvent 全局监听。
 - 依赖：TC。
-- 交付物：快捷键注册、输入入口、动作分发，复用 P1 已验证的查询管线。
-- 验收标准：能区分截图、取词、手动输入入口；快捷键冲突与授权失败有提示。
+- 交付物：`InputEntry`（screenshot/selection/manualInput→`InputSourceKind`）；
+  `AccessibilityAuthorizing` 协议（`AXIsProcessTrusted` + 桩）；
+  `InputRouter`（纯逻辑，未授权入口返回 `AgentError(.permission)`）；
+  `HotkeyMonitoring` 协议（`GlobalHotkeyMonitor` 用 NSEvent global+local，
+  未授权 `start()` 抛 `.permission`，默认 ⌘⇧A）。
+- 验收结果：三入口可区分；manualInput 不需授权恒通过，screenshot/
+  selection 未授权返回 `.permission`；热键触发回调与授权失败抛错单测覆盖。
+- 范围决策（AGENTS「不提前造系统」）：本任务只交付路由/授权/监听契约层。
+  全局热键接入 App 生命周期 + 权限引导 UI **随 T05/T08 一并落地**——
+  现接热键只能指向尚不存在的截屏/取词采集（死路径）；manualInput 查询
+  路径已由 T-UI1 UI 可用。
+- 诚实约束：NSEvent 全局监听非独占，无法检测与其它 App 的热键冲突
+  （需 Carbon `RegisterEventHotKey`）；本任务只做授权失败提示，冲突
+  检测推迟。
+- 落点：`Core/Input/{InputEntry,AccessibilityAuthorizing,InputRouter,
+  HotkeyMonitoring}.swift`、`PersonalAgentTests/T04InputRoutingTests.swift`。
 
 ### T05 截屏区域选择（P2）
 

@@ -1,14 +1,14 @@
 # Relay Task
 
-_updated: 2026-05-16 13:05_
+_updated: 2026-05-16 13:35_
 _project: /Users/macmini/Documents/fanyibiji (PersonalAgent macOS App)_
 _branch: main_
 
 ## 任务
 参考 Easydict、干净重写个人用 macOS 助理 App MVP。2026-05-16 经 James
 确认执行策略为 P0→P4（先定契约 → 最薄垂直闭环 → 再扩重路径 → 收敛
-硬化）。**P0 + 整个 P1 垂直闭环已完成**（剪贴板→LLM→JSONL→展示，
-headless 单测全绿），下一步进入 P2 起点 T04 全局快捷键与输入入口。
+硬化）。**P0 + P1 垂直闭环 + P2 的 T04 路由层已完成**（单测全绿），
+下一步 P2 的 T05 截屏区域选择 → T06 OCR → T08 取词。
 
 `relay-task.md` 是唯一交接文件；`handoff.md` 已废弃。
 
@@ -23,18 +23,21 @@ headless 单测全绿），下一步进入 P2 起点 T04 全局快捷键与输�
 - [x] P1 T11a 最小 JSONL 持久化：DONE。`JSONLResultStore`，7 单测绿。
 - [x] P1 T07a 最小 LLM Provider：DONE。`LLMHTTPClient` 协议 +
   `OpenAICompatibleLLMProvider`，12 单测绿。
-- [x] P1 T-UI1 主窗口接入垂直闭环：DONE。`ContentQueryViewModel` +
-  `MainWindowView` + `AppComposition` + 中英本地化，5 单测绿。
-  **P1 全部完成，`** TEST SUCCEEDED **`。**
+- [x] P1 T-UI1 主窗口接入垂直闭环：DONE，5 单测绿。**P1 全部完成。**
+- [x] P2 T04 全局快捷键与输入入口：DONE。`InputEntry`/
+  `AccessibilityAuthorizing`/`InputRouter`/`HotkeyMonitoring`（NSEvent），
+  6 单测绿。**仅交付路由/授权/监听契约层**；热键接 App 生命周期 +
+  权限引导 UI 随 T05/T08 落地（现接为死路径）。
 
 ## 下一步（具体到能直接动手）
 1. 按序读 `AGENTS.md` → `relay-task.md` → `project-board.md` → `prd-mvp.md`。
-2. 进入 **P2 起点 T04 全局快捷键与输入入口**（依赖 TC，已就绪）：
-   快捷键注册、输入入口路由（截图/取词/手动输入分流），复用 P1 已验证
-   的 `ContentQueryViewModel` 查询管线；快捷键冲突与授权失败要有提示。
-   涉及全局快捷键/权限属系统级，按 AGENTS 复杂任务流先 Admin 输出路径；
-   James 已授权无系统级/业务问题即连续推进，Admin 写在回复中即可。
-3. 后续 P2：T05 截屏区域选择 → T06 Vision OCR → T08 取词。
+2. 进入 **T05 截屏区域选择**（依赖 T04，已就绪）：截图 UI、区域选择、
+   `NSImage`/`Data` 输出；支持取消、多屏基本场景、屏幕录制权限失败提示；
+   截图模块不直接调 LLM（AGENTS 模块边界）。系统级（ScreenCaptureKit/
+   CGWindow + 录屏权限），把可测逻辑（区域计算、权限门、取消语义）抽离
+   成纯类型 + 协议桩，系统采集走薄适配层（沿用 Keychain/NSEvent 先例）。
+3. 后续：T06 Vision OCR（依赖 T05）→ T08 取词（依赖 T04）。届时一并把
+   T04 的 `HotkeyMonitoring`/`InputRouter` 接入 App 生命周期与权限 UI。
 4. 每个任务完成后验证：
    ```bash
    xcodebuild build -project PersonalAgent.xcodeproj -scheme PersonalAgent
@@ -52,8 +55,11 @@ headless 单测全绿），下一步进入 P2 起点 T04 全局快捷键与输�
   `Features/Providers/OpenAICompatibleLLMProvider.swift`
 - 垂直闭环 UI：`UI/ContentQueryViewModel.swift`、`UI/MainWindowView.swift`、
   `App/AppComposition.swift`、`Resources/Localizable.xcstrings`
+- 输入路由层：`PersonalAgent/Core/Input/{InputEntry,
+  AccessibilityAuthorizing,InputRouter,HotkeyMonitoring}.swift`
 - 单测：`PersonalAgentTests/{TCContractsTests,T03ConfigTests,
-  T11aJSONLStoreTests,T07aLLMProviderTests,TUI1QueryFlowTests}.swift`
+  T11aJSONLStoreTests,T07aLLMProviderTests,TUI1QueryFlowTests,
+  T04InputRoutingTests}.swift`
 - 本轮存档（详细背景）：`/Users/macmini/baidu/Archives/2026-05-16-personalagent-replan-tc-contracts.md`
 - 相关 auto memory：`project_personalagent.md`、`user_james.md`
 

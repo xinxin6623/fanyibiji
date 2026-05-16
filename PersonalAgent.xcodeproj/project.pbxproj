@@ -31,6 +31,11 @@
 		B200000000000000000000C4 /* ContentQueryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000C5 /* ContentQueryViewModel.swift */; };
 		B200000000000000000000C6 /* AppComposition.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000C7 /* AppComposition.swift */; };
 		B200000000000000000000C8 /* TUI1QueryFlowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000C9 /* TUI1QueryFlowTests.swift */; };
+		B200000000000000000000CB /* InputEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000D3 /* InputEntry.swift */; };
+		B200000000000000000000CC /* AccessibilityAuthorizing.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000D4 /* AccessibilityAuthorizing.swift */; };
+		B200000000000000000000CD /* InputRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000D5 /* InputRouter.swift */; };
+		B200000000000000000000CE /* HotkeyMonitoring.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000D6 /* HotkeyMonitoring.swift */; };
+		B200000000000000000000CF /* T04InputRoutingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000D7 /* T04InputRoutingTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -60,6 +65,11 @@
 		B200000000000000000000C5 /* ContentQueryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentQueryViewModel.swift; sourceTree = "<group>"; };
 		B200000000000000000000C7 /* AppComposition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppComposition.swift; sourceTree = "<group>"; };
 		B200000000000000000000C9 /* TUI1QueryFlowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TUI1QueryFlowTests.swift; sourceTree = "<group>"; };
+		B200000000000000000000D3 /* InputEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputEntry.swift; sourceTree = "<group>"; };
+		B200000000000000000000D4 /* AccessibilityAuthorizing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccessibilityAuthorizing.swift; sourceTree = "<group>"; };
+		B200000000000000000000D5 /* InputRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputRouter.swift; sourceTree = "<group>"; };
+		B200000000000000000000D6 /* HotkeyMonitoring.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyMonitoring.swift; sourceTree = "<group>"; };
+		B200000000000000000000D7 /* T04InputRoutingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = T04InputRoutingTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -144,6 +154,7 @@
 				A10000000000000000000036 /* Services */,
 				A10000000000000000000037 /* Persistence */,
 				B200000000000000000000C1 /* Config */,
+				B200000000000000000000CA /* Input */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -185,6 +196,17 @@
 				B200000000000000000000FA /* ConfigStore.swift */,
 			);
 			path = Config;
+			sourceTree = "<group>";
+		};
+		B200000000000000000000CA /* Input */ = {
+			isa = PBXGroup;
+			children = (
+				B200000000000000000000D3 /* InputEntry.swift */,
+				B200000000000000000000D4 /* AccessibilityAuthorizing.swift */,
+				B200000000000000000000D5 /* InputRouter.swift */,
+				B200000000000000000000D6 /* HotkeyMonitoring.swift */,
+			);
+			path = Input;
 			sourceTree = "<group>";
 		};
 		A10000000000000000000038 /* Features */ = {
@@ -237,6 +259,7 @@
 				B200000000000000000000FD /* T11aJSONLStoreTests.swift */,
 				B200000000000000000000C3 /* T07aLLMProviderTests.swift */,
 				B200000000000000000000C9 /* TUI1QueryFlowTests.swift */,
+				B200000000000000000000D7 /* T04InputRoutingTests.swift */,
 			);
 			path = PersonalAgentTests;
 			sourceTree = "<group>";
@@ -366,6 +389,10 @@
 				B200000000000000000000EF /* OpenAICompatibleLLMProvider.swift in Sources */,
 				B200000000000000000000C4 /* ContentQueryViewModel.swift in Sources */,
 				B200000000000000000000C6 /* AppComposition.swift in Sources */,
+				B200000000000000000000CB /* InputEntry.swift in Sources */,
+				B200000000000000000000CC /* AccessibilityAuthorizing.swift in Sources */,
+				B200000000000000000000CD /* InputRouter.swift in Sources */,
+				B200000000000000000000CE /* HotkeyMonitoring.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -379,6 +406,7 @@
 				B200000000000000000000ED /* T11aJSONLStoreTests.swift in Sources */,
 				B200000000000000000000C2 /* T07aLLMProviderTests.swift in Sources */,
 				B200000000000000000000C8 /* TUI1QueryFlowTests.swift in Sources */,
+				B200000000000000000000CF /* T04InputRoutingTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
