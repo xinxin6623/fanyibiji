@@ -1,14 +1,15 @@
 # Relay Task
 
-_updated: 2026-05-16 13:35_
+_updated: 2026-05-16 14:05_
 _project: /Users/macmini/Documents/fanyibiji (PersonalAgent macOS App)_
 _branch: main_
 
 ## 任务
 参考 Easydict、干净重写个人用 macOS 助理 App MVP。2026-05-16 经 James
 确认执行策略为 P0→P4（先定契约 → 最薄垂直闭环 → 再扩重路径 → 收敛
-硬化）。**P0 + P1 垂直闭环 + P2 的 T04 路由层已完成**（单测全绿），
-下一步 P2 的 T05 截屏区域选择 → T06 OCR → T08 取词。
+硬化）。**P0 + P1 垂直闭环 + P2 的 T04 路由层 + T05 截屏逻辑层已完成**
+（单测全绿），下一步 T06 Vision OCR，之后做一次 P2 整合（overlay +
+热键 + 截屏→OCR→查询 App 接线）。
 
 `relay-task.md` 是唯一交接文件；`handoff.md` 已废弃。
 
@@ -24,20 +25,22 @@ _branch: main_
 - [x] P1 T07a 最小 LLM Provider：DONE。`LLMHTTPClient` 协议 +
   `OpenAICompatibleLLMProvider`，12 单测绿。
 - [x] P1 T-UI1 主窗口接入垂直闭环：DONE，5 单测绿。**P1 全部完成。**
-- [x] P2 T04 全局快捷键与输入入口：DONE。`InputEntry`/
-  `AccessibilityAuthorizing`/`InputRouter`/`HotkeyMonitoring`（NSEvent），
-  6 单测绿。**仅交付路由/授权/监听契约层**；热键接 App 生命周期 +
-  权限引导 UI 随 T05/T08 落地（现接为死路径）。
+- [x] P2 T04 全局快捷键与输入入口：DONE，6 单测绿。仅契约/逻辑层。
+- [x] P2 T05 截屏区域选择：DONE（逻辑/适配层），9 单测绿。
+  `CaptureRegion`/`ScreenCaptureAuthorizing`/`ScreenCaptureCoordinator`/
+  `SCScreenCapturer`(ScreenCaptureKit)。overlay UI + 接线进 P2 整合。
 
 ## 下一步（具体到能直接动手）
 1. 按序读 `AGENTS.md` → `relay-task.md` → `project-board.md` → `prd-mvp.md`。
-2. 进入 **T05 截屏区域选择**（依赖 T04，已就绪）：截图 UI、区域选择、
-   `NSImage`/`Data` 输出；支持取消、多屏基本场景、屏幕录制权限失败提示；
-   截图模块不直接调 LLM（AGENTS 模块边界）。系统级（ScreenCaptureKit/
-   CGWindow + 录屏权限），把可测逻辑（区域计算、权限门、取消语义）抽离
-   成纯类型 + 协议桩，系统采集走薄适配层（沿用 Keychain/NSEvent 先例）。
-3. 后续：T06 Vision OCR（依赖 T05）→ T08 取词（依赖 T04）。届时一并把
-   T04 的 `HotkeyMonitoring`/`InputRouter` 接入 App 生命周期与权限 UI。
+2. 进入 **T06 Vision OCR**（依赖 T05，已就绪）：用 Apple Vision
+   `VNRecognizeTextRequest` 把 `ScreenshotResult` → TC `OCRResult`
+   （fullText/置信度/blocks/语言提示）；空结果/低置信度/失败可区分；
+   OCR 层不做翻译（AGENTS 边界）。把 Vision 调用藏到 `OCRRecognizing`
+   协议后，纯整理逻辑（行块→fullText、置信度聚合、空/低置信判定）做
+   headless 单测，Vision 真实识别走薄适配（沿用 Keychain/SC 先例）。
+3. T06 后做 **P2 整合**（一次性、需真机可视化验收）：区域选择 overlay
+   窗口 + `HotkeyMonitoring`/`InputRouter` 接 App 生命周期 + 权限引导
+   UI + 截屏→OCR→`ContentQueryViewModel` 端到端；T08 取词并入。
 4. 每个任务完成后验证：
    ```bash
    xcodebuild build -project PersonalAgent.xcodeproj -scheme PersonalAgent
@@ -57,9 +60,11 @@ _branch: main_
   `App/AppComposition.swift`、`Resources/Localizable.xcstrings`
 - 输入路由层：`PersonalAgent/Core/Input/{InputEntry,
   AccessibilityAuthorizing,InputRouter,HotkeyMonitoring}.swift`
+- 截屏层：`PersonalAgent/Features/Input/{ScreenCapture,
+  ScreenCaptureAuthorizing,ScreenCaptureCoordinator,SCScreenCapturer}.swift`
 - 单测：`PersonalAgentTests/{TCContractsTests,T03ConfigTests,
   T11aJSONLStoreTests,T07aLLMProviderTests,TUI1QueryFlowTests,
-  T04InputRoutingTests}.swift`
+  T04InputRoutingTests,T05ScreenCaptureTests}.swift`
 - 本轮存档（详细背景）：`/Users/macmini/baidu/Archives/2026-05-16-personalagent-replan-tc-contracts.md`
 - 相关 auto memory：`project_personalagent.md`、`user_james.md`
 

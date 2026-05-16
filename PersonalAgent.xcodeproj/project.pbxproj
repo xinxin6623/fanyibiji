@@ -36,6 +36,11 @@
 		B200000000000000000000CD /* InputRouter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000D5 /* InputRouter.swift */; };
 		B200000000000000000000CE /* HotkeyMonitoring.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000D6 /* HotkeyMonitoring.swift */; };
 		B200000000000000000000CF /* T04InputRoutingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000D7 /* T04InputRoutingTests.swift */; };
+		B200000000000000000000D8 /* ScreenCapture.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000DD /* ScreenCapture.swift */; };
+		B200000000000000000000D9 /* ScreenCaptureAuthorizing.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000DE /* ScreenCaptureAuthorizing.swift */; };
+		B200000000000000000000DA /* ScreenCaptureCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000DF /* ScreenCaptureCoordinator.swift */; };
+		B200000000000000000000DB /* SCScreenCapturer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000E0 /* SCScreenCapturer.swift */; };
+		B200000000000000000000DC /* T05ScreenCaptureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000C0 /* T05ScreenCaptureTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -70,6 +75,11 @@
 		B200000000000000000000D5 /* InputRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputRouter.swift; sourceTree = "<group>"; };
 		B200000000000000000000D6 /* HotkeyMonitoring.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeyMonitoring.swift; sourceTree = "<group>"; };
 		B200000000000000000000D7 /* T04InputRoutingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = T04InputRoutingTests.swift; sourceTree = "<group>"; };
+		B200000000000000000000DD /* ScreenCapture.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenCapture.swift; sourceTree = "<group>"; };
+		B200000000000000000000DE /* ScreenCaptureAuthorizing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenCaptureAuthorizing.swift; sourceTree = "<group>"; };
+		B200000000000000000000DF /* ScreenCaptureCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenCaptureCoordinator.swift; sourceTree = "<group>"; };
+		B200000000000000000000E0 /* SCScreenCapturer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SCScreenCapturer.swift; sourceTree = "<group>"; };
+		B200000000000000000000C0 /* T05ScreenCaptureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = T05ScreenCaptureTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -222,6 +232,10 @@
 		A10000000000000000000039 /* Input */ = {
 			isa = PBXGroup;
 			children = (
+				B200000000000000000000DD /* ScreenCapture.swift */,
+				B200000000000000000000DE /* ScreenCaptureAuthorizing.swift */,
+				B200000000000000000000DF /* ScreenCaptureCoordinator.swift */,
+				B200000000000000000000E0 /* SCScreenCapturer.swift */,
 			);
 			path = Input;
 			sourceTree = "<group>";
@@ -260,6 +274,7 @@
 				B200000000000000000000C3 /* T07aLLMProviderTests.swift */,
 				B200000000000000000000C9 /* TUI1QueryFlowTests.swift */,
 				B200000000000000000000D7 /* T04InputRoutingTests.swift */,
+				B200000000000000000000C0 /* T05ScreenCaptureTests.swift */,
 			);
 			path = PersonalAgentTests;
 			sourceTree = "<group>";
@@ -393,6 +408,10 @@
 				B200000000000000000000CC /* AccessibilityAuthorizing.swift in Sources */,
 				B200000000000000000000CD /* InputRouter.swift in Sources */,
 				B200000000000000000000CE /* HotkeyMonitoring.swift in Sources */,
+				B200000000000000000000D8 /* ScreenCapture.swift in Sources */,
+				B200000000000000000000D9 /* ScreenCaptureAuthorizing.swift in Sources */,
+				B200000000000000000000DA /* ScreenCaptureCoordinator.swift in Sources */,
+				B200000000000000000000DB /* SCScreenCapturer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -407,6 +426,7 @@
 				B200000000000000000000C2 /* T07aLLMProviderTests.swift in Sources */,
 				B200000000000000000000C8 /* TUI1QueryFlowTests.swift in Sources */,
 				B200000000000000000000CF /* T04InputRoutingTests.swift in Sources */,
+				B200000000000000000000DC /* T05ScreenCaptureTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

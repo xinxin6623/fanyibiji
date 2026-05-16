@@ -57,7 +57,7 @@
 | T11a | P1 | 最小 JSONL 持久化 | DONE | TC | ResultModel 的 JSONL 写入与读取 |
 | T-UI1 | P1 | 主窗口接入垂直闭环 | DONE | T07a、T11a | 粘贴文本→查询→展示→落盘 UI |
 | T04 | P2 | 全局快捷键与输入入口 | DONE | TC | 快捷键注册、入口路由 |
-| T05 | P2 | 截屏区域选择 | TODO | T04 | 截屏区域选择与图片输出 |
+| T05 | P2 | 截屏区域选择 | DONE | T04 | 截屏区域选择与图片输出 |
 | T06 | P2 | Vision OCR | TODO | T05 | OCRResult 与 Vision OCR pipeline |
 | T08 | P2 | 划线/剪贴板取词 | TODO | T04 | 选中文本或剪贴板输入链路 |
 | T09 | P3 | 免费翻译 Provider | TODO | T03、TC | 一个稳定翻译 provider |
@@ -195,14 +195,29 @@ T00 文档骨架、T01 MVP PRD、T02 SwiftUI 骨架均已 DONE 并通过构建�
 - 落点：`Core/Input/{InputEntry,AccessibilityAuthorizing,InputRouter,
   HotkeyMonitoring}.swift`、`PersonalAgentTests/T04InputRoutingTests.swift`。
 
-### T05 截屏区域选择（P2）
+### T05 截屏区域选择（P2，逻辑层完成）
 
 - 目标：实现区域截图和图片元信息输出。
-- 状态：TODO。
+- 状态：DONE（逻辑/适配层，2026-05-16，`** TEST SUCCEEDED **`，
+  T05 9 单测绿，回归全绿）。James 决策采集用 ScreenCaptureKit。
 - 依赖：T04。
-- 交付物：截图 UI、区域选择、NSImage/Data 输出。
-- 验收标准：支持取消、多屏基本场景、屏幕录制权限失败提示；
-  截图模块不直接调用 LLM。
+- 交付物：`CaptureRegion`（拖拽两点归一化 + 多屏裁剪 + 退化判空，纯
+  几何）；`ScreenCaptureAuthorizing`（`CGPreflight/RequestScreenCaptureAccess`
+  + 桩）；`ScreenCaptureCoordinator`（授权门/取消/失败编排，纯可测）；
+  `SCScreenCapturer`（ScreenCaptureKit 薄适配，`SCScreenshotManager`
+  macOS 14+，13.x 明确报"需 macOS 14"）；`ScreenshotResult`（PNG +
+  TC `DisplayInfo`）。
+- 验收结果：取消→`.cancelled`，未授权→`.permission`，采集失败分类；
+  截图模块只产图不调 LLM/OCR；几何/编排单测覆盖。
+- 范围决策（AGENTS「不提前造系统」+ 不零散造无法测 UI）：区域选择
+  overlay 窗口（全屏拖拽框选）+ 热键→截屏→OCR 的 App 接线，与 T06
+  一并作一次 **P2 整合**落地（届时截图有 OCR 消费者，可端到端可视化
+  验收，同时接入 T04 `HotkeyMonitoring`/`InputRouter`）。
+- 诚实约束：单帧截图依赖 macOS 14 `SCScreenshotManager`；13.x 单次
+  截图需 `SCStream` 取帧，属后续硬化，当前明确报错不静默。
+- 落点：`Features/Input/{ScreenCapture,ScreenCaptureAuthorizing,
+  ScreenCaptureCoordinator,SCScreenCapturer}.swift`、
+  `PersonalAgentTests/T05ScreenCaptureTests.swift`。
 
 ### T06 Vision OCR（P2）
 
