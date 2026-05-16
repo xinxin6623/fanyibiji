@@ -59,7 +59,7 @@
 | T04 | P2 | 全局快捷键与输入入口 | DONE | TC | 快捷键注册、入口路由 |
 | T05 | P2 | 截屏区域选择 | DONE | T04 | 截屏区域选择与图片输出 |
 | T06 | P2 | Vision OCR | DONE | T05 | OCRResult 与 Vision OCR pipeline |
-| T08 | P2 | 划线/剪贴板取词 | READY | T04 | 选中文本或剪贴板输入链路 |
+| T08 | P2 | 划线/剪贴板取词 | DONE | T04 | 选中文本或剪贴板输入链路 |
 | T-INT2 | P2 | P2 整合与可视化验收 | TODO | T04,T05,T06,T08 | overlay+热键+截屏→OCR→查询 App 接线 |
 | T09 | P3 | 免费翻译 Provider | TODO | T03、TC | 一个稳定翻译 provider |
 | T10 | P3 | 指定 TTS Provider | BLOCKED | T03、TC | 可配置 TTS provider 与播放链路 |
@@ -237,14 +237,20 @@ T00 文档骨架、T01 MVP PRD、T02 SwiftUI 骨架均已 DONE 并通过构建�
   OCRCoordinator,VisionTextRecognizer}.swift`、
   `PersonalAgentTests/T06OCRTests.swift`。
 
-### T08 划线/剪贴板取词（P2）
+### T08 划线/剪贴板取词（P2，已完成）
 
 - 目标：实现选中文本或剪贴板输入链路。
-- 状态：TODO。
+- 状态：DONE（2026-05-16，`** TEST SUCCEEDED **`，T08 5 单测绿，
+  回归全绿）。
 - 依赖：T04。
-- 交付物：文本提取入口、剪贴板保护、失败状态。
-- 验收标准：取词失败不触发空查询；不永久破坏用户剪贴板。
-- 备注：MVP 用剪贴板兜底；正式版再补 Accessibility/AppleScript/模拟复制。
+- 交付物：`PasteboardReading` 协议 + `SystemPasteboard`（NSPasteboard
+  只读）；`ClipboardTextGrabber`（空/纯空白→`.invalidInput`，纯可测）。
+- 验收结果：取词失败返回 `.invalidInput` 不触发空查询；MVP 只读剪贴板
+  兜底、不模拟 ⌘C、不写回 → 天然不破坏用户剪贴板。
+- 落点：`Core/Input/{PasteboardReading,ClipboardTextGrabber}.swift`、
+  `PersonalAgentTests/T08ClipboardGrabTests.swift`。
+- 备注：Accessibility/AppleScript/模拟复制（含剪贴板快照恢复）属正式版，
+  按 AGENTS「不提前造系统」推迟；接入 UI 在 T-INT2。
 
 ### T-INT2 P2 整合与可视化验收（P2）
 
