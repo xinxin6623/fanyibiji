@@ -12,6 +12,13 @@
 		A10000000000000000000003 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000013 /* Assets.xcassets */; };
 		A10000000000000000000004 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000014 /* Localizable.xcstrings */; };
 		A10000000000000000000005 /* PersonalAgentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000015 /* PersonalAgentTests.swift */; };
+		B200000000000000000000E1 /* AgentError.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000F1 /* AgentError.swift */; };
+		B200000000000000000000E2 /* InputSource.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000F2 /* InputSource.swift */; };
+		B200000000000000000000E3 /* OCRResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000F3 /* OCRResult.swift */; };
+		B200000000000000000000E4 /* QueryContext.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000F4 /* QueryContext.swift */; };
+		B200000000000000000000E5 /* ResultModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000F5 /* ResultModel.swift */; };
+		B200000000000000000000E6 /* ProviderAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000F6 /* ProviderAdapter.swift */; };
+		B200000000000000000000E7 /* TCContractsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000F7 /* TCContractsTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -22,6 +29,13 @@
 		A10000000000000000000015 /* PersonalAgentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalAgentTests.swift; sourceTree = "<group>"; };
 		A10000000000000000000016 /* PersonalAgent.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PersonalAgent.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000017 /* PersonalAgentTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PersonalAgentTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		B200000000000000000000F1 /* AgentError.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AgentError.swift; sourceTree = "<group>"; };
+		B200000000000000000000F2 /* InputSource.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InputSource.swift; sourceTree = "<group>"; };
+		B200000000000000000000F3 /* OCRResult.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OCRResult.swift; sourceTree = "<group>"; };
+		B200000000000000000000F4 /* QueryContext.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QueryContext.swift; sourceTree = "<group>"; };
+		B200000000000000000000F5 /* ResultModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResultModel.swift; sourceTree = "<group>"; };
+		B200000000000000000000F6 /* ProviderAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderAdapter.swift; sourceTree = "<group>"; };
+		B200000000000000000000F7 /* TCContractsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TCContractsTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -40,6 +54,24 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXContainerItemProxy section */
+		B200000000000000000000D2 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = A10000000000000000000062 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A10000000000000000000060;
+			remoteInfo = PersonalAgent;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXTargetDependency section */
+		B200000000000000000000D1 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = A10000000000000000000060 /* PersonalAgent */;
+			targetProxy = B200000000000000000000D2 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin PBXGroup section */
 		A10000000000000000000030 = {
@@ -92,6 +124,11 @@
 		A10000000000000000000035 /* Models */ = {
 			isa = PBXGroup;
 			children = (
+				B200000000000000000000F1 /* AgentError.swift */,
+				B200000000000000000000F2 /* InputSource.swift */,
+				B200000000000000000000F3 /* OCRResult.swift */,
+				B200000000000000000000F4 /* QueryContext.swift */,
+				B200000000000000000000F5 /* ResultModel.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -99,6 +136,7 @@
 		A10000000000000000000036 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				B200000000000000000000F6 /* ProviderAdapter.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -154,6 +192,7 @@
 			isa = PBXGroup;
 			children = (
 				A10000000000000000000015 /* PersonalAgentTests.swift */,
+				B200000000000000000000F7 /* TCContractsTests.swift */,
 			);
 			path = PersonalAgentTests;
 			sourceTree = "<group>";
@@ -198,6 +237,7 @@
 			buildRules = (
 			);
 			dependencies = (
+				B200000000000000000000D1 /* PBXTargetDependency */,
 			);
 			name = PersonalAgentTests;
 			productName = PersonalAgentTests;
@@ -268,6 +308,12 @@
 			files = (
 				A10000000000000000000001 /* PersonalAgentApp.swift in Sources */,
 				A10000000000000000000002 /* MainWindowView.swift in Sources */,
+				B200000000000000000000E1 /* AgentError.swift in Sources */,
+				B200000000000000000000E2 /* InputSource.swift in Sources */,
+				B200000000000000000000E3 /* OCRResult.swift in Sources */,
+				B200000000000000000000E4 /* QueryContext.swift in Sources */,
+				B200000000000000000000E5 /* ResultModel.swift in Sources */,
+				B200000000000000000000E6 /* ProviderAdapter.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -276,6 +322,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A10000000000000000000005 /* PersonalAgentTests.swift in Sources */,
+				B200000000000000000000E7 /* TCContractsTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -441,6 +488,7 @@
 		A100000000000000000000A4 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -449,12 +497,14 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.james.personalagent.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PersonalAgent.app/Contents/MacOS/PersonalAgent";
 			};
 			name = Debug;
 		};
 		A100000000000000000000A5 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
 				CODE_SIGN_IDENTITY = "-";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
@@ -463,6 +513,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.james.personalagent.tests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/PersonalAgent.app/Contents/MacOS/PersonalAgent";
 			};
 			name = Release;
 		};
