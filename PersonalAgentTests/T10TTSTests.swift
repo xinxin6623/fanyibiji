@@ -258,10 +258,27 @@ final class T10TTSTests: XCTestCase {
         XCTAssertEqual(builtConfigs.count, 3) // 两次改动各重建一次
         XCTAssertEqual(builtConfigs.last?.vcn, "aisjiuxu")
         XCTAssertEqual(builtConfigs.last?.speed, 88)
-        // 等 debounce(0.4s) 落盘
-        try await Task.sleep(nanoseconds: 600_000_000)
+        // debounce 0.4s 落盘：轮询至生效（最长 3s），避免固定 sleep 在
+        // 并行负载下与 debounce 抢跑导致偶发失败（快路径仍很快返回）。
+        try await waitUntil(timeout: 3) {
+            store.load().vcn == "aisjiuxu" && store.load().speed == 88
+        }
         XCTAssertEqual(store.load().vcn, "aisjiuxu")
         XCTAssertEqual(store.load().speed, 88)
+    }
+
+    /// 轮询直到 `condition` 为真或超时（每 50ms 查一次）。比固定
+    /// `Task.sleep` 稳健：负载高时多等，正常时几乎立刻返回。
+    private func waitUntil(timeout: TimeInterval,
+                           _ condition: () -> Bool) async throws {
+        let deadline = Date().addingTimeInterval(timeout)
+        while !condition() {
+            if Date() >= deadline {
+                XCTFail("waitUntil timed out after \(timeout)s")
+                return
+            }
+            try await Task.sleep(nanoseconds: 50_000_000)
+        }
     }
 
     // MARK: - 引擎切换 / 超拟人接口
