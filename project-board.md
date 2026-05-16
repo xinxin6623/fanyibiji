@@ -64,7 +64,7 @@
 | T09 | P3 | 免费翻译 Provider | DONE（UI 已接为主翻译通道，真机验收通过）| T03、TC | 一个稳定翻译 provider |
 | T10 | P3 | 指定 TTS Provider | BLOCKED | T03、TC | 可配置 TTS provider 与播放链路 |
 | T07b | P3 | LLM Provider 硬化 | DONE | T07a | 多模型配置已由 T03/T07a 承载；新增重试装饰器；流式推迟 |
-| T12 | P4 | 收敛与硬化 | TODO | P1–P3 | 容灾矩阵、本地化完整性、历史读取接口 |
+| T12 | P4 | 收敛与硬化 | DONE（A/B/C/D 四项，TTS 路径随 T10）| P1–P3 | 容灾矩阵、本地化完整性、历史读取接口 |
 
 ## 任务详情
 
@@ -375,19 +375,44 @@ T00 文档骨架、T01 MVP PRD、T02 SwiftUI 骨架均已 DONE 并通过构建�
 ### T12 收敛与硬化（P4）
 
 - 目标：补齐容灾矩阵与交付质量。
-- 状态：TODO。
+- 状态：**DONE**（2026-05-16，A/B/C/D 四项，James 确认范围，逐项
+  单测全绿、全量回归绿、无告警）。TTS 相关失败路径随 T10 解阻塞。
 - 依赖：P1–P3。
-- 交付物：`prd-mvp.md` §8 八种失败路径全覆盖、统一 cancel/timeout、
-  本地化完整性、历史读取接口。
-- 验收标准：失败注入测试通过；`prd-mvp.md` §10 验收标准逐条满足。
-- **待办（T-INT2 验收暴露，James 确认记录不立即做）：截屏坐标/空图
-  防御机制**。当前 `SCScreenCapturer` 已修 AppKit↔CG 坐标系 Y 翻转
-  （commit 7ac00d8），但仅"改对公式"，无防御：换机器（不同分辨率/
-  缩放/多屏布局）或坐标回归时，会再次静默截到空白图 → OCR 报
-  `.invalidInput`（伪装成"无文字"），需盲查。硬化方向：①截图后检测
-  近纯色/字节过小 → 报专用诊断（"截图疑似空白/坐标异常"）而非混同
-  OCR 无文字；②AppKit↔CG 坐标翻转抽纯函数 + 多屏/高分/边界单测，
-  回归提前拦截。
+- 拆分与落地：
+  - **T12-A 截屏空图/坐标防御**（commit ba4c5fa）：`ScreenGeometry`
+    （AppKit↔CG 坐标翻转 + 像素尺寸，纯函数）+ `BlankImageDetector`
+    （近纯色采样，纯函数）；`SCScreenCapturer` 截到近纯色即抛
+    `.invalidInput`「likely coord/capture error」，根因不再被 OCR
+    "无文字"掩盖。11 单测（多屏/高分/边界/对比/短缓冲）。
+  - **T12-B 失败落盘+重试**（§8-4，commit c4f23f8）：LLM/翻译失败
+    也写带 `error` 的 `ResultModel`（tags=["failed"]），满足 §10
+    "每次查询≥1 记录"；取消非失败不落盘。`lastAttempt`+`retryLast()`
+    复用同输入同通道，`canRetry` 控 UI 重试按钮。8 单测。
+  - **T12-C 统一取消+超时恢复**（§8-8，commit 4f7182c）：ViewModel
+    经 `dispatch` 持有 `runningTask`，`cancelCurrent()` 取消并归位
+    idle（传导到 provider）；run 方法对 `.cancelled`/`Task.isCancelled`
+    早退不回写状态、不与取消打架；超时统一 `.timeout` 透传并落失败。
+    UI loading 态显「取消」按钮。4 新单测 + 修正 T12-B 取消语义测试。
+  - **T12-D 历史读取+本地化完整性**（commit 98a951a）：
+    `loadHistory(limit:)` 读 JSONL（最近在前、缺失→空无错、损坏行
+    →`.persistence` 不崩）；MainWindowView「历史」面板（provider/
+    时间/内容/失败标记）。全 25 本地化键 en+zh-Hans 齐全、无硬编码
+    UI 字面量。4 单测。
+- 验收标准达成：§8 失败路径（除 TTS 随 T10）全覆盖且有失败注入
+  单测；§10 逐条满足（取消/超时可恢复、失败可区分不空查询、key 不
+  入仓库/日志、每次查询≥1 记录、Apple Silicon 可构建运行、无 Easydict
+  源码复制）。
+- 落点：`Features/Input/ScreenGeometry.swift`、
+  `Features/Recognition/BlankImageDetector.swift`、
+  `Features/Input/SCScreenCapturer.swift`、
+  `UI/{ContentQueryViewModel,MainWindowView}.swift`、
+  `Resources/Localizable.xcstrings`、
+  `PersonalAgentTests/{T12ScreenDefenseTests,T12FailurePersistRetryTests,
+  T12CancelTimeoutTests,T12HistoryTests}.swift`。
+- 诚实约束：取消依赖 provider 内 `Task.checkCancellation()`/
+  `URLError.cancelled`（已具备）；空图检测是采样近纯色启发式，极端
+  纯色正常截图理论上可能误报（阈值 tolerance=8 已留余量，可调）；
+  TTS（§8-6）随 T10 解阻塞补。
 
 ## 看板维护规则
 

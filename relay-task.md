@@ -1,6 +1,6 @@
 # Relay Task
 
-_updated: 2026-05-16 (T08/T09 取词 UI 分发真机验收通过)_
+_updated: 2026-05-16 (T12 收敛硬化 A/B/C/D 全完成)_
 _project: /Users/macmini/Documents/fanyibiji (PersonalAgent macOS App)_
 _branch: main_
 
@@ -46,16 +46,20 @@ T10 TTS（BLOCKED 待 James 决策）、T12 收敛硬化。
   T09（主翻译通道，免 key）。+7 单测，全量回归绿无告警。截屏
   `.translate` 走 LLM+prompt、取词 `.translate` 走 T09 provider——
   两条有意不同，各经 James 确认。详见看板 T09「UI 接入」。
+- [x] **T12 收敛硬化 全完成**（2026-05-16，commit
+  ba4c5fa/c4f23f8/4f7182c/98a951a）：A 截屏空图/坐标防御（纯函数
+  +11 单测）、B 失败落盘+重试（§8-4，+8）、C 统一取消+超时恢复
+  （§8-8，+4）、D 历史读取+本地化完整性（+4，25 键齐全）。逻辑层
+  全单测覆盖，真机点验按 James"继续"跳过。TTS 失败路径随 T10。
+  详见看板 T12 拆分。
 
 ## 下一步（具体到能直接动手）
 1. 按序读 `AGENTS.md` → `relay-task.md` → `project-board.md` → `prd-mvp.md`。
-2. **P2 全部完成 + T08/T09 取词 UI 分发已接并真机验收通过**。
-   剩余下一步候选：
-   - **T12 收敛硬化**，明确含 T-INT2 暴露的：截屏空图/坐标防御机制
-     （空图检测报专用诊断 + AppKit↔CG 坐标翻转纯函数单测，覆盖
-     多屏/高分/边界）——见看板 T12 条目，James 已确认记录待做。
-     另含 `prd-mvp.md` §8 八种失败路径覆盖、本地化完整性、历史读取。
-   - T10 TTS 仍 BLOCKED 待 James 决策（供应商/鉴权/格式/流式）。
+2. **P0–P4 主体全部完成**（P2 整合 + T08/T09 UI + T12 收敛硬化
+   A/B/C/D 均已落地，逻辑层单测全绿）。**唯一剩余：T10 TTS**，仍
+   BLOCKED 待 James 决策：供应商、鉴权方式、音频格式、是否流式。
+   T10 解阻塞后另需把 §8-6 TTS 失败路径补进 T12 容灾矩阵（看板已注）。
+   除 T10 外无 TODO；后续多为打磨/分发（非 MVP 范围，PRD §9 Defer）。
 3. 每个任务完成后验证（**本机用稳定签名构建参数**）：
    ```bash
    xcodebuild build -project PersonalAgent.xcodeproj -scheme PersonalAgent \
