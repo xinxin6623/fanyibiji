@@ -122,11 +122,18 @@ struct MainWindowView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
         case let .failure(category):
-            Label {
-                Text(Self.messageKey(for: category))
-            } icon: {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .foregroundStyle(.orange)
+            VStack(alignment: .leading, spacing: 10) {
+                Label {
+                    Text(Self.messageKey(for: category))
+                } icon: {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                }
+                if viewModel.canRetry {
+                    Button("query.retry") {
+                        Task { await viewModel.retryLast() }
+                    }
+                }
             }
         }
     }

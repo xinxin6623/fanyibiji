@@ -23,6 +23,24 @@ final class ContentQueryViewModel: ObservableObject {
     private let clipboard: ClipboardTextGrabber
     private let store: JSONLResultStore
 
+    /// 上次尝试的原始参数，供 `retryLast()` 复用（§8-4 允许重试）。
+    private struct LastAttempt {
+        enum Kind: Equatable {
+            case llm(action: UserAction)
+            case translate
+        }
+        let rawText: String
+        let sourceKind: InputSourceKind
+        let kind: Kind
+    }
+    private var lastAttempt: LastAttempt?
+
+    /// UI 据此决定是否显示「重试」按钮：仅当处于失败态且有可重试记录。
+    var canRetry: Bool {
+        if case .failure = state { return lastAttempt != nil }
+        return false
+    }
+
     init(provider: LLMProvider,
          translateProvider: TranslateProvider,
          clipboard: ClipboardTextGrabber,
@@ -72,6 +90,10 @@ final class ContentQueryViewModel: ObservableObject {
             userAction: action
         )
 
+        // 记住本次尝试供 retryLast() 复用（失败后可一键重试同一输入）。
+        lastAttempt = .init(rawText: text, sourceKind: sourceKind,
+                            kind: .llm(action: action))
+
         do {
             let assistant = try await provider.complete(context)
             let model = ResultModel(
@@ -83,8 +105,12 @@ final class ContentQueryViewModel: ObservableObject {
             try? store.append(model)
             state = .success(model)
         } catch let error as AgentError {
+            persistFailure(context: context, provider: provider.id, error: error)
             state = .failure(error.category)
         } catch {
+            let e = AgentError(category: .unknown,
+                               diagnosticMessage: "non-AgentError")
+            persistFailure(context: context, provider: provider.id, error: e)
             state = .failure(.unknown)
         }
     }
@@ -94,6 +120,39 @@ final class ContentQueryViewModel: ObservableObject {
     /// （如 `.permission`）显示对应本地化文案，引导用户处理。
     func reportCaptureFailure(_ category: AgentError.Category) {
         state = category == .cancelled ? .idle : .failure(category)
+    }
+
+    // MARK: - T12-B 失败落盘 + 重试（§8-4）
+
+    /// 失败也写一条带 `error` 的 `ResultModel`（content 留空文本占位），
+    /// 让历史可追溯失败、且每次查询至少一条记录（PRD §10）。取消属
+    /// 用户主动放弃、非失败，不落盘。落盘本身失败按既有非阻断降级
+    /// （`try?`，内存缓冲已由 store 兜底）。
+    private func persistFailure(context: QueryContext,
+                                provider: String,
+                                error: AgentError) {
+        guard error.category != .cancelled else { return }
+        let model = ResultModel(
+            contextId: context.id,
+            provider: provider,
+            content: .text(""),
+            tags: ["failed"],
+            error: error)
+        try? store.append(model)
+    }
+
+    /// 重试上一次尝试（同输入、同通道）。无记录则无操作。UI 仅在
+    /// `canRetry` 为真时暴露按钮。重试复用原始文本，重新组装 context
+    /// （新 id），与首次走完全相同的失败落盘/分类语义。
+    func retryLast() async {
+        guard let a = lastAttempt else { return }
+        switch a.kind {
+        case let .llm(action):
+            await runQuery(with: a.rawText,
+                           sourceKind: a.sourceKind, action: action)
+        case .translate:
+            await runTranslate(a.rawText, sourceKind: a.sourceKind)
+        }
     }
 
     // MARK: - T08 取词动作分发
@@ -140,6 +199,8 @@ final class ContentQueryViewModel: ObservableObject {
             languageHints: [Self.translateTargetLangCode],
             userAction: .translate
         )
+        lastAttempt = .init(rawText: text, sourceKind: sourceKind,
+                            kind: .translate)
 
         do {
             let result = try await translateProvider.translate(context)
@@ -153,8 +214,14 @@ final class ContentQueryViewModel: ObservableObject {
             try? store.append(model)
             state = .success(model)
         } catch let error as AgentError {
+            persistFailure(context: context,
+                           provider: translateProvider.id, error: error)
             state = .failure(error.category)
         } catch {
+            let e = AgentError(category: .unknown,
+                               diagnosticMessage: "non-AgentError")
+            persistFailure(context: context,
+                           provider: translateProvider.id, error: e)
             state = .failure(.unknown)
         }
     }
