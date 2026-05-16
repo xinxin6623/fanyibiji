@@ -3,7 +3,7 @@ import SwiftUI
 /// TTS 面板：输入框 → 一键「合成并播放」→ 可拖动进度条 + 播放/暂停。
 ///
 /// 失败仅按 `AgentError.Category` 显示本地化文案（不拼 provider 私有
-/// 错误，与主窗口 `messageKey(for:)` 同策略）。
+/// 错误），文案键经共享 `AgentError.Category.localizationKey`。
 struct TTSPanelView: View {
     @ObservedObject private var viewModel: TTSPlaybackViewModel
 
@@ -52,7 +52,7 @@ struct TTSPanelView: View {
 
             if case let .failure(category) = viewModel.state {
                 Label {
-                    Text(Self.messageKey(for: category))
+                    Text(category.localizationKey)
                 } icon: {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundStyle(.orange)
@@ -140,16 +140,4 @@ struct TTSPanelView: View {
     }
 
     /// category → 本地化键（与 MainWindowView 保持一致）。
-    private static func messageKey(for category: AgentError.Category) -> LocalizedStringKey {
-        switch category {
-        case .invalidInput:     return "error.invalid_input"
-        case .network:          return "error.network"
-        case .timeout:          return "error.timeout"
-        case .cancelled:        return "error.cancelled"
-        case .permission:       return "error.permission"
-        case .persistence:      return "error.persistence"
-        case .providerRejected: return "error.provider_rejected"
-        case .unknown:          return "error.unknown"
-        }
-    }
 }

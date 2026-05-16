@@ -93,7 +93,9 @@ struct SuperTTSFrameCollector {
         let code = (header?["code"] as? Int) ?? -1
         guard code == 0 else {
             let message = (header?["message"] as? String) ?? "super tts rejected"
-            // 流控/限频类可重试；鉴权/授权类不可重试（与普通 TTS 同策略）。
+            // 超拟人 super-tts 接口码表，与普通 v2/tts 不同（故码集与
+            // URLSessionTTSWebSocketClient 不一致是有意的，非失同步）：
+            // 流控/限频类可重试，鉴权/授权类不可重试。
             let retriable = code == 11200 || code == 11201 || code == 11202
             throw AgentError(category: .providerRejected,
                              isRetriable: retriable,

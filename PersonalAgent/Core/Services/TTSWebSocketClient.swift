@@ -101,7 +101,9 @@ struct TTSFrameCollector {
         let code = (root["code"] as? Int) ?? -1
         guard code == 0 else {
             let message = (root["message"] as? String) ?? "tts rejected"
-            // 11201/11202 流控类可重试；鉴权/授权类不可重试。
+            // 普通 v2/tts 接口码表（与超拟人 super-tts 不同，故两处码集
+            // 不一致是有意的）：11201/11202/10200 流控类可重试，鉴权/
+            // 授权类不可重试。
             let retriable = code == 11201 || code == 11202 || code == 10200
             throw AgentError(category: .providerRejected,
                              isRetriable: retriable,

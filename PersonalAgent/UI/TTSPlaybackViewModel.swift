@@ -164,9 +164,12 @@ final class TTSPlaybackViewModel: NSObject, ObservableObject {
         if player.isPlaying {
             player.pause()
             isPlaying = false
+            ticker?.invalidate()
+            ticker = nil
         } else {
             player.play()
             isPlaying = true
+            startTicker()
         }
     }
 
@@ -202,12 +205,16 @@ final class TTSPlaybackViewModel: NSObject, ObservableObject {
 
     private func startTicker() {
         ticker?.invalidate()
-        ticker = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) {
+        ticker = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) {
             [weak self] _ in
             Task { @MainActor in
                 guard let self, let player = self.player,
                       self.durationSeconds > 0 else { return }
-                self.progress = player.currentTime / self.durationSeconds
+                let next = player.currentTime / self.durationSeconds
+                // 进度条精度有限，未变则不发 @Published 更新，避免空转重渲染整个面板。
+                if abs(next - self.progress) > 0.001 {
+                    self.progress = next
+                }
             }
         }
     }

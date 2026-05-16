@@ -115,7 +115,7 @@ struct MainWindowView: View {
             Label {
                 Text(category == .permission
                      ? "permission.guide"
-                     : Self.messageKey(for: category))
+                     : category.localizationKey)
             } icon: {
                 Image(systemName: "lock.shield")
                     .foregroundStyle(.orange)
@@ -147,7 +147,7 @@ struct MainWindowView: View {
         case let .failure(category):
             VStack(alignment: .leading, spacing: 10) {
                 Label {
-                    Text(Self.messageKey(for: category))
+                    Text(category.localizationKey)
                 } icon: {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundStyle(.orange)
@@ -165,7 +165,7 @@ struct MainWindowView: View {
     private var historyArea: some View {
         if let cat = viewModel.historyError {
             Label {
-                Text(Self.messageKey(for: cat))
+                Text(cat.localizationKey)
             } icon: {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .foregroundStyle(.orange)
@@ -211,16 +211,4 @@ struct MainWindowView: View {
     }
 
     /// category → 本地化键。UI 不拼接 provider 私有错误。
-    private static func messageKey(for category: AgentError.Category) -> LocalizedStringKey {
-        switch category {
-        case .invalidInput:     return "error.invalid_input"
-        case .network:          return "error.network"
-        case .timeout:          return "error.timeout"
-        case .cancelled:        return "error.cancelled"
-        case .permission:       return "error.permission"
-        case .persistence:      return "error.persistence"
-        case .providerRejected: return "error.provider_rejected"
-        case .unknown:          return "error.unknown"
-        }
-    }
 }
