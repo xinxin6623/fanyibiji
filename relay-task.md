@@ -1,9 +1,9 @@
 # Relay Task
 
-_updated: 2026-05-16 (收尾：P0–P4 + T10 TTS 全部完成并已合并推送，MVP 收口)_
+_updated: 2026-05-17 (MVP 全闭环：开发完成 + 真机验收通过 + 已合并推送)_
 _project: /Users/qoragufimo390gmail.com/Documents/New project 3 (PersonalAgent macOS App)_
 _branch: main（t10-tts-impl 已 --no-ff 合入并删除，已 push origin）_
-_HEAD: 153e47e（Merge t10-tts-impl），origin/main 同步_
+_HEAD: 153e47e（Merge t10-tts-impl）+ 后续 doc 同步 commit，origin 同步_
 
 ## 任务
 参考 Easydict、干净重写个人用 macOS 助理 App MVP。执行策略 P0→P4
@@ -36,21 +36,17 @@ _HEAD: 153e47e（Merge t10-tts-impl），origin/main 同步_
   绿，§8-6 失败路径随此收口（看板 T12 已闭环）。
 - 全量回归 159 测绿、无告警；commit 1349f2c→1e6ea06→b1f7356，
   `--no-ff` 合并为 153e47e，已 `git push origin main`（与 origin 同步）。
+- [x] **真机验收通过（2026-05-17，James 在场）**：普通 v2/tts 与
+  超拟人 super-tts **两个引擎都实测出声**，UI 切换/发音人/口语化
+  正常，三件套 Keychain key 已由 James 写入（两引擎共用）。
+- [x] **OpenRouter 泄露 key 已处理**：`sk-or-v1-35ff...` James 已去
+  openrouter.ai/keys 作废并重建（长期风险项闭环）。
 
 ## 下一步（具体到能直接动手）
 1. 按序读 `AGENTS.md` → `relay-task.md` → `project-board.md` → `prd-mvp.md`。
-2. **MVP 已无剩余开发任务，已合并推送**。只剩两件「需 James 本人做」：
-   - 重启 App 真机实测 TTS（在 James 机器上，AI 无法代跑）。
-   - James 自行写入讯飞三件套 Keychain（敏感信息不由 AI 代填；
-     普通/超拟人两引擎共用这同一套 key）：
-     ```bash
-     security add-generic-password -A -s com.james.personalagent -a tts.appId    -w <APPID>
-     security add-generic-password -A -s com.james.personalagent -a tts.apiKey   -w <APIKey>
-     security add-generic-password -A -s com.james.personalagent -a tts.apiSecret -w <APISecret>
-     ```
-     未写入时 TTS 面板显示「无效输入」橙字（`FailingTTSProvider`
-     降级，预期非 bug）；选的发音人须在讯飞控制台开通否则「服务方
-     拒绝」。
+2. **MVP 全闭环：开发完成 + 真机验收通过 + 已合并推送，无剩余任务。**
+   接手时无 TODO；如需继续，均属 PRD §9 Defer（分发/签名公证/插件
+   等，非 MVP），动手前向 James 确认范围。
 3. 其余均 PRD §9 Defer（分发/签名公证/插件等，非 MVP）。
 4. 验证（**本机必带稳定签名构建参数**）：
    ```bash
@@ -86,19 +82,16 @@ _HEAD: 153e47e（Merge t10-tts-impl），origin/main 同步_
   InputRouter,HotkeyMonitoring,PasteboardReading,ClipboardTextGrabber}.swift`
 - 单测：`PersonalAgentTests/*.swift`（19 文件，含 TINT2/TClipboard
   Dispatch/T12{ScreenDefense,FailurePersistRetry,CancelTimeout,History}/
-  T10TTS 21 用例）
+  T10TTS 30 用例；全量 159 测绿）
 - 本轮存档（详细背景去这里翻）：
   `/Users/qoragufimo390gmail.com/baidu/Archives/2026-05-16-personalagent-p2-t12-impl.md`
 - 相关 auto memory：`project_2026-05-16_*.md`、`feedback_2026-05-16_*.md`
 
 ## 阻塞 / 风险 / 待用户决策
-- **T10 已解阻塞完成、合并推送**：四个决策 James 已拍板（讯飞
-  WebSocket / HMAC-SHA256 / lame-MP3 / 非流式攒整段）+ 后续追加双
-  引擎（普通+超拟人），见 board T10 与
-  `project_2026-05-16_t10-tts-done.md`。**已合 main 并 push**；仅剩
-  James 写 Keychain key + 真机实测（均非代码任务）。
-- **OpenRouter key 泄露**：`sk-or-v1-35ff...` 调试期多次明文进对话
-  历史，**James 需去 openrouter.ai/keys 作废重建**（多次提醒未确认）。
+- **无未决阻塞**。MVP 全闭环（开发+真机验收+合并推送）。
+- ~~T10 TTS~~：双引擎全完成，2026-05-17 真机验收两引擎均通过。
+- ~~OpenRouter key 泄露~~：`sk-or-v1-35ff...` 2026-05-17 James 已
+  openrouter.ai/keys 作废重建，风险闭环。
 - T09 用隔离的逆向公开端点；后续可整体替换 provider。
 - 本地自签证书非正式签名；对外分发需正式 Developer ID + 公证 + 重新
   确认 GPL 策略。
