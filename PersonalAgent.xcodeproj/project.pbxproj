@@ -49,6 +49,9 @@
 		B200000000000000000000BB /* PasteboardReading.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000BE /* PasteboardReading.swift */; };
 		B200000000000000000000BC /* ClipboardTextGrabber.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000BF /* ClipboardTextGrabber.swift */; };
 		B200000000000000000000BD /* T08ClipboardGrabTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000B0 /* T08ClipboardGrabTests.swift */; };
+		B200000000000000000000A1 /* TranslateHTTPClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000A6 /* TranslateHTTPClient.swift */; };
+		B200000000000000000000A2 /* FreeWebTranslateProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000A7 /* FreeWebTranslateProvider.swift */; };
+		B200000000000000000000A3 /* T09TranslateProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000A8 /* T09TranslateProviderTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -96,6 +99,9 @@
 		B200000000000000000000BE /* PasteboardReading.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasteboardReading.swift; sourceTree = "<group>"; };
 		B200000000000000000000BF /* ClipboardTextGrabber.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardTextGrabber.swift; sourceTree = "<group>"; };
 		B200000000000000000000B0 /* T08ClipboardGrabTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = T08ClipboardGrabTests.swift; sourceTree = "<group>"; };
+		B200000000000000000000A6 /* TranslateHTTPClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslateHTTPClient.swift; sourceTree = "<group>"; };
+		B200000000000000000000A7 /* FreeWebTranslateProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreeWebTranslateProvider.swift; sourceTree = "<group>"; };
+		B200000000000000000000A8 /* T09TranslateProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = T09TranslateProviderTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -202,6 +208,7 @@
 			children = (
 				B200000000000000000000F6 /* ProviderAdapter.swift */,
 				B200000000000000000000FE /* LLMHTTPClient.swift */,
+				B200000000000000000000A6 /* TranslateHTTPClient.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -273,6 +280,7 @@
 			isa = PBXGroup;
 			children = (
 				B200000000000000000000FF /* OpenAICompatibleLLMProvider.swift */,
+				B200000000000000000000A7 /* FreeWebTranslateProvider.swift */,
 			);
 			path = Providers;
 			sourceTree = "<group>";
@@ -299,6 +307,7 @@
 				B200000000000000000000C0 /* T05ScreenCaptureTests.swift */,
 				B200000000000000000000BA /* T06OCRTests.swift */,
 				B200000000000000000000B0 /* T08ClipboardGrabTests.swift */,
+				B200000000000000000000A8 /* T09TranslateProviderTests.swift */,
 			);
 			path = PersonalAgentTests;
 			sourceTree = "<group>";
@@ -442,6 +451,8 @@
 				B200000000000000000000B4 /* VisionTextRecognizer.swift in Sources */,
 				B200000000000000000000BB /* PasteboardReading.swift in Sources */,
 				B200000000000000000000BC /* ClipboardTextGrabber.swift in Sources */,
+				B200000000000000000000A1 /* TranslateHTTPClient.swift in Sources */,
+				B200000000000000000000A2 /* FreeWebTranslateProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -459,6 +470,7 @@
 				B200000000000000000000DC /* T05ScreenCaptureTests.swift in Sources */,
 				B200000000000000000000B5 /* T06OCRTests.swift in Sources */,
 				B200000000000000000000BD /* T08ClipboardGrabTests.swift in Sources */,
+				B200000000000000000000A3 /* T09TranslateProviderTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

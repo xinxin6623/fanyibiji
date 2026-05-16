@@ -61,7 +61,7 @@
 | T06 | P2 | Vision OCR | DONE | T05 | OCRResult 与 Vision OCR pipeline |
 | T08 | P2 | 划线/剪贴板取词 | DONE | T04 | 选中文本或剪贴板输入链路 |
 | T-INT2 | P2 | P2 整合与可视化验收 | TODO | T04,T05,T06,T08 | overlay+热键+截屏→OCR→查询 App 接线 |
-| T09 | P3 | 免费翻译 Provider | TODO | T03、TC | 一个稳定翻译 provider |
+| T09 | P3 | 免费翻译 Provider | DONE | T03、TC | 一个稳定翻译 provider |
 | T10 | P3 | 指定 TTS Provider | BLOCKED | T03、TC | 可配置 TTS provider 与播放链路 |
 | T07b | P3 | LLM Provider 硬化 | TODO | T07a | 多模型适配、重试、流式（如需）|
 | T12 | P4 | 收敛与硬化 | TODO | P1–P3 | 容灾矩阵、本地化完整性、历史读取接口 |
@@ -266,14 +266,24 @@ T00 文档骨架、T01 MVP PRD、T02 SwiftUI 骨架均已 DONE 并通过构建�
 - 备注：本任务是前述被刻意推迟的"零散造无法测 UI"的集中兑现点；
   GUI/系统授权需手动验收，James 在场或提供验收反馈。
 
-### T09 免费翻译 Provider（P3）
+### T09 免费翻译 Provider（P3，已完成）
 
 - 目标：接入一个免费翻译 provider。
-- 状态：TODO。
+- 状态：DONE（2026-05-16，`** TEST SUCCEEDED **`，T09 11 单测绿，
+  回归全绿）。
 - 依赖：T03、TC。
-- 交付物：`TranslationResult` 与一个实现 `ProviderAdapter` 的 adapter。
-- 验收标准：可完成基本翻译；provider 失败不影响 LLM 主流程（隔离性单测）。
-- 备注：逆向 Web API 必须隔离在可替换 provider 层，不得成为核心依赖。
+- 交付物：`TranslateHTTPClient` 协议（独立于 `LLMHTTPClient`，生产
+  URLSession + 桩）；`FreeWebTranslateProvider: TranslateProvider`
+  （逆向公开端点，非官方响应解析集中在 `parse` 一处便于整体替换）。
+- 验收结果：基本翻译成功（解析嵌套数组、目标语言取 languageHints
+  兜底 default）；空输入→`.invalidInput`，HTTP/网络/超时/取消/响应畸形
+  分类映射；隔离性单测证明翻译失败不影响 LLM 主路径（无共享状态、
+  各自 HTTPClient）。
+- 落点：`Core/Services/TranslateHTTPClient.swift`、
+  `Features/Providers/FreeWebTranslateProvider.swift`、
+  `PersonalAgentTests/T09TranslateProviderTests.swift`。
+- 备注（AGENTS 边界）：逆向 Web API 隔离在可替换 provider 层，未成为
+  核心依赖；接入 UI/动作分发在 T-INT2 之后或独立小任务。
 
 ### T10 指定 TTS Provider（P3，BLOCKED）
 

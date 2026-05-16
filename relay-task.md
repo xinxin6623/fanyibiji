@@ -1,15 +1,15 @@
 # Relay Task
 
-_updated: 2026-05-16 15:00_
+_updated: 2026-05-16 15:25_
 _project: /Users/macmini/Documents/fanyibiji (PersonalAgent macOS App)_
 _branch: main_
 
 ## 任务
 参考 Easydict、干净重写个人用 macOS 助理 App MVP。2026-05-16 经 James
 确认执行策略为 P0→P4（先定契约 → 最薄垂直闭环 → 再扩重路径 → 收敛
-硬化）。**P0 + P1 垂直闭环 + P2 全部逻辑层（T04/T05/T06/T08）已完成**
-（单测全绿），剩 T-INT2 P2 整合（overlay + 热键 + 截屏→OCR→查询 App
-接线，需真机可视化验收，建议 James 在场/给反馈）。
+硬化）。**P0 + P1 + P2 全部逻辑层 + P3 的 T09 翻译 provider 已完成**
+（单测全绿）。剩 T-INT2 P2 整合（GUI/授权，需真机验收）、T10 TTS
+（BLOCKED 待 James 决策）、T07b/T12 硬化。
 
 `relay-task.md` 是唯一交接文件；`handoff.md` 已废弃。
 
@@ -28,8 +28,9 @@ _branch: main_
 - [x] P2 T04 全局快捷键与输入入口：DONE，6 单测绿。仅契约/逻辑层。
 - [x] P2 T05 截屏区域选择：DONE（逻辑/适配层），9 单测绿。
 - [x] P2 T06 Vision OCR：DONE，8 单测绿。
-- [x] P2 T08 划线/剪贴板取词：DONE，5 单测绿。`PasteboardReading`/
-  `ClipboardTextGrabber`（MVP 只读兜底）。**P2 逻辑层全部完成。**
+- [x] P2 T08 划线/剪贴板取词：DONE，5 单测绿。**P2 逻辑层全部完成。**
+- [x] P3 T09 免费翻译 provider：DONE，11 单测绿（含隔离性）。
+  `TranslateHTTPClient`/`FreeWebTranslateProvider`（逆向端点隔离）。
 
 ## 下一步（具体到能直接动手）
 1. 按序读 `AGENTS.md` → `relay-task.md` → `project-board.md` → `prd-mvp.md`。
@@ -37,10 +38,10 @@ _branch: main_
    给反馈）：区域选择 overlay 全屏框选（复用 `CaptureRegion`）+
    `HotkeyMonitoring`/`InputRouter` 接 App 生命周期 + 权限引导 UI +
    截屏→`SCScreenCapturer`→`OCRCoordinator`→`ContentQueryViewModel`
-   端到端 + T08 剪贴板取词入口。这是前面各任务刻意推迟的"无法 headless
-   测的 GUI/系统授权"集中兑现点；逻辑层已全部就绪，本任务主要是接线
-   与可视化/授权验收。
-3. 之后进 P3：T09 免费翻译 provider（可 headless）；T10 TTS 仍 BLOCKED。
+   端到端 + T08 取词入口 + T09 翻译动作。逻辑层已全就绪，本任务主要
+   是接线与可视化/授权验收——刻意推迟的"无法 headless 测 GUI"兑现点。
+3. 可 headless 的备选：T07b LLM 硬化（多模型/重试），T12 收敛硬化的
+   纯逻辑部分。T10 TTS 仍 BLOCKED 待 James 决策（供应商/鉴权/格式/流式）。
 4. 每个任务完成后验证：
    ```bash
    xcodebuild build -project PersonalAgent.xcodeproj -scheme PersonalAgent
@@ -56,6 +57,8 @@ _branch: main_
 - 持久化：`PersonalAgent/Core/Persistence/JSONLResultStore.swift`
 - LLM provider：`Core/Services/LLMHTTPClient.swift`、
   `Features/Providers/OpenAICompatibleLLMProvider.swift`
+- 翻译 provider：`Core/Services/TranslateHTTPClient.swift`、
+  `Features/Providers/FreeWebTranslateProvider.swift`
 - 垂直闭环 UI：`UI/ContentQueryViewModel.swift`、`UI/MainWindowView.swift`、
   `App/AppComposition.swift`、`Resources/Localizable.xcstrings`
 - 输入路由层：`PersonalAgent/Core/Input/{InputEntry,
@@ -68,7 +71,7 @@ _branch: main_
 - 单测：`PersonalAgentTests/{TCContractsTests,T03ConfigTests,
   T11aJSONLStoreTests,T07aLLMProviderTests,TUI1QueryFlowTests,
   T04InputRoutingTests,T05ScreenCaptureTests,T06OCRTests,
-  T08ClipboardGrabTests}.swift`
+  T08ClipboardGrabTests,T09TranslateProviderTests}.swift`
 - 本轮存档（详细背景）：`/Users/macmini/baidu/Archives/2026-05-16-personalagent-replan-tc-contracts.md`
 - 相关 auto memory：`project_personalagent.md`、`user_james.md`
 
