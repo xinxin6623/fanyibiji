@@ -56,10 +56,17 @@ T10 TTS（BLOCKED 待 James 决策）、T12 收敛硬化。
 ## 下一步（具体到能直接动手）
 1. 按序读 `AGENTS.md` → `relay-task.md` → `project-board.md` → `prd-mvp.md`。
 2. **P0–P4 主体全部完成**（P2 整合 + T08/T09 UI + T12 收敛硬化
-   A/B/C/D 均已落地，逻辑层单测全绿）。**唯一剩余：T10 TTS**，仍
-   BLOCKED 待 James 决策：供应商、鉴权方式、音频格式、是否流式。
-   T10 解阻塞后另需把 §8-6 TTS 失败路径补进 T12 容灾矩阵（看板已注）。
-   除 T10 外无 TODO；后续多为打磨/分发（非 MVP 范围，PRD §9 Defer）。
+   A/B/C/D 均已落地，逻辑层单测全绿）。**唯一剩余：T10 TTS**。
+   2026-05-16 James 表示去准备 TTS key（决策进行中）。
+   接手 T10 时需先向 James 确认/收集：供应商、鉴权方式、音频格式、
+   是否流式；key 走 Keychain（仿 LLM：account 自定，
+   service=`com.james.personalagent`，写入用 `-A` 宽松 ACL 避免重签
+   反复弹框）。实现沿 `TTSProvider` 协议（`Core/Services/ProviderAdapter
+   .swift` 已定义 `synthesize(_:)->AudioResult`），仿 T07a/T09 结构：
+   `TTSHTTPClient` 协议+URLSession 生产+桩、provider 错误统一
+   `AgentError`、`validate()` 零网络、播放层（AVFoundation）。完成后
+   把 §8-6 TTS 失败路径补进 T12 容灾矩阵（看板 T12 已注）。
+   除 T10 外无 TODO；后续多为打磨/分发（非 MVP，PRD §9 Defer）。
 3. 每个任务完成后验证（**本机用稳定签名构建参数**）：
    ```bash
    xcodebuild build -project PersonalAgent.xcodeproj -scheme PersonalAgent \
