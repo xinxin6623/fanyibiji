@@ -62,7 +62,7 @@
 | T08 | P2 | 划线/剪贴板取词 | DONE（UI 已接，真机验收通过）| T04 | 选中文本或剪贴板输入链路 |
 | T-INT2 | P2 | P2 整合与可视化验收 | DONE（真机验收通过）| T04,T05,T06,T08 | overlay+热键+截屏→OCR→翻译 App 接线 |
 | T09 | P3 | 免费翻译 Provider | DONE（UI 已接为主翻译通道，真机验收通过）| T03、TC | 一个稳定翻译 provider |
-| T10 | P3 | 指定 TTS Provider | DONE（讯飞 WebSocket，21 单测绿） | T03、TC | 可配置 TTS provider、播放链路、设置持久化 |
+| T10 | P3 | 指定 TTS Provider | DONE（讯飞双引擎 WebSocket，30 单测绿，已合并推送） | T03、TC | 普通+超拟人可切换 provider、播放链路、设置持久化 |
 | T07b | P3 | LLM Provider 硬化 | DONE | T07a | 多模型配置已由 T03/T07a 承载；新增重试装饰器；流式推迟 |
 | T12 | P4 | 收敛与硬化 | DONE（A/B/C/D 四项；TTS §8-6 已随 T10 收口）| P1–P3 | 容灾矩阵、本地化完整性、历史读取接口 |
 
@@ -442,7 +442,7 @@ T00 文档骨架、T01 MVP PRD、T02 SwiftUI 骨架均已 DONE 并通过构建�
 - 诚实约束：取消依赖 provider 内 `Task.checkCancellation()`/
   `URLError.cancelled`（已具备）；空图检测是采样近纯色启发式，极端
   纯色正常截图理论上可能误报（阈值 tolerance=8 已留余量，可调）；
-  TTS（§8-6）随 T10 解阻塞补。
+  TTS（§8-6）已随 T10（双引擎）收口，错误经 `AgentError` 统一映射。
 
 ## 看板维护规则
 

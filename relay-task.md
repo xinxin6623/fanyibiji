@@ -1,8 +1,9 @@
 # Relay Task
 
-_updated: 2026-05-16 (收尾：P0–P4 + T10 TTS 全部完成，MVP 收口)_
+_updated: 2026-05-16 (收尾：P0–P4 + T10 TTS 全部完成并已合并推送，MVP 收口)_
 _project: /Users/qoragufimo390gmail.com/Documents/New project 3 (PersonalAgent macOS App)_
-_branch: t10-tts-impl（从 main 切出，待合并）_
+_branch: main（t10-tts-impl 已 --no-ff 合入并删除，已 push origin）_
+_HEAD: 153e47e（Merge t10-tts-impl），origin/main 同步_
 
 ## 任务
 参考 Easydict、干净重写个人用 macOS 助理 App MVP。执行策略 P0→P4
@@ -27,19 +28,21 @@ _branch: t10-tts-impl（从 main 切出，待合并）_
   +11 单测）、B 失败落盘+重试 §8-4（+8）、C 统一取消+超时恢复 §8-8
   （+4）、D 历史读取+本地化完整性（+4，25 键齐全）。逻辑层全单测
   覆盖，真机点验按 James"继续"跳过。
-- [x] **T10 讯飞 TTS 全完成**（本轮，分支 `t10-tts-impl`）：**双引擎**
-  （普通 v2/tts + 超拟人 super-tts，UI 下拉切换，共用同一套三件套
-  密钥，默认超拟人·聪小璇）；WebSocket 攒整段、HMAC-SHA256 鉴权、
-  lame(MP3)、AVAudioPlayer 播放（进度条+播放/暂停）；引擎/发音人
-  （随引擎联动两套）/口语化（仅超拟人）/三滑块均持久化。
-  `T10TTSTests` 30 单测绿，§8-6 失败路径随此收口（看板 T12 已闭环）。
-- 全量回归绿、无告警；本轮提交见分支 `t10-tts-impl`（上一轮 → 4438a7c）。
+- [x] **T10 讯飞 TTS 全完成并已合并推送**：**双引擎**（普通 v2/tts +
+  超拟人 super-tts，UI 下拉切换，共用同一套三件套密钥，默认超拟人·
+  聪小璇）；WebSocket 攒整段、HMAC-SHA256 鉴权、lame(MP3)、
+  AVAudioPlayer 播放（进度条+播放/暂停）；引擎/发音人（随引擎联动
+  两套）/口语化（仅超拟人）/三滑块均持久化。`T10TTSTests` 30 单测
+  绿，§8-6 失败路径随此收口（看板 T12 已闭环）。
+- 全量回归 159 测绿、无告警；commit 1349f2c→1e6ea06→b1f7356，
+  `--no-ff` 合并为 153e47e，已 `git push origin main`（与 origin 同步）。
 
 ## 下一步（具体到能直接动手）
 1. 按序读 `AGENTS.md` → `relay-task.md` → `project-board.md` → `prd-mvp.md`。
-2. **MVP 已无剩余任务**。接手后只剩两件「需 James 拍板」的事：
-   - 把分支 `t10-tts-impl` 合回 `main`（本轮没合，等 James 验收）。
-   - James 自行写入讯飞三件套 Keychain（敏感信息不由 AI 代填）：
+2. **MVP 已无剩余开发任务，已合并推送**。只剩两件「需 James 本人做」：
+   - 重启 App 真机实测 TTS（在 James 机器上，AI 无法代跑）。
+   - James 自行写入讯飞三件套 Keychain（敏感信息不由 AI 代填；
+     普通/超拟人两引擎共用这同一套 key）：
      ```bash
      security add-generic-password -A -s com.james.personalagent -a tts.appId    -w <APPID>
      security add-generic-password -A -s com.james.personalagent -a tts.apiKey   -w <APIKey>
@@ -89,9 +92,11 @@ _branch: t10-tts-impl（从 main 切出，待合并）_
 - 相关 auto memory：`project_2026-05-16_*.md`、`feedback_2026-05-16_*.md`
 
 ## 阻塞 / 风险 / 待用户决策
-- **T10 已解阻塞完成**：四个决策 James 已拍板（讯飞 WebSocket /
-  HMAC-SHA256 / lame-MP3 / 非流式攒整段），见 board T10 与
-  `project_2026-05-16_t10-tts-done.md`。剩 James 写 key + 合分支。
+- **T10 已解阻塞完成、合并推送**：四个决策 James 已拍板（讯飞
+  WebSocket / HMAC-SHA256 / lame-MP3 / 非流式攒整段）+ 后续追加双
+  引擎（普通+超拟人），见 board T10 与
+  `project_2026-05-16_t10-tts-done.md`。**已合 main 并 push**；仅剩
+  James 写 Keychain key + 真机实测（均非代码任务）。
 - **OpenRouter key 泄露**：`sk-or-v1-35ff...` 调试期多次明文进对话
   历史，**James 需去 openrouter.ai/keys 作废重建**（多次提醒未确认）。
 - T09 用隔离的逆向公开端点；后续可整体替换 provider。
