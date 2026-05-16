@@ -26,15 +26,24 @@ final class ContentQueryViewModel: ObservableObject {
         self.store = store
     }
 
-    /// 运行一次查询（手动输入框，来源记为 `.manualInput`）。
+    /// 默认翻译目标语言。MVP 固定中文，可配置 UI 属后续任务。
+    private let translateTargetLanguage = "中文"
+
+    /// 运行一次查询（手动输入框，来源记为 `.manualInput`，问答语义）。
     func runQuery() async {
-        await runQuery(with: inputText, sourceKind: .manualInput)
+        await runQuery(with: inputText, sourceKind: .manualInput, action: .query)
     }
 
-    /// 用外部采集到的文本运行查询（截屏 OCR / 剪贴板取词注入）。
-    /// 把文本回填输入框便于用户查看与二次编辑，再走同一条管线，
-    /// 保留真实 `sourceKind` 供 `ResultModel` 溯源。
-    func runQuery(with text: String, sourceKind: InputSourceKind) async {
+    /// 用外部采集到的文本运行（截屏 OCR / 剪贴板取词注入）。
+    ///
+    /// 经 James 确认对齐 Easydict：OCR 文本默认走**翻译**（`action`
+    /// 缺省 `.translate`）。把文本回填输入框便于查看/二次编辑，再走
+    /// 同一条管线，保留真实 `sourceKind`/`userAction` 供 `ResultModel`
+    /// 溯源。翻译指令在本编排层组装（provider 保持纯通道，不感知动作），
+    /// 失败分类与落盘行为与问答路径一致。
+    func runQuery(with text: String,
+                  sourceKind: InputSourceKind,
+                  action: UserAction = .translate) async {
         inputText = text
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
@@ -43,10 +52,13 @@ final class ContentQueryViewModel: ObservableObject {
         }
 
         state = .loading
+        let prompt = Self.prompt(for: action,
+                                 text: trimmed,
+                                 targetLanguage: translateTargetLanguage)
         let context = QueryContext(
             sourceKind: sourceKind,
-            inputText: trimmed,
-            userAction: .query
+            inputText: prompt,
+            userAction: action
         )
 
         do {
@@ -71,5 +83,24 @@ final class ContentQueryViewModel: ObservableObject {
     /// （如 `.permission`）显示对应本地化文案，引导用户处理。
     func reportCaptureFailure(_ category: AgentError.Category) {
         state = category == .cancelled ? .idle : .failure(category)
+    }
+
+    /// 按动作组装发给 LLM 的提示词。翻译套固定指令（要求只回译文，
+    /// 不加解释，原文照抄非目标语言部分以适配 OCR 噪声）；问答/朗读
+    /// 直发原文。纯函数，便于单测断言提示词形状。
+    nonisolated static func prompt(for action: UserAction,
+                                   text: String,
+                                   targetLanguage: String) -> String {
+        switch action {
+        case .translate:
+            return """
+            请把下面的文本翻译成\(targetLanguage)，只输出译文，不要解释、\
+            不要附加原文。若文本已是\(targetLanguage)则原样返回：
+
+            \(text)
+            """
+        case .query, .speak:
+            return text
+        }
     }
 }

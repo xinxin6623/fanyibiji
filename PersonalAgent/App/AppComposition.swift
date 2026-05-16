@@ -16,9 +16,10 @@ struct FailingLLMProvider: LLMProvider {
 enum AppComposition {
 
     /// 默认 provider 配置（OpenAI-compatible）。真实可配置 UI 属后续任务。
+    /// 经 James 确认：走 OpenRouter，模型 `baidu/qianfan-ocr-fast`。
     static let defaultConfig = ProviderConfig(
-        baseUrl: "https://api.openai.com/v1",
-        model: "gpt-4o-mini"
+        baseUrl: "https://openrouter.ai/api/v1",
+        model: "baidu/qianfan-ocr-fast"
     )
     static let apiKeyRef = "llm.apiKey"
 

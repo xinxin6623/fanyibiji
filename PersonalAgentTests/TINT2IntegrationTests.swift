@@ -137,14 +137,23 @@ final class TINT2IntegrationTests: XCTestCase {
     // MARK: ViewModel 接入
 
     @MainActor
-    func testViewModelRunsQueryWithInjectedTextAndSourceKind() async {
+    func testOCRTextDefaultsToTranslateWithPromptWrapped() async {
+        // 截屏 OCR 文本默认走翻译：发给 provider 的应是包了翻译指令的
+        // prompt（含原文），userAction=.translate，sourceKind=.screenshot；
+        // 输入框回填原始 OCR 文本（便于用户查看/二次编辑）。
         struct StubLLM: LLMProvider {
             let id = "stub"
             func validate() throws {}
             func complete(_ c: QueryContext) async throws -> AssistantResult {
                 XCTAssertEqual(c.sourceKind, .screenshot)
-                XCTAssertEqual(c.inputText, "ocr text")
-                return AssistantResult(text: "answer", model: "m")
+                XCTAssertEqual(c.userAction, .translate)
+                XCTAssertTrue(c.inputText.contains("ocr text"),
+                              "prompt 应含原文")
+                XCTAssertTrue(c.inputText.contains("翻译"),
+                              "prompt 应含翻译指令")
+                XCTAssertNotEqual(c.inputText, "ocr text",
+                                  "翻译路径不应直发裸文本")
+                return AssistantResult(text: "译文", model: "m")
             }
         }
         let dir = FileManager.default.temporaryDirectory
@@ -159,7 +168,23 @@ final class TINT2IntegrationTests: XCTestCase {
         guard case .success = vm.state else {
             return XCTFail("expected success, got \(vm.state)")
         }
-        XCTAssertEqual(vm.inputText, "  ocr text  ")
+        XCTAssertEqual(vm.inputText, "  ocr text  ", "输入框回填原始文本")
+    }
+
+    func testPromptBuilderShapes() {
+        let t = ContentQueryViewModel.prompt(
+            for: .translate, text: "hello", targetLanguage: "中文")
+        XCTAssertTrue(t.contains("hello"))
+        XCTAssertTrue(t.contains("中文"))
+        XCTAssertTrue(t.contains("翻译"))
+
+        // 问答/朗读直发原文，不包装。
+        XCTAssertEqual(
+            ContentQueryViewModel.prompt(
+                for: .query, text: "hi", targetLanguage: "中文"), "hi")
+        XCTAssertEqual(
+            ContentQueryViewModel.prompt(
+                for: .speak, text: "hi", targetLanguage: "中文"), "hi")
     }
 
     @MainActor

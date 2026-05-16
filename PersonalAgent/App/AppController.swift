@@ -66,8 +66,10 @@ final class AppController: ObservableObject {
                 })
             switch outcome {
             case .success(let captured):
+                // 对齐 Easydict：截屏 OCR 文本默认走翻译。
                 await queryViewModel.runQuery(
-                    with: captured.text, sourceKind: .screenshot)
+                    with: captured.text, sourceKind: .screenshot,
+                    action: .translate)
             case .failure(let error):
                 // 取消回 idle 不报错；权限等分类显示引导横幅 + UI 失败态。
                 if error.category != .cancelled {
