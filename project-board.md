@@ -63,7 +63,7 @@
 | T-INT2 | P2 | P2 整合与可视化验收 | TODO | T04,T05,T06,T08 | overlay+热键+截屏→OCR→查询 App 接线 |
 | T09 | P3 | 免费翻译 Provider | DONE | T03、TC | 一个稳定翻译 provider |
 | T10 | P3 | 指定 TTS Provider | BLOCKED | T03、TC | 可配置 TTS provider 与播放链路 |
-| T07b | P3 | LLM Provider 硬化 | TODO | T07a | 多模型适配、重试、流式（如需）|
+| T07b | P3 | LLM Provider 硬化 | DONE | T07a | 多模型配置已由 T03/T07a 承载；新增重试装饰器；流式推迟 |
 | T12 | P4 | 收敛与硬化 | TODO | P1–P3 | 容灾矩阵、本地化完整性、历史读取接口 |
 
 ## 任务详情
@@ -298,9 +298,14 @@ T00 文档骨架、T01 MVP PRD、T02 SwiftUI 骨架均已 DONE 并通过构建�
 ### T07b LLM Provider 硬化（P3）
 
 - 目标：在最小 LLM provider 基础上补多模型适配、重试与流式（如需）。
-- 状态：TODO。
+- 状态：DONE（2026-05-16，`T07bRetryTests` 5 单测绿）。
 - 依赖：T07a。
-- 验收标准：新增能力不破坏 P1 已验证的最小闭环回归。
+- 交付物：`RetryingLLMProvider` 装饰器，可包裹任意 `LLMProvider`，
+  只对 `AgentError.isRetriable` 重试，`.cancelled` 立即停止，耗尽次数
+  抛最后一次错误。多模型能力继续由 `ResolvedProviderConfig.model`
+  承载；流式按"确有需求再做"推迟。
+- 验收标准：新增能力不破坏 P1 已验证的最小闭环回归；新增重试成功、
+  耗尽、不可重试、取消不重试、id/validate 透传测试。
 
 ### T12 收敛与硬化（P4）
 

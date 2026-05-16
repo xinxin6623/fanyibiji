@@ -1,15 +1,15 @@
 # Relay Task
 
-_updated: 2026-05-16 15:25_
+_updated: 2026-05-16 15:58_
 _project: /Users/macmini/Documents/fanyibiji (PersonalAgent macOS App)_
 _branch: main_
 
 ## 任务
 参考 Easydict、干净重写个人用 macOS 助理 App MVP。2026-05-16 经 James
 确认执行策略为 P0→P4（先定契约 → 最薄垂直闭环 → 再扩重路径 → 收敛
-硬化）。**P0 + P1 + P2 全部逻辑层 + P3 的 T09 翻译 provider 已完成**
+硬化）。**P0 + P1 + P2 全部逻辑层 + P3 的 T09/T07b 已完成**
 （单测全绿）。剩 T-INT2 P2 整合（GUI/授权，需真机验收）、T10 TTS
-（BLOCKED 待 James 决策）、T07b/T12 硬化。
+（BLOCKED 待 James 决策）、T12 收敛硬化。
 
 `relay-task.md` 是唯一交接文件；`handoff.md` 已废弃。
 
@@ -31,6 +31,9 @@ _branch: main_
 - [x] P2 T08 划线/剪贴板取词：DONE，5 单测绿。**P2 逻辑层全部完成。**
 - [x] P3 T09 免费翻译 provider：DONE，11 单测绿（含隔离性）。
   `TranslateHTTPClient`/`FreeWebTranslateProvider`（逆向端点隔离）。
+- [x] P3 T07b LLM Provider 硬化：DONE，5 单测绿。
+  `RetryingLLMProvider` 装饰器只对可重试 `AgentError` 重试，取消不重试；
+  多模型由 `ResolvedProviderConfig.model` 承载，流式推迟到确有需求。
 
 ## 下一步（具体到能直接动手）
 1. 按序读 `AGENTS.md` → `relay-task.md` → `project-board.md` → `prd-mvp.md`。
@@ -40,8 +43,8 @@ _branch: main_
    截屏→`SCScreenCapturer`→`OCRCoordinator`→`ContentQueryViewModel`
    端到端 + T08 取词入口 + T09 翻译动作。逻辑层已全就绪，本任务主要
    是接线与可视化/授权验收——刻意推迟的"无法 headless 测 GUI"兑现点。
-3. 可 headless 的备选：T07b LLM 硬化（多模型/重试），T12 收敛硬化的
-   纯逻辑部分。T10 TTS 仍 BLOCKED 待 James 决策（供应商/鉴权/格式/流式）。
+3. 可 headless 的备选：T12 收敛硬化的纯逻辑部分。T10 TTS 仍 BLOCKED
+   待 James 决策（供应商/鉴权/格式/流式）。
 4. 每个任务完成后验证：
    ```bash
    xcodebuild build -project PersonalAgent.xcodeproj -scheme PersonalAgent
@@ -56,7 +59,8 @@ _branch: main_
 - 配置/密钥边界：`PersonalAgent/Core/Config/{ProviderConfig,SecretStore,ConfigStore}.swift`
 - 持久化：`PersonalAgent/Core/Persistence/JSONLResultStore.swift`
 - LLM provider：`Core/Services/LLMHTTPClient.swift`、
-  `Features/Providers/OpenAICompatibleLLMProvider.swift`
+  `Features/Providers/OpenAICompatibleLLMProvider.swift`、
+  `Features/Providers/RetryingLLMProvider.swift`
 - 翻译 provider：`Core/Services/TranslateHTTPClient.swift`、
   `Features/Providers/FreeWebTranslateProvider.swift`
 - 垂直闭环 UI：`UI/ContentQueryViewModel.swift`、`UI/MainWindowView.swift`、
@@ -71,7 +75,7 @@ _branch: main_
 - 单测：`PersonalAgentTests/{TCContractsTests,T03ConfigTests,
   T11aJSONLStoreTests,T07aLLMProviderTests,TUI1QueryFlowTests,
   T04InputRoutingTests,T05ScreenCaptureTests,T06OCRTests,
-  T08ClipboardGrabTests,T09TranslateProviderTests}.swift`
+  T08ClipboardGrabTests,T09TranslateProviderTests,T07bRetryTests}.swift`
 - 本轮存档（详细背景）：`/Users/macmini/baidu/Archives/2026-05-16-personalagent-replan-tc-contracts.md`
 - 相关 auto memory：`project_personalagent.md`、`user_james.md`
 
@@ -81,7 +85,7 @@ _branch: main_
   （account=`llm.apiKey`, service=`com.james.personalagent`）。无 key 时
   UI 走降级失败态 `error.invalid_input`（已验证）。
 - T10 TTS BLOCKED：供应商、鉴权、音频格式、是否流式待 James 决策；不阻塞 P1/P2。
-- 免费翻译 provider 未锁定；逆向 Web API 须隔离在可替换层。
+- T09 免费翻译 provider 当前使用隔离的逆向公开端点；后续可整体替换 provider。
 - 未来如对外分发，需重新确认 GPL/签名/公证策略。
 
 ## 上下文要点（接手前必读）

@@ -52,6 +52,8 @@
 		B200000000000000000000A1 /* TranslateHTTPClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000A6 /* TranslateHTTPClient.swift */; };
 		B200000000000000000000A2 /* FreeWebTranslateProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000A7 /* FreeWebTranslateProvider.swift */; };
 		B200000000000000000000A3 /* T09TranslateProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000A8 /* T09TranslateProviderTests.swift */; };
+		B200000000000000000000A4 /* RetryingLLMProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000A9 /* RetryingLLMProvider.swift */; };
+		B200000000000000000000A5 /* T07bRetryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000AA /* T07bRetryTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -102,6 +104,8 @@
 		B200000000000000000000A6 /* TranslateHTTPClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslateHTTPClient.swift; sourceTree = "<group>"; };
 		B200000000000000000000A7 /* FreeWebTranslateProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreeWebTranslateProvider.swift; sourceTree = "<group>"; };
 		B200000000000000000000A8 /* T09TranslateProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = T09TranslateProviderTests.swift; sourceTree = "<group>"; };
+		B200000000000000000000A9 /* RetryingLLMProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RetryingLLMProvider.swift; sourceTree = "<group>"; };
+		B200000000000000000000AA /* T07bRetryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = T07bRetryTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -281,6 +285,7 @@
 			children = (
 				B200000000000000000000FF /* OpenAICompatibleLLMProvider.swift */,
 				B200000000000000000000A7 /* FreeWebTranslateProvider.swift */,
+				B200000000000000000000A9 /* RetryingLLMProvider.swift */,
 			);
 			path = Providers;
 			sourceTree = "<group>";
@@ -302,6 +307,7 @@
 				B200000000000000000000FB /* T03ConfigTests.swift */,
 				B200000000000000000000FD /* T11aJSONLStoreTests.swift */,
 				B200000000000000000000C3 /* T07aLLMProviderTests.swift */,
+				B200000000000000000000AA /* T07bRetryTests.swift */,
 				B200000000000000000000C9 /* TUI1QueryFlowTests.swift */,
 				B200000000000000000000D7 /* T04InputRoutingTests.swift */,
 				B200000000000000000000C0 /* T05ScreenCaptureTests.swift */,
@@ -453,6 +459,7 @@
 				B200000000000000000000BC /* ClipboardTextGrabber.swift in Sources */,
 				B200000000000000000000A1 /* TranslateHTTPClient.swift in Sources */,
 				B200000000000000000000A2 /* FreeWebTranslateProvider.swift in Sources */,
+				B200000000000000000000A4 /* RetryingLLMProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -465,6 +472,7 @@
 				B200000000000000000000EB /* T03ConfigTests.swift in Sources */,
 				B200000000000000000000ED /* T11aJSONLStoreTests.swift in Sources */,
 				B200000000000000000000C2 /* T07aLLMProviderTests.swift in Sources */,
+				B200000000000000000000A5 /* T07bRetryTests.swift in Sources */,
 				B200000000000000000000C8 /* TUI1QueryFlowTests.swift in Sources */,
 				B200000000000000000000CF /* T04InputRoutingTests.swift in Sources */,
 				B200000000000000000000DC /* T05ScreenCaptureTests.swift in Sources */,
