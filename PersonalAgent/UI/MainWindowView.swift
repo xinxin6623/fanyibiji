@@ -50,6 +50,22 @@ struct MainWindowView: View {
                 }
             }
 
+            HStack(spacing: 12) {
+                Button {
+                    Task { await viewModel.queryFromClipboard() }
+                } label: {
+                    Text("clipboard.query")
+                }
+                .disabled(isLoading)
+
+                Button {
+                    Task { await viewModel.translateFromClipboard() }
+                } label: {
+                    Text("clipboard.translate")
+                }
+                .disabled(isLoading)
+            }
+
             Text("capture.hint")
                 .font(.caption)
                 .foregroundStyle(.secondary)

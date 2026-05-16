@@ -19,15 +19,26 @@ final class ContentQueryViewModel: ObservableObject {
     @Published var inputText: String = ""
 
     private let provider: LLMProvider
+    private let translateProvider: TranslateProvider
+    private let clipboard: ClipboardTextGrabber
     private let store: JSONLResultStore
 
-    init(provider: LLMProvider, store: JSONLResultStore) {
+    init(provider: LLMProvider,
+         translateProvider: TranslateProvider,
+         clipboard: ClipboardTextGrabber,
+         store: JSONLResultStore) {
         self.provider = provider
+        self.translateProvider = translateProvider
+        self.clipboard = clipboard
         self.store = store
     }
 
     /// 默认翻译目标语言。MVP 固定中文，可配置 UI 属后续任务。
+    /// `translateTargetLanguage`：LLM prompt 用的自然语言名（截屏路径）。
+    /// `translateTargetLangCode`：T09 provider 的 `tl` 语言代码（取词
+    /// 翻译路径，经 `languageHints` 传入）。
     private let translateTargetLanguage = "中文"
+    nonisolated static let translateTargetLangCode = "zh"
 
     /// 运行一次查询（手动输入框，来源记为 `.manualInput`，问答语义）。
     func runQuery() async {
@@ -83,6 +94,69 @@ final class ContentQueryViewModel: ObservableObject {
     /// （如 `.permission`）显示对应本地化文案，引导用户处理。
     func reportCaptureFailure(_ category: AgentError.Category) {
         state = category == .cancelled ? .idle : .failure(category)
+    }
+
+    // MARK: - T08 取词动作分发
+
+    /// 剪贴板取词 → LLM 问答（`.query`）。取词失败（空/纯空白）按
+    /// `ClipboardTextGrabber` 语义直接 `.invalidInput`，不触发空查询。
+    func queryFromClipboard() async {
+        switch clipboard.grab() {
+        case .success(let text):
+            await runQuery(with: text, sourceKind: .clipboard, action: .query)
+        case .failure(let error):
+            inputText = ""
+            state = .failure(error.category)
+        }
+    }
+
+    /// 剪贴板取词 → 翻译（走 T09 `TranslateProvider`，主翻译通道、
+    /// 免 key）。与截屏的"LLM+翻译 prompt"路径有意区分：取词翻译用
+    /// 专用翻译 provider，落盘 `provider` 字段据此可溯源走的是哪条。
+    func translateFromClipboard() async {
+        switch clipboard.grab() {
+        case .success(let text):
+            await runTranslate(text, sourceKind: .clipboard)
+        case .failure(let error):
+            inputText = ""
+            state = .failure(error.category)
+        }
+    }
+
+    /// 经 `TranslateProvider` 翻译并落盘。失败分类与 LLM 路径一致语义，
+    /// 落盘失败不丢结果（与 `runQuery` 一致的非阻断降级）。
+    func runTranslate(_ text: String, sourceKind: InputSourceKind) async {
+        inputText = text
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            state = .failure(.invalidInput)
+            return
+        }
+
+        state = .loading
+        let context = QueryContext(
+            sourceKind: sourceKind,
+            inputText: trimmed,
+            languageHints: [Self.translateTargetLangCode],
+            userAction: .translate
+        )
+
+        do {
+            let result = try await translateProvider.translate(context)
+            let model = ResultModel(
+                contextId: context.id,
+                provider: translateProvider.id,
+                content: .text(result.text),
+                tags: [result.sourceLang, result.targetLang]
+                    .compactMap { $0 }.map { "lang:\($0)" }
+            )
+            try? store.append(model)
+            state = .success(model)
+        } catch let error as AgentError {
+            state = .failure(error.category)
+        } catch {
+            state = .failure(.unknown)
+        }
     }
 
     /// 按动作组装发给 LLM 的提示词。翻译套固定指令（要求只回译文，

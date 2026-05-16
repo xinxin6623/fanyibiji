@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		B200000000000000000011 /* TClipboardDispatchTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000010 /* TClipboardDispatchTests.swift */; };
 		B200000000000000000021 /* P2IntegrationCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000020 /* P2IntegrationCoordinator.swift */; };
 		B200000000000000000023 /* RegionSelectionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000022 /* RegionSelectionController.swift */; };
 		B200000000000000000025 /* AppController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000024 /* AppController.swift */; };
@@ -61,6 +62,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		B200000000000000000010 /* TClipboardDispatchTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TClipboardDispatchTests.swift; sourceTree = "<group>"; };
 		B200000000000000000020 /* P2IntegrationCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = P2IntegrationCoordinator.swift; sourceTree = "<group>"; };
 		B200000000000000000022 /* RegionSelectionController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionSelectionController.swift; sourceTree = "<group>"; };
 		B200000000000000000024 /* AppController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppController.swift; sourceTree = "<group>"; };
@@ -334,6 +336,7 @@
 				B200000000000000000000B0 /* T08ClipboardGrabTests.swift */,
 				B200000000000000000000A8 /* T09TranslateProviderTests.swift */,
 				B200000000000000000026 /* TINT2IntegrationTests.swift */,
+				B200000000000000000010 /* TClipboardDispatchTests.swift */,
 			);
 			path = PersonalAgentTests;
 			sourceTree = "<group>";
@@ -503,6 +506,7 @@
 				B200000000000000000000BD /* T08ClipboardGrabTests.swift in Sources */,
 				B200000000000000000000A3 /* T09TranslateProviderTests.swift in Sources */,
 				B200000000000000000027 /* TINT2IntegrationTests.swift in Sources */,
+				B200000000000000000011 /* TClipboardDispatchTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

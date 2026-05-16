@@ -49,6 +49,15 @@ enum AppComposition {
                 error: AgentError(category: .unknown,
                                   diagnosticMessage: "composition failed"))
         }
-        return ContentQueryViewModel(provider: provider, store: store)
+        // T09 免费翻译 provider 作主翻译通道（免 key、零配置；逆向公开
+        // 端点隔离在可替换 provider 层，AGENTS 边界）。
+        let translate = FreeWebTranslateProvider(
+            client: URLSessionTranslateHTTPClient())
+        let clipboard = ClipboardTextGrabber(pasteboard: SystemPasteboard())
+        return ContentQueryViewModel(
+            provider: provider,
+            translateProvider: translate,
+            clipboard: clipboard,
+            store: store)
     }
 }

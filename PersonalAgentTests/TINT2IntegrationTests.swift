@@ -161,7 +161,7 @@ final class TINT2IntegrationTests: XCTestCase {
             .appendingPathComponent(UUID().uuidString)
         try? FileManager.default.createDirectory(
             at: dir, withIntermediateDirectories: true)
-        let vm = ContentQueryViewModel(
+        let vm = makeTestViewModel(
             provider: StubLLM(),
             store: JSONLResultStore(
                 fileURL: dir.appendingPathComponent("r.jsonl")))
@@ -201,7 +201,7 @@ final class TINT2IntegrationTests: XCTestCase {
             .appendingPathComponent(UUID().uuidString)
         try? FileManager.default.createDirectory(
             at: dir, withIntermediateDirectories: true)
-        let vm = ContentQueryViewModel(
+        let vm = makeTestViewModel(
             provider: StubLLM(),
             store: JSONLResultStore(
                 fileURL: dir.appendingPathComponent("r.jsonl")))

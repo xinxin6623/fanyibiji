@@ -10,6 +10,36 @@ private struct StubLLMProvider: LLMProvider {
     }
 }
 
+/// 不参与本套用例的占位翻译 provider（调用即失败，确保未误走翻译路径）。
+struct NoopTranslateProvider: TranslateProvider {
+    let id = "noop-translate"
+    func validate() throws {}
+    func translate(_ context: QueryContext) async throws -> TranslationResult {
+        throw AgentError(category: .unknown, diagnosticMessage: "noop")
+    }
+}
+
+/// 可注入剪贴板内容的共享桩（测试目标内复用）。
+struct SharedStubPasteboard: PasteboardReading {
+    let value: String?
+    func readString() -> String? { value }
+}
+
+@MainActor
+func makeTestViewModel(
+    provider: LLMProvider,
+    translateProvider: TranslateProvider = NoopTranslateProvider(),
+    clipboard: ClipboardTextGrabber =
+        ClipboardTextGrabber(pasteboard: SharedStubPasteboard(value: nil)),
+    store: JSONLResultStore
+) -> ContentQueryViewModel {
+    ContentQueryViewModel(
+        provider: provider,
+        translateProvider: translateProvider,
+        clipboard: clipboard,
+        store: store)
+}
+
 @MainActor
 final class TUI1QueryFlowTests: XCTestCase {
 
@@ -28,7 +58,7 @@ final class TUI1QueryFlowTests: XCTestCase {
 
     private func makeVM(_ result: Result<AssistantResult, Error>,
                         store: JSONLResultStore? = nil) -> ContentQueryViewModel {
-        ContentQueryViewModel(
+        makeTestViewModel(
             provider: StubLLMProvider(result: result),
             store: store ?? JSONLResultStore(
                 fileURL: tempDir.appendingPathComponent("results.jsonl")))

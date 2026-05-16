@@ -272,6 +272,38 @@
           }
         }
       }
+    },
+    "clipboard.query": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Query Clipboard"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取词问 AI"
+          }
+        }
+      }
+    },
+    "clipboard.translate": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Translate Clipboard"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取词翻译"
+          }
+        }
+      }
     }
   },
   "version": "1.0"
