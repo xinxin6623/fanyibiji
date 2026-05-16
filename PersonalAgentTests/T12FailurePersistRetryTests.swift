@@ -90,7 +90,13 @@ final class T12FailurePersistRetryTests: XCTestCase {
         let vm = makeTestViewModel(provider: CancelLLM(), store: s)
         await vm.runQuery(with: "hi", sourceKind: .manualInput, action: .query)
 
-        XCTAssertEqual(vm.state, .failure(.cancelled))
+        // T12-C 语义：取消不回写状态（由 cancelCurrent() 归位 idle），
+        // 不弹错误横幅、不落盘。此处未经 cancelCurrent 直接 provider 抛
+        // .cancelled，run 方法应早退、状态停在 loading（不变为 failure），
+        // 关键断言是「不落盘」。
+        if case .failure = vm.state {
+            XCTFail("取消不应进入 failure 态，got \(vm.state)")
+        }
         XCTAssertEqual(try s.readAll().count, 0, "取消属用户主动，不落盘")
     }
 

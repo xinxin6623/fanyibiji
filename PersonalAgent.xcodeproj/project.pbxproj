@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		B20000000000000000001B /* T12CancelTimeoutTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000001A /* T12CancelTimeoutTests.swift */; };
 		B200000000000000000019 /* T12FailurePersistRetryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000018 /* T12FailurePersistRetryTests.swift */; };
 		B200000000000000000013 /* ScreenGeometry.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000012 /* ScreenGeometry.swift */; };
 		B200000000000000000015 /* BlankImageDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000014 /* BlankImageDetector.swift */; };
@@ -66,6 +67,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		B20000000000000000001A /* T12CancelTimeoutTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = T12CancelTimeoutTests.swift; sourceTree = "<group>"; };
 		B200000000000000000018 /* T12FailurePersistRetryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = T12FailurePersistRetryTests.swift; sourceTree = "<group>"; };
 		B200000000000000000012 /* ScreenGeometry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenGeometry.swift; sourceTree = "<group>"; };
 		B200000000000000000014 /* BlankImageDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlankImageDetector.swift; sourceTree = "<group>"; };
@@ -349,6 +351,7 @@
 				B200000000000000000010 /* TClipboardDispatchTests.swift */,
 				B200000000000000000016 /* T12ScreenDefenseTests.swift */,
 				B200000000000000000018 /* T12FailurePersistRetryTests.swift */,
+				B20000000000000000001A /* T12CancelTimeoutTests.swift */,
 			);
 			path = PersonalAgentTests;
 			sourceTree = "<group>";
@@ -523,6 +526,7 @@
 				B200000000000000000011 /* TClipboardDispatchTests.swift in Sources */,
 				B200000000000000000017 /* T12ScreenDefenseTests.swift in Sources */,
 				B200000000000000000019 /* T12FailurePersistRetryTests.swift in Sources */,
+				B20000000000000000001B /* T12CancelTimeoutTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

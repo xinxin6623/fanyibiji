@@ -30,7 +30,7 @@ struct MainWindowView: View {
 
             HStack(spacing: 12) {
                 Button {
-                    Task { await viewModel.runQuery() }
+                    viewModel.dispatch { await viewModel.runQuery() }
                 } label: {
                     Text("query.run")
                 }
@@ -47,19 +47,24 @@ struct MainWindowView: View {
 
                 if isLoading {
                     ProgressView().controlSize(.small)
+                    if viewModel.canCancel {
+                        Button("query.cancel") { viewModel.cancelCurrent() }
+                    }
                 }
             }
 
             HStack(spacing: 12) {
                 Button {
-                    Task { await viewModel.queryFromClipboard() }
+                    viewModel.dispatch { await viewModel.queryFromClipboard() }
                 } label: {
                     Text("clipboard.query")
                 }
                 .disabled(isLoading)
 
                 Button {
-                    Task { await viewModel.translateFromClipboard() }
+                    viewModel.dispatch {
+                        await viewModel.translateFromClipboard()
+                    }
                 } label: {
                     Text("clipboard.translate")
                 }
@@ -131,7 +136,7 @@ struct MainWindowView: View {
                 }
                 if viewModel.canRetry {
                     Button("query.retry") {
-                        Task { await viewModel.retryLast() }
+                        viewModel.dispatch { await viewModel.retryLast() }
                     }
                 }
             }

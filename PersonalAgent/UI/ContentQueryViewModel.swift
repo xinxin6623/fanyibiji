@@ -41,6 +41,34 @@ final class ContentQueryViewModel: ObservableObject {
         return false
     }
 
+    /// 运行中的查询/翻译任务，供取消（§8-8）。同一时刻至多一个。
+    private var runningTask: Task<Void, Never>?
+
+    /// UI 据此显示「取消」按钮：仅 loading 且有在跑的任务。
+    var canCancel: Bool {
+        if case .loading = state { return runningTask != nil }
+        return false
+    }
+
+    /// 取消进行中的查询/翻译。取消会传导到 provider（其内部
+    /// `Task.checkCancellation()` / `URLError.cancelled` → `.cancelled`），
+    /// 状态回 idle、不报错、不落盘（取消属用户主动，复用 T12-B 语义）。
+    func cancelCurrent() {
+        runningTask?.cancel()
+        runningTask = nil
+        state = .idle
+    }
+
+    /// 在受管任务中跑一段查询/翻译逻辑：串行（已有在跑则忽略，避免叠
+    /// 请求），完成清理任务句柄。UI 统一经此触发，便于取消与状态归位。
+    func dispatch(_ body: @escaping () async -> Void) {
+        guard runningTask == nil else { return }
+        runningTask = Task { @MainActor in
+            await body()
+            runningTask = nil
+        }
+    }
+
     init(provider: LLMProvider,
          translateProvider: TranslateProvider,
          clipboard: ClipboardTextGrabber,
@@ -105,9 +133,16 @@ final class ContentQueryViewModel: ObservableObject {
             try? store.append(model)
             state = .success(model)
         } catch let error as AgentError {
+            // 取消由 cancelCurrent() 负责把状态归位到 idle；在途请求随后
+            // 抛出的 .cancelled / Task 取消不应回写状态、不落盘，否则与
+            // 取消语义打架（§8-8）。
+            if error.category == .cancelled || Task.isCancelled { return }
             persistFailure(context: context, provider: provider.id, error: error)
             state = .failure(error.category)
+        } catch is CancellationError {
+            return
         } catch {
+            if Task.isCancelled { return }
             let e = AgentError(category: .unknown,
                                diagnosticMessage: "non-AgentError")
             persistFailure(context: context, provider: provider.id, error: e)
@@ -214,10 +249,14 @@ final class ContentQueryViewModel: ObservableObject {
             try? store.append(model)
             state = .success(model)
         } catch let error as AgentError {
+            if error.category == .cancelled || Task.isCancelled { return }
             persistFailure(context: context,
                            provider: translateProvider.id, error: error)
             state = .failure(error.category)
+        } catch is CancellationError {
+            return
         } catch {
+            if Task.isCancelled { return }
             let e = AgentError(category: .unknown,
                                diagnosticMessage: "non-AgentError")
             persistFailure(context: context,
