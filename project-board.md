@@ -58,8 +58,9 @@
 | T-UI1 | P1 | 主窗口接入垂直闭环 | DONE | T07a、T11a | 粘贴文本→查询→展示→落盘 UI |
 | T04 | P2 | 全局快捷键与输入入口 | DONE | TC | 快捷键注册、入口路由 |
 | T05 | P2 | 截屏区域选择 | DONE | T04 | 截屏区域选择与图片输出 |
-| T06 | P2 | Vision OCR | TODO | T05 | OCRResult 与 Vision OCR pipeline |
-| T08 | P2 | 划线/剪贴板取词 | TODO | T04 | 选中文本或剪贴板输入链路 |
+| T06 | P2 | Vision OCR | DONE | T05 | OCRResult 与 Vision OCR pipeline |
+| T08 | P2 | 划线/剪贴板取词 | READY | T04 | 选中文本或剪贴板输入链路 |
+| T-INT2 | P2 | P2 整合与可视化验收 | TODO | T04,T05,T06,T08 | overlay+热键+截屏→OCR→查询 App 接线 |
 | T09 | P3 | 免费翻译 Provider | TODO | T03、TC | 一个稳定翻译 provider |
 | T10 | P3 | 指定 TTS Provider | BLOCKED | T03、TC | 可配置 TTS provider 与播放链路 |
 | T07b | P3 | LLM Provider 硬化 | TODO | T07a | 多模型适配、重试、流式（如需）|
@@ -219,14 +220,22 @@ T00 文档骨架、T01 MVP PRD、T02 SwiftUI 骨架均已 DONE 并通过构建�
   ScreenCaptureCoordinator,SCScreenCapturer}.swift`、
   `PersonalAgentTests/T05ScreenCaptureTests.swift`。
 
-### T06 Vision OCR（P2）
+### T06 Vision OCR（P2，已完成）
 
 - 目标：用 Apple Vision 实现本地 OCR。
-- 状态：TODO。
+- 状态：DONE（2026-05-16，`** TEST SUCCEEDED **`，T06 8 单测绿，
+  回归全绿）。
 - 依赖：T05。
-- 交付物：`OCRResult`、文本整理、失败状态。
-- 验收标准：图片输入返回结构化结果；空结果/低置信度/权限失败可区分；
-  OCR 层不做翻译。
+- 交付物：`OCRRecognizing` 协议 + `OCRLine`；`OCRAssembler`（行→
+  `OCRResult`，fullText 拼接 + 置信度均值，纯可测）；`OCRCoordinator`
+  （取消/空结果/未知分类编排）；`VisionTextRecognizer`（VNRecognizeText
+  薄适配，本地无网络无权限）。
+- 验收结果：图片→结构化 `OCRResult`；空/纯空白→`.invalidInput`，
+  低置信度仍成功（保留 `overallConfidence` 供调用方判断），取消→
+  `.cancelled`，其它→`.unknown`；OCR 层不做翻译。
+- 落点：`Features/Recognition/{OCRRecognizing,OCRAssembler,
+  OCRCoordinator,VisionTextRecognizer}.swift`、
+  `PersonalAgentTests/T06OCRTests.swift`。
 
 ### T08 划线/剪贴板取词（P2）
 
@@ -236,6 +245,20 @@ T00 文档骨架、T01 MVP PRD、T02 SwiftUI 骨架均已 DONE 并通过构建�
 - 交付物：文本提取入口、剪贴板保护、失败状态。
 - 验收标准：取词失败不触发空查询；不永久破坏用户剪贴板。
 - 备注：MVP 用剪贴板兜底；正式版再补 Accessibility/AppleScript/模拟复制。
+
+### T-INT2 P2 整合与可视化验收（P2）
+
+- 目标：把 T04/T05/T06/T08 的逻辑层接成可用功能，做一次真机可视化验收。
+- 状态：TODO。
+- 依赖：T04、T05、T06、T08。
+- 交付物：区域选择 overlay 窗口（全屏拖拽框选，复用 `CaptureRegion`）；
+  `HotkeyMonitoring`/`InputRouter` 接 App 生命周期；权限引导 UI（辅助
+  功能/录屏未授权→引导系统设置，复用 `.permission` 文案）；
+  截屏→`OCRCoordinator`→`ContentQueryViewModel` 端到端串联。
+- 验收标准：真机走通 热键→框选→截屏→OCR→查询→落盘；取消/权限失败
+  在 UI 可区分；文案本地化；逻辑层回归单测全绿。
+- 备注：本任务是前述被刻意推迟的"零散造无法测 UI"的集中兑现点；
+  GUI/系统授权需手动验收，James 在场或提供验收反馈。
 
 ### T09 免费翻译 Provider（P3）
 

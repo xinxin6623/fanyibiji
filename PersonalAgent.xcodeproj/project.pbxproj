@@ -41,6 +41,11 @@
 		B200000000000000000000DA /* ScreenCaptureCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000DF /* ScreenCaptureCoordinator.swift */; };
 		B200000000000000000000DB /* SCScreenCapturer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000E0 /* SCScreenCapturer.swift */; };
 		B200000000000000000000DC /* T05ScreenCaptureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000C0 /* T05ScreenCaptureTests.swift */; };
+		B200000000000000000000B1 /* OCRRecognizing.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000B6 /* OCRRecognizing.swift */; };
+		B200000000000000000000B2 /* OCRAssembler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000B7 /* OCRAssembler.swift */; };
+		B200000000000000000000B3 /* OCRCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000B8 /* OCRCoordinator.swift */; };
+		B200000000000000000000B4 /* VisionTextRecognizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000B9 /* VisionTextRecognizer.swift */; };
+		B200000000000000000000B5 /* T06OCRTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000BA /* T06OCRTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -80,6 +85,11 @@
 		B200000000000000000000DF /* ScreenCaptureCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ScreenCaptureCoordinator.swift; sourceTree = "<group>"; };
 		B200000000000000000000E0 /* SCScreenCapturer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SCScreenCapturer.swift; sourceTree = "<group>"; };
 		B200000000000000000000C0 /* T05ScreenCaptureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = T05ScreenCaptureTests.swift; sourceTree = "<group>"; };
+		B200000000000000000000B6 /* OCRRecognizing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OCRRecognizing.swift; sourceTree = "<group>"; };
+		B200000000000000000000B7 /* OCRAssembler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OCRAssembler.swift; sourceTree = "<group>"; };
+		B200000000000000000000B8 /* OCRCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OCRCoordinator.swift; sourceTree = "<group>"; };
+		B200000000000000000000B9 /* VisionTextRecognizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VisionTextRecognizer.swift; sourceTree = "<group>"; };
+		B200000000000000000000BA /* T06OCRTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = T06OCRTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -243,6 +253,10 @@
 		A1000000000000000000003A /* Recognition */ = {
 			isa = PBXGroup;
 			children = (
+				B200000000000000000000B6 /* OCRRecognizing.swift */,
+				B200000000000000000000B7 /* OCRAssembler.swift */,
+				B200000000000000000000B8 /* OCRCoordinator.swift */,
+				B200000000000000000000B9 /* VisionTextRecognizer.swift */,
 			);
 			path = Recognition;
 			sourceTree = "<group>";
@@ -275,6 +289,7 @@
 				B200000000000000000000C9 /* TUI1QueryFlowTests.swift */,
 				B200000000000000000000D7 /* T04InputRoutingTests.swift */,
 				B200000000000000000000C0 /* T05ScreenCaptureTests.swift */,
+				B200000000000000000000BA /* T06OCRTests.swift */,
 			);
 			path = PersonalAgentTests;
 			sourceTree = "<group>";
@@ -412,6 +427,10 @@
 				B200000000000000000000D9 /* ScreenCaptureAuthorizing.swift in Sources */,
 				B200000000000000000000DA /* ScreenCaptureCoordinator.swift in Sources */,
 				B200000000000000000000DB /* SCScreenCapturer.swift in Sources */,
+				B200000000000000000000B1 /* OCRRecognizing.swift in Sources */,
+				B200000000000000000000B2 /* OCRAssembler.swift in Sources */,
+				B200000000000000000000B3 /* OCRCoordinator.swift in Sources */,
+				B200000000000000000000B4 /* VisionTextRecognizer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -427,6 +446,7 @@
 				B200000000000000000000C8 /* TUI1QueryFlowTests.swift in Sources */,
 				B200000000000000000000CF /* T04InputRoutingTests.swift in Sources */,
 				B200000000000000000000DC /* T05ScreenCaptureTests.swift in Sources */,
+				B200000000000000000000B5 /* T06OCRTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

@@ -1,15 +1,15 @@
 # Relay Task
 
-_updated: 2026-05-16 14:05_
+_updated: 2026-05-16 14:35_
 _project: /Users/macmini/Documents/fanyibiji (PersonalAgent macOS App)_
 _branch: main_
 
 ## 任务
 参考 Easydict、干净重写个人用 macOS 助理 App MVP。2026-05-16 经 James
 确认执行策略为 P0→P4（先定契约 → 最薄垂直闭环 → 再扩重路径 → 收敛
-硬化）。**P0 + P1 垂直闭环 + P2 的 T04 路由层 + T05 截屏逻辑层已完成**
-（单测全绿），下一步 T06 Vision OCR，之后做一次 P2 整合（overlay +
-热键 + 截屏→OCR→查询 App 接线）。
+硬化）。**P0 + P1 垂直闭环 + P2 逻辑层（T04/T05/T06）已完成**
+（单测全绿），剩 T08 取词 + T-INT2 P2 整合（overlay + 热键 + 截屏→
+OCR→查询 App 接线，需真机可视化验收）。
 
 `relay-task.md` 是唯一交接文件；`handoff.md` 已废弃。
 
@@ -27,20 +27,19 @@ _branch: main_
 - [x] P1 T-UI1 主窗口接入垂直闭环：DONE，5 单测绿。**P1 全部完成。**
 - [x] P2 T04 全局快捷键与输入入口：DONE，6 单测绿。仅契约/逻辑层。
 - [x] P2 T05 截屏区域选择：DONE（逻辑/适配层），9 单测绿。
-  `CaptureRegion`/`ScreenCaptureAuthorizing`/`ScreenCaptureCoordinator`/
-  `SCScreenCapturer`(ScreenCaptureKit)。overlay UI + 接线进 P2 整合。
+- [x] P2 T06 Vision OCR：DONE，8 单测绿。`OCRRecognizing`/
+  `OCRAssembler`/`OCRCoordinator`/`VisionTextRecognizer`。
 
 ## 下一步（具体到能直接动手）
 1. 按序读 `AGENTS.md` → `relay-task.md` → `project-board.md` → `prd-mvp.md`。
-2. 进入 **T06 Vision OCR**（依赖 T05，已就绪）：用 Apple Vision
-   `VNRecognizeTextRequest` 把 `ScreenshotResult` → TC `OCRResult`
-   （fullText/置信度/blocks/语言提示）；空结果/低置信度/失败可区分；
-   OCR 层不做翻译（AGENTS 边界）。把 Vision 调用藏到 `OCRRecognizing`
-   协议后，纯整理逻辑（行块→fullText、置信度聚合、空/低置信判定）做
-   headless 单测，Vision 真实识别走薄适配（沿用 Keychain/SC 先例）。
-3. T06 后做 **P2 整合**（一次性、需真机可视化验收）：区域选择 overlay
-   窗口 + `HotkeyMonitoring`/`InputRouter` 接 App 生命周期 + 权限引导
-   UI + 截屏→OCR→`ContentQueryViewModel` 端到端；T08 取词并入。
+2. **T08 划线/剪贴板取词**（依赖 T04，已就绪，可 headless）：剪贴板兜底
+   取词链路；取词失败不触发空查询；不永久破坏用户剪贴板（保存/恢复
+   pasteboard）。把 NSPasteboard 藏到协议后做纯逻辑单测。
+3. **T-INT2 P2 整合**（看板已登记，需真机可视化验收，建议 James 在场/
+   给反馈）：区域选择 overlay 全屏框选 + `HotkeyMonitoring`/`InputRouter`
+   接 App 生命周期 + 权限引导 UI + 截屏→`OCRCoordinator`→
+   `ContentQueryViewModel` 端到端。这是前面刻意推迟的"无法 headless 测
+   的 GUI/系统授权"集中兑现点。
 4. 每个任务完成后验证：
    ```bash
    xcodebuild build -project PersonalAgent.xcodeproj -scheme PersonalAgent
@@ -62,9 +61,11 @@ _branch: main_
   AccessibilityAuthorizing,InputRouter,HotkeyMonitoring}.swift`
 - 截屏层：`PersonalAgent/Features/Input/{ScreenCapture,
   ScreenCaptureAuthorizing,ScreenCaptureCoordinator,SCScreenCapturer}.swift`
+- OCR 层：`PersonalAgent/Features/Recognition/{OCRRecognizing,
+  OCRAssembler,OCRCoordinator,VisionTextRecognizer}.swift`
 - 单测：`PersonalAgentTests/{TCContractsTests,T03ConfigTests,
   T11aJSONLStoreTests,T07aLLMProviderTests,TUI1QueryFlowTests,
-  T04InputRoutingTests,T05ScreenCaptureTests}.swift`
+  T04InputRoutingTests,T05ScreenCaptureTests,T06OCRTests}.swift`
 - 本轮存档（详细背景）：`/Users/macmini/baidu/Archives/2026-05-16-personalagent-replan-tc-contracts.md`
 - 相关 auto memory：`project_personalagent.md`、`user_james.md`
 
