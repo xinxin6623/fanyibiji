@@ -37,22 +37,18 @@ struct SCScreenCapturer: ScreenCapturer {
         let filter = SCContentFilter(display: display, excludingWindows: [])
         let scale = displayScaleFactor(region.displayID)
 
-        // 坐标系翻转（关键）：region.rect 来自 AppKit overlay
-        // （NSView 坐标：原点左下、Y 向上），而 SCStreamConfiguration
-        // .sourceRect 用 CoreGraphics 显示坐标（原点左上、Y 向下，单位
-        // point）。直接传会上下镜像，截到错误区域（空白）→ OCR 无文字。
-        // cgY = 显示高度 - appKitY - 选区高度。
-        let displayHeight = CGFloat(display.height)
-        let cgRect = CGRect(
-            x: region.rect.origin.x,
-            y: displayHeight - region.rect.origin.y - region.rect.height,
-            width: region.rect.width,
-            height: region.rect.height)
+        // 坐标系翻转抽到 `ScreenGeometry`（纯函数、有多屏/高分/边界
+        // 单测，防 T-INT2 那类坐标回归再次静默截空白）。
+        let cgRect = ScreenGeometry.flipToCGDisplayRect(
+            appKitRect: region.rect,
+            displayHeight: CGFloat(display.height))
+        let px = ScreenGeometry.pixelSize(
+            forPointSize: region.rect.size, scale: scale)
 
         let config = SCStreamConfiguration()
         config.sourceRect = cgRect
-        config.width = Int(region.rect.width * scale)
-        config.height = Int(region.rect.height * scale)
+        config.width = px.width
+        config.height = px.height
 
         let cgImage: CGImage
         do {
@@ -62,6 +58,18 @@ struct SCScreenCapturer: ScreenCapturer {
             throw AgentError(category: .cancelled, diagnosticMessage: "capture cancelled")
         } catch {
             throw AgentError(category: .unknown, diagnosticMessage: "capture failed")
+        }
+
+        // 空图防御：截到近纯色 → 多半是坐标翻转/采集异常（T-INT2 那类
+        // 根因）。明确报"疑似空白/坐标异常"而非让下游 OCR 报"无文字"
+        // 掩盖根因。判定逻辑在纯函数 `BlankImageDetector`（可单测）。
+        if let rgba = Self.rgbaBytes(from: cgImage),
+           BlankImageDetector.isNearlyBlank(
+               rgba: rgba, width: cgImage.width, height: cgImage.height) {
+            throw AgentError(
+                category: .invalidInput,
+                diagnosticMessage:
+                    "captured image nearly blank — likely coord/capture error")
         }
 
         guard let png = Self.pngData(from: cgImage) else {
@@ -77,6 +85,25 @@ struct SCScreenCapturer: ScreenCapturer {
     private func displayScaleFactor(_ displayID: UInt32) -> Double {
         // 主屏 backingScaleFactor 兜底；多屏精确缩放属后续硬化。
         Double(NSScreen.screens.first?.backingScaleFactor ?? 2.0)
+    }
+
+    /// 把 CGImage 解到 RGBA8888 连续缓冲，供 `BlankImageDetector` 采样。
+    /// 失败返回 nil（此时跳过空图检测，不阻断截图——宁可漏报不误杀）。
+    private static func rgbaBytes(from image: CGImage) -> [UInt8]? {
+        let w = image.width, h = image.height
+        guard w > 0, h > 0 else { return nil }
+        var buf = [UInt8](repeating: 0, count: w * h * 4)
+        guard let cs = CGColorSpace(name: CGColorSpace.sRGB),
+              let ctx = buf.withUnsafeMutableBytes({ ptr in
+                  CGContext(
+                      data: ptr.baseAddress,
+                      width: w, height: h,
+                      bitsPerComponent: 8, bytesPerRow: w * 4,
+                      space: cs,
+                      bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+              }) else { return nil }
+        ctx.draw(image, in: CGRect(x: 0, y: 0, width: w, height: h))
+        return buf
     }
 
     private static func pngData(from image: CGImage) -> Data? {
