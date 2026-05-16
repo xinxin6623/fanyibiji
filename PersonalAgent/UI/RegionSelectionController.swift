@@ -39,9 +39,9 @@ final class RegionSelectionController {
                 self?.finish(selection)
             }
 
-            let window = NSWindow(
+            let window = OverlayPanel(
                 contentRect: screen.frame,
-                styleMask: .borderless,
+                styleMask: [.borderless, .nonactivatingPanel],
                 backing: .buffered,
                 defer: false)
             window.isOpaque = false
@@ -53,7 +53,12 @@ final class RegionSelectionController {
             window.makeKeyAndOrderFront(nil)
             windows.append(window)
         }
-        NSApp.activate(ignoringOtherApps: true)
+        // 不调 NSApp.activate：截屏 overlay 不应把 PersonalAgent 主窗口
+        // 抢到前台（用户从任意 App 按热键，期望就地框选）。overlay 是
+        // .screenSaver 层级 + nonactivatingPanel + makeKey，浮在最上层
+        // 并能收 ESC，无需激活整个 App。结果展示时再由 AppController
+        // 主动激活主窗口。
+        windows.first?.makeKey()
         windows.first?.makeFirstResponder(windows.first?.contentView)
     }
 
@@ -64,6 +69,14 @@ final class RegionSelectionController {
         continuation = nil
         cont.resume(returning: selection)
     }
+}
+
+/// borderless NSPanel 默认 `canBecomeKey == false`，收不到键盘（ESC）。
+/// 重写为可成 key；配合 `.nonactivatingPanel` 可接收键盘而不激活整个
+/// App（不把主窗口抢到前台）。
+private final class OverlayPanel: NSPanel {
+    override var canBecomeKey: Bool { true }
+    override var canBecomeMain: Bool { false }
 }
 
 /// 拖拽采集视图：记录起止点，绘制选区，回传 `RegionSelection`。

@@ -33,9 +33,12 @@ struct VisionTextRecognizer: OCRRecognizing {
             }
             request.recognitionLevel = .accurate
             request.usesLanguageCorrection = true
-            if !languageHints.isEmpty {
-                request.recognitionLanguages = languageHints
-            }
+            // 调用方给了语言提示则尊重；否则默认中英混排
+            // （Vision 默认仅英文，会漏识中文——T-INT2 真机暴露）。
+            // 顺序即优先级：简繁中文在前，英文兜底。
+            request.recognitionLanguages = languageHints.isEmpty
+                ? ["zh-Hans", "zh-Hant", "en-US"]
+                : languageHints
             let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
             do {
                 try handler.perform([request])

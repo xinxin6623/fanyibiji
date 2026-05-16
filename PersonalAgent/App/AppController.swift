@@ -41,12 +41,34 @@ final class AppController: ObservableObject {
 
     /// App 启动调用：尝试接入全局热键。未授权（辅助功能）时不崩溃，
     /// 记 `.permission` 让 UI 引导——用户仍可用界面按钮触发截屏取词。
+    ///
+    /// 自愈：监听 `didBecomeActiveNotification`（App 每次被切到前台都
+    /// 发，比 SwiftUI scenePhase 可靠），用户在系统设置授权辅助功能后
+    /// 切回本 App 即重试装热键，无需重启。
     func start() {
         hotkey.onTrigger = { [weak self] in
             Task { @MainActor in self?.triggerCapture() }
         }
+        NotificationCenter.default.addObserver(
+            forName: NSApplication.didBecomeActiveNotification,
+            object: nil, queue: .main) { [weak self] _ in
+            Task { @MainActor in self?.retryHotkeyIfNeeded() }
+        }
+        retryHotkeyIfNeeded()
+    }
+
+    /// 全局热键是否已成功装上（辅助功能未授权时为 false）。
+    @Published private(set) var hotkeyActive = false
+
+    /// 幂等地尝试装热键。首次因辅助功能未授权失败后，用户授权并切回
+    /// 窗口会再次调用（`.onAppear`/`scenePhase`），授权一旦生效即自愈，
+    /// 无需重启 App。已装上则直接返回，不重复注册。
+    func retryHotkeyIfNeeded() {
+        guard !hotkeyActive else { return }
         do {
             try hotkey.start()
+            hotkeyActive = true
+            captureFailure = nil
         } catch let error as AgentError {
             captureFailure = error.category
         } catch {
@@ -66,13 +88,18 @@ final class AppController: ObservableObject {
                 })
             switch outcome {
             case .success(let captured):
+                // 截屏成功、要展示结果了，此时才把主窗口调到前台
+                // （框选阶段刻意不激活，让用户从任意 App 就地截屏）。
+                NSApp.activate(ignoringOtherApps: true)
                 // 对齐 Easydict：截屏 OCR 文本默认走翻译。
                 await queryViewModel.runQuery(
                     with: captured.text, sourceKind: .screenshot,
                     action: .translate)
             case .failure(let error):
-                // 取消回 idle 不报错；权限等分类显示引导横幅 + UI 失败态。
+                // 取消回 idle 不报错、不打扰（用户主动放弃，不抢窗口）；
+                // 其它失败（权限/采集错）需要用户看到引导横幅，激活窗口。
                 if error.category != .cancelled {
+                    NSApp.activate(ignoringOtherApps: true)
                     captureFailure = error.category
                 }
                 queryViewModel.reportCaptureFailure(error.category)

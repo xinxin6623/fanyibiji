@@ -34,7 +34,13 @@ final class GlobalHotkeyMonitor: HotkeyMonitoring, @unchecked Sendable {
     }
 
     func start() throws {
-        guard authorizer.isTrusted else {
+        var trusted = authorizer.isTrusted
+        if !trusted {
+            // 主动弹系统授权对话框并登记当前二进制（被动 isTrusted
+            // 对开发期未正式签名构建常持续 false，主动 prompt 更可靠）。
+            trusted = authorizer.promptIfNeeded()
+        }
+        guard trusted else {
             throw AgentError(category: .permission,
                              diagnosticMessage: "accessibility not authorized for hotkey")
         }
