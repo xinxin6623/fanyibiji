@@ -39,8 +39,8 @@
 | --- | --- | --- | --- |
 | P-1 | 文档与工程骨架 | 文档、可构建 SwiftUI 工程 | DONE |
 | P0 | 核心契约层 | 纯类型与协议、统一错误模型 | DONE |
-| P1 | 最薄垂直闭环 | 剪贴板→LLM→JSONL→展示 跑通 | READY |
-| P2 | 截屏/OCR 重路径 | 快捷键、截屏、OCR、取词入口 | TODO |
+| P1 | 最薄垂直闭环 | 剪贴板→LLM→JSONL→展示 跑通 | DONE |
+| P2 | 截屏/OCR 重路径 | 快捷键、截屏、OCR、取词入口 | READY |
 | P3 | 次要 Provider | 免费翻译、指定 TTS | TODO |
 | P4 | 收敛与硬化 | 容灾矩阵、本地化、历史读取 | TODO |
 
@@ -52,11 +52,11 @@
 | T01 | P-1 | MVP PRD | DONE | T00 | `prd-mvp.md` |
 | T02 | P-1 | SwiftUI App 骨架 | DONE | T01 | 可构建的 macOS App 工程 |
 | TC  | P0 | 核心契约层 | DONE | T02 | 纯 Swift 模型 + ProviderAdapter 协议 + AgentError |
-| T03 | P1 | 本地配置与密钥边界 | READY | TC | 本地配置模型、Keychain/API key 边界 |
-| T07a | P1 | 最小 LLM Provider | TODO | TC、T03 | OpenAI-compatible provider（validate/timeout/cancel）|
-| T11a | P1 | 最小 JSONL 持久化 | TODO | TC | ResultModel 的 JSONL 写入与读取 |
-| T-UI1 | P1 | 主窗口接入垂直闭环 | TODO | T07a、T11a | 粘贴文本→查询→展示→落盘 UI |
-| T04 | P2 | 全局快捷键与输入入口 | TODO | TC | 快捷键注册、入口路由 |
+| T03 | P1 | 本地配置与密钥边界 | DONE | TC | 本地配置模型、Keychain/API key 边界 |
+| T07a | P1 | 最小 LLM Provider | DONE | TC、T03 | OpenAI-compatible provider（validate/timeout/cancel）|
+| T11a | P1 | 最小 JSONL 持久化 | DONE | TC | ResultModel 的 JSONL 写入与读取 |
+| T-UI1 | P1 | 主窗口接入垂直闭环 | DONE | T07a、T11a | 粘贴文本→查询→展示→落盘 UI |
+| T04 | P2 | 全局快捷键与输入入口 | READY | TC | 快捷键注册、入口路由 |
 | T05 | P2 | 截屏区域选择 | TODO | T04 | 截屏区域选择与图片输出 |
 | T06 | P2 | Vision OCR | TODO | T05 | OCRResult 与 Vision OCR pipeline |
 | T08 | P2 | 划线/剪贴板取词 | TODO | T04 | 选中文本或剪贴板输入链路 |
@@ -95,44 +95,82 @@ T00 文档骨架、T01 MVP PRD、T02 SwiftUI 骨架均已 DONE 并通过构建�
   错误统一 `throws AgentError`；`validate()` 仅形状检查、零网络。
 - 备注：后续每个模块只对本层协议编程，禁止跨层私有耦合。
 
-### T03 本地配置与密钥边界（P1）
+### T03 本地配置与密钥边界（P1，已完成）
 
 - 目标：定义本地配置模型和敏感信息保存边界。
-- 状态：TODO。
+- 状态：DONE（2026-05-16，`xcodebuild build/test` 通过，T03 11 单测绿，
+  回归 TC 10 + skeleton 1 全绿）。
 - 依赖：TC。
-- 交付物：配置模型、Keychain 或本地安全配置方案、缺失配置的明确错误。
-- 验收标准：API key 不进入仓库；配置缺失时返回 `AgentError` 明确分支；
-  单测覆盖"有 key / 无 key / 非法 key"。
-- 备注：不要修改或覆盖 `.env`；不需要真实 API key 即可完成边界。
+- 交付物：
+  - `ProviderConfig`（非敏感值类型：`baseUrl`/`model`/`timeoutSeconds`，
+    snake_case Codable，**不含 API key**）。
+  - `SecretStore` 协议 + `KeychainSecretStore`（生产）+
+    `InMemorySecretStore`/`FailingSecretStore`（单测桩）。
+  - `ConfigStore.resolve(_:apiKeyRef:)` → `ResolvedProviderConfig`
+    （**故意不 Codable**，含 apiKey 防误序列化）。
+- 验收结果：API key 仅经 Keychain，不进仓库/不落 JSON；缺失/非法配置
+  统一抛 `AgentError(.invalidInput)`，Keychain 底层失败原样透传
+  `.persistence`；单测覆盖有 key / 无 key / 非法配置 / 失败透传。
+- 落点：`Core/Config/{ProviderConfig,SecretStore,ConfigStore}.swift`、
+  `PersonalAgentTests/T03ConfigTests.swift`。
+- 编码契约坑（后续沿用）：属性命名避开缩略词大写——`.convertFromSnakeCase`
+  把 `base_url` 解回 `baseUrl`，用 `baseURL` 会解码失败，故用 `baseUrl`。
+- 决策落地（James 确认）：ProviderConfig 最小三字段；Keychain 真实实现 +
+  协议抽象桩测（单测不触碰真实 Keychain）。
 
-### T07a 最小 LLM Provider（P1）
+### T07a 最小 LLM Provider（P1，已完成）
 
 - 目标：实现一个 OpenAI-compatible LLM provider 的最小可用版本。
-- 状态：TODO。
+- 状态：DONE（2026-05-16，`** TEST SUCCEEDED **`，T07a 12 单测绿，
+  回归全绿）。
 - 依赖：TC、T03。
-- 交付物：实现 `ProviderAdapter` 的 LLM adapter，含 validate、timeout、
-  cancel、结构化错误。
-- 验收标准：文本输入能转成 `ResultModel`；超时/取消/鉴权失败可区分；
-  单测用桩网络层覆盖成功与各失败分支。
-- 备注：API key 只走 T03 的本地配置或 Keychain。
+- 交付物：`LLMHTTPClient` 协议（生产 `URLSessionLLMHTTPClient`，单测桩）；
+  `OpenAICompatibleLLMProvider: LLMProvider` 消费 `ResolvedProviderConfig`，
+  `validate()` 仅形状零网络，`complete` 走 `/chat/completions`。
+- 验收结果：成功 → `AssistantResult`（含 model）；空输入 → `.invalidInput`；
+  HTTP 401/4xx → `.providerRejected`，5xx 同类可重试；`URLError.timedOut`
+  → `.timeout`，`.cancelled`/`CancellationError` → `.cancelled`，其它网络
+  → `.network`；响应畸形/空 choices → `.providerRejected`。API key 仅进
+  `Authorization` 头，不落日志、不入 `ResultModel`。
+- 落点：`Core/Services/LLMHTTPClient.swift`、
+  `Features/Providers/OpenAICompatibleLLMProvider.swift`、
+  `PersonalAgentTests/T07aLLMProviderTests.swift`。
+- 备注：多模型/重试/流式属 T07b；本任务只做最小闭环所需。
 
-### T11a 最小 JSONL 持久化（P1）
+### T11a 最小 JSONL 持久化（P1，已完成）
 
 - 目标：把 `ResultModel` 以 JSONL 追加写入本地并可读取。
-- 状态：TODO。
+- 状态：DONE（2026-05-16，`xcodebuild test` 通过，T11a 7 单测绿，
+  回归全绿）。
 - 依赖：TC。
-- 交付物：JSONL 写入/读取接口，写入失败时内存保留并返回错误。
-- 验收标准：每条记录含 id、source、content、provider、created_at、tags、
-  error；单测覆盖写入、读取、写入失败兜底；不保存明文 API key。
+- 交付物：`JSONLResultStore`（注入 `fileURL`）：`append`/`readAll`/
+  `bufferedFailures`。一行一 JSON，snake_case+iso8601（时间精度到秒）。
+- 验收结果：写入失败时记录留内存缓冲并抛 `AgentError(.persistence)`；
+  缺失/空文件读取返回 `[]`；损坏行抛 `.persistence`（MVP 不静默跳过）；
+  `ResultModel` 不含明文 key。单测覆盖写读 round-trip / 顺序 / 行分隔 /
+  秒精度 / 缺失 / 空 / 损坏行 / 写失败兜底。
+- 落点：`Core/Persistence/JSONLResultStore.swift`、
+  `PersonalAgentTests/T11aJSONLStoreTests.swift`。
+- 备注：失败重试与缓冲回刷、损坏行容错均推迟到 T12 硬化。
 
-### T-UI1 主窗口接入垂直闭环（P1）
+### T-UI1 主窗口接入垂直闭环（P1，已完成）
 
 - 目标：用最薄 UI 跑通端到端，证明架构成立。
-- 状态：TODO。
+- 状态：DONE（2026-05-16，`** TEST SUCCEEDED **`，TUI1 5 单测绿，
+  回归全绿）。
 - 依赖：T07a、T11a。
-- 交付物：主窗口"粘贴文本 → 触发查询 → 展示结构化结果 → 落盘"。
-- 验收标准：手动跑通一次剪贴板→LLM→JSONL；失败状态在 UI 可区分；
-  UI 只消费结构化结果，不拼接 provider 私有错误；文案可本地化。
+- 交付物：`ContentQueryViewModel`（headless 编排：文本→QueryContext→
+  LLMProvider→ResultModel→JSONL）+ 重写的 `MainWindowView` +
+  `AppComposition` 组合根 + `FailingLLMProvider` 降级 + 中英本地化键。
+- 验收结果：编排层 headless 单测覆盖 成功+落盘 / 空输入 / provider
+  AgentError 分类 / 非 AgentError→unknown / 落盘失败不阻断结果；UI 只按
+  `AgentError.Category` 显示本地化文案，不拼 provider 私有错误；缺 key
+  经 `FailingLLMProvider` 降级为可见失败态而非崩溃。
+- 待办（非代码问题）：带真实 API key 的端到端手动验收待 James 提供 key；
+  当前无 key 实跑停在 `error.invalid_input`（降级路径，已验证失败态 UI）。
+- 落点：`UI/ContentQueryViewModel.swift`、`UI/MainWindowView.swift`、
+  `App/AppComposition.swift`、`Resources/Localizable.xcstrings`、
+  `PersonalAgentTests/TUI1QueryFlowTests.swift`。
 
 ### T04 全局快捷键与输入入口（P2）
 

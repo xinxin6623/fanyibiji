@@ -19,6 +19,18 @@
 		B200000000000000000000E5 /* ResultModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000F5 /* ResultModel.swift */; };
 		B200000000000000000000E6 /* ProviderAdapter.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000F6 /* ProviderAdapter.swift */; };
 		B200000000000000000000E7 /* TCContractsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000F7 /* TCContractsTests.swift */; };
+		B200000000000000000000E8 /* ProviderConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000F8 /* ProviderConfig.swift */; };
+		B200000000000000000000E9 /* SecretStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000F9 /* SecretStore.swift */; };
+		B200000000000000000000EA /* ConfigStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000FA /* ConfigStore.swift */; };
+		B200000000000000000000EB /* T03ConfigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000FB /* T03ConfigTests.swift */; };
+		B200000000000000000000EC /* JSONLResultStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000FC /* JSONLResultStore.swift */; };
+		B200000000000000000000ED /* T11aJSONLStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000FD /* T11aJSONLStoreTests.swift */; };
+		B200000000000000000000EE /* LLMHTTPClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000FE /* LLMHTTPClient.swift */; };
+		B200000000000000000000EF /* OpenAICompatibleLLMProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000FF /* OpenAICompatibleLLMProvider.swift */; };
+		B200000000000000000000C2 /* T07aLLMProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000C3 /* T07aLLMProviderTests.swift */; };
+		B200000000000000000000C4 /* ContentQueryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000C5 /* ContentQueryViewModel.swift */; };
+		B200000000000000000000C6 /* AppComposition.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000C7 /* AppComposition.swift */; };
+		B200000000000000000000C8 /* TUI1QueryFlowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000C9 /* TUI1QueryFlowTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -36,6 +48,18 @@
 		B200000000000000000000F5 /* ResultModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResultModel.swift; sourceTree = "<group>"; };
 		B200000000000000000000F6 /* ProviderAdapter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderAdapter.swift; sourceTree = "<group>"; };
 		B200000000000000000000F7 /* TCContractsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TCContractsTests.swift; sourceTree = "<group>"; };
+		B200000000000000000000F8 /* ProviderConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderConfig.swift; sourceTree = "<group>"; };
+		B200000000000000000000F9 /* SecretStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SecretStore.swift; sourceTree = "<group>"; };
+		B200000000000000000000FA /* ConfigStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigStore.swift; sourceTree = "<group>"; };
+		B200000000000000000000FB /* T03ConfigTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = T03ConfigTests.swift; sourceTree = "<group>"; };
+		B200000000000000000000FC /* JSONLResultStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONLResultStore.swift; sourceTree = "<group>"; };
+		B200000000000000000000FD /* T11aJSONLStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = T11aJSONLStoreTests.swift; sourceTree = "<group>"; };
+		B200000000000000000000FE /* LLMHTTPClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMHTTPClient.swift; sourceTree = "<group>"; };
+		B200000000000000000000FF /* OpenAICompatibleLLMProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAICompatibleLLMProvider.swift; sourceTree = "<group>"; };
+		B200000000000000000000C3 /* T07aLLMProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = T07aLLMProviderTests.swift; sourceTree = "<group>"; };
+		B200000000000000000000C5 /* ContentQueryViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentQueryViewModel.swift; sourceTree = "<group>"; };
+		B200000000000000000000C7 /* AppComposition.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppComposition.swift; sourceTree = "<group>"; };
+		B200000000000000000000C9 /* TUI1QueryFlowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TUI1QueryFlowTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -99,6 +123,7 @@
 			isa = PBXGroup;
 			children = (
 				A10000000000000000000011 /* PersonalAgentApp.swift */,
+				B200000000000000000000C7 /* AppComposition.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -107,6 +132,7 @@
 			isa = PBXGroup;
 			children = (
 				A10000000000000000000012 /* MainWindowView.swift */,
+				B200000000000000000000C5 /* ContentQueryViewModel.swift */,
 			);
 			path = UI;
 			sourceTree = "<group>";
@@ -117,6 +143,7 @@
 				A10000000000000000000035 /* Models */,
 				A10000000000000000000036 /* Services */,
 				A10000000000000000000037 /* Persistence */,
+				B200000000000000000000C1 /* Config */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -137,6 +164,7 @@
 			isa = PBXGroup;
 			children = (
 				B200000000000000000000F6 /* ProviderAdapter.swift */,
+				B200000000000000000000FE /* LLMHTTPClient.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -144,8 +172,19 @@
 		A10000000000000000000037 /* Persistence */ = {
 			isa = PBXGroup;
 			children = (
+				B200000000000000000000FC /* JSONLResultStore.swift */,
 			);
 			path = Persistence;
+			sourceTree = "<group>";
+		};
+		B200000000000000000000C1 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				B200000000000000000000F8 /* ProviderConfig.swift */,
+				B200000000000000000000F9 /* SecretStore.swift */,
+				B200000000000000000000FA /* ConfigStore.swift */,
+			);
+			path = Config;
 			sourceTree = "<group>";
 		};
 		A10000000000000000000038 /* Features */ = {
@@ -175,6 +214,7 @@
 		A1000000000000000000003B /* Providers */ = {
 			isa = PBXGroup;
 			children = (
+				B200000000000000000000FF /* OpenAICompatibleLLMProvider.swift */,
 			);
 			path = Providers;
 			sourceTree = "<group>";
@@ -193,6 +233,10 @@
 			children = (
 				A10000000000000000000015 /* PersonalAgentTests.swift */,
 				B200000000000000000000F7 /* TCContractsTests.swift */,
+				B200000000000000000000FB /* T03ConfigTests.swift */,
+				B200000000000000000000FD /* T11aJSONLStoreTests.swift */,
+				B200000000000000000000C3 /* T07aLLMProviderTests.swift */,
+				B200000000000000000000C9 /* TUI1QueryFlowTests.swift */,
 			);
 			path = PersonalAgentTests;
 			sourceTree = "<group>";
@@ -314,6 +358,14 @@
 				B200000000000000000000E4 /* QueryContext.swift in Sources */,
 				B200000000000000000000E5 /* ResultModel.swift in Sources */,
 				B200000000000000000000E6 /* ProviderAdapter.swift in Sources */,
+				B200000000000000000000E8 /* ProviderConfig.swift in Sources */,
+				B200000000000000000000E9 /* SecretStore.swift in Sources */,
+				B200000000000000000000EA /* ConfigStore.swift in Sources */,
+				B200000000000000000000EC /* JSONLResultStore.swift in Sources */,
+				B200000000000000000000EE /* LLMHTTPClient.swift in Sources */,
+				B200000000000000000000EF /* OpenAICompatibleLLMProvider.swift in Sources */,
+				B200000000000000000000C4 /* ContentQueryViewModel.swift in Sources */,
+				B200000000000000000000C6 /* AppComposition.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -323,6 +375,10 @@
 			files = (
 				A10000000000000000000005 /* PersonalAgentTests.swift in Sources */,
 				B200000000000000000000E7 /* TCContractsTests.swift in Sources */,
+				B200000000000000000000EB /* T03ConfigTests.swift in Sources */,
+				B200000000000000000000ED /* T11aJSONLStoreTests.swift in Sources */,
+				B200000000000000000000C2 /* T07aLLMProviderTests.swift in Sources */,
+				B200000000000000000000C8 /* TUI1QueryFlowTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

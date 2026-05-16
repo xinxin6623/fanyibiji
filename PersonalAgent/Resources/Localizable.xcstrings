@@ -1,68 +1,82 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "app.next_step" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Next: local configuration and key boundaries"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "下一步：本地配置与密钥边界"
-          }
-        }
-      }
-    },
-    "app.scope" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "T02 only creates the clean SwiftUI app skeleton. Screenshot, OCR, LLM, translation, TTS, and history storage are reserved for later tasks."
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "T02 只创建干净的 SwiftUI App 骨架。截图、OCR、LLM、翻译、TTS 和历史记录留给后续任务。"
-          }
-        }
-      }
-    },
-    "app.stage" : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "M1 - SwiftUI App Skeleton"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "M1 - SwiftUI App 骨架"
-          }
-        }
-      }
-    },
     "app.title" : {
       "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Personal Agent"
-          }
-        },
-        "zh-Hans" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Personal Agent"
-          }
-        }
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Personal Agent" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "Personal Agent" } }
+      }
+    },
+    "query.prompt" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Paste or type text, then run a query" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "粘贴或输入文本，然后发起查询" } }
+      }
+    },
+    "query.run" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Run Query" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "发起查询" } }
+      }
+    },
+    "query.idle" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Result will appear here." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "结果将显示在这里。" } }
+      }
+    },
+    "query.loading" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Querying…" } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "查询中…" } }
+      }
+    },
+    "error.invalid_input" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Invalid input or missing configuration." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "输入无效或配置缺失。" } }
+      }
+    },
+    "error.network" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Network error. Please retry." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "网络错误，请重试。" } }
+      }
+    },
+    "error.timeout" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Request timed out. Please retry." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "请求超时，请重试。" } }
+      }
+    },
+    "error.cancelled" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Request cancelled." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "请求已取消。" } }
+      }
+    },
+    "error.permission" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Permission denied." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "权限被拒绝。" } }
+      }
+    },
+    "error.persistence" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Failed to save result locally." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "本地保存结果失败。" } }
+      }
+    },
+    "error.provider_rejected" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "The provider rejected the request." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "服务方拒绝了请求。" } }
+      }
+    },
+    "error.unknown" : {
+      "localizations" : {
+        "en" : { "stringUnit" : { "state" : "translated", "value" : "Unknown error." } },
+        "zh-Hans" : { "stringUnit" : { "state" : "translated", "value" : "未知错误。" } }
       }
     }
   },
