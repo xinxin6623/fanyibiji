@@ -23,6 +23,47 @@ enum AppComposition {
     )
     static let apiKeyRef = "llm.apiKey"
 
+    /// TTS 偏好（发音人/语速/音量/音调）持久化文件，与 results.jsonl
+    /// 同目录。UI 改动写这里，启动读回；缺失/损坏回 `TTSConfig()` 默认。
+    static func ttsSettingsFileURL() -> URL {
+        let base = (try? FileManager.default.url(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask, appropriateFor: nil, create: true))
+            ?? FileManager.default.temporaryDirectory
+        return base
+            .appendingPathComponent("com.james.personalagent", isDirectory: true)
+            .appendingPathComponent("tts-config.json")
+    }
+
+    /// 按给定 `TTSConfig` 解析三件套密钥并造 provider；缺 key/非法配置
+    /// → `FailingTTSProvider` 降级（UI 可见，不崩）。供 ViewModel 在
+    /// 设置变更时按新 config 重建。
+    @Sendable
+    static func makeTTSProvider(_ config: TTSConfig) -> TTSProvider {
+        let configStore = TTSConfigStore(secrets: KeychainSecretStore())
+        do {
+            let resolved = try configStore.resolve(config)
+            return XunfeiTTSProvider(
+                config: resolved, client: URLSessionTTSWebSocketClient())
+        } catch let error as AgentError {
+            return FailingTTSProvider(error: error)
+        } catch {
+            return FailingTTSProvider(
+                error: AgentError(category: .unknown,
+                                  diagnosticMessage: "tts composition failed"))
+        }
+    }
+
+    @MainActor
+    static func makeTTSViewModel() -> TTSPlaybackViewModel {
+        let store = TTSSettingsStore(fileURL: ttsSettingsFileURL())
+        let settings = store.load()
+        return TTSPlaybackViewModel(
+            settings: settings,
+            settingsStore: store,
+            makeProvider: makeTTSProvider)
+    }
+
     static func resultsFileURL() -> URL {
         let base = (try? FileManager.default.url(
             for: .applicationSupportDirectory,

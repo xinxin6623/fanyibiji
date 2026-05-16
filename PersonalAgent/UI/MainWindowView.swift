@@ -94,10 +94,14 @@ struct MainWindowView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
+            Divider()
+
+            TTSPanelView(viewModel: controller.ttsViewModel)
+
             Spacer()
         }
         .padding(28)
-        .frame(minWidth: 560, minHeight: 460)
+        .frame(minWidth: 560, minHeight: 520)
     }
 
     private var isLoading: Bool {

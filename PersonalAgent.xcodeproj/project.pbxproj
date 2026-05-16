@@ -17,6 +17,12 @@
 		B200000000000000000021 /* P2IntegrationCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000020 /* P2IntegrationCoordinator.swift */; };
 		B200000000000000000023 /* RegionSelectionController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000022 /* RegionSelectionController.swift */; };
 		B200000000000000000025 /* AppController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000024 /* AppController.swift */; };
+		B200000000000000000031 /* TTSConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000030 /* TTSConfig.swift */; };
+		B200000000000000000033 /* TTSWebSocketClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000032 /* TTSWebSocketClient.swift */; };
+		B200000000000000000035 /* XunfeiTTSProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000034 /* XunfeiTTSProvider.swift */; };
+		B200000000000000000037 /* TTSPlaybackViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000036 /* TTSPlaybackViewModel.swift */; };
+		B200000000000000000039 /* TTSPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000038 /* TTSPanelView.swift */; };
+		B20000000000000000003B /* T10TTSTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000003A /* T10TTSTests.swift */; };
 		B200000000000000000027 /* TINT2IntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000026 /* TINT2IntegrationTests.swift */; };
 		A10000000000000000000001 /* PersonalAgentApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000011 /* PersonalAgentApp.swift */; };
 		A10000000000000000000002 /* MainWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000012 /* MainWindowView.swift */; };
@@ -35,6 +41,7 @@
 		B200000000000000000000EA /* ConfigStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000FA /* ConfigStore.swift */; };
 		B200000000000000000000EB /* T03ConfigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000FB /* T03ConfigTests.swift */; };
 		B200000000000000000000EC /* JSONLResultStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000FC /* JSONLResultStore.swift */; };
+		B20000000000000000003D /* TTSSettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000003C /* TTSSettingsStore.swift */; };
 		B200000000000000000000ED /* T11aJSONLStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000FD /* T11aJSONLStoreTests.swift */; };
 		B200000000000000000000EE /* LLMHTTPClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000FE /* LLMHTTPClient.swift */; };
 		B200000000000000000000EF /* OpenAICompatibleLLMProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000FF /* OpenAICompatibleLLMProvider.swift */; };
@@ -78,6 +85,12 @@
 		B200000000000000000020 /* P2IntegrationCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = P2IntegrationCoordinator.swift; sourceTree = "<group>"; };
 		B200000000000000000022 /* RegionSelectionController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RegionSelectionController.swift; sourceTree = "<group>"; };
 		B200000000000000000024 /* AppController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppController.swift; sourceTree = "<group>"; };
+		B200000000000000000030 /* TTSConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TTSConfig.swift; sourceTree = "<group>"; };
+		B200000000000000000032 /* TTSWebSocketClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TTSWebSocketClient.swift; sourceTree = "<group>"; };
+		B200000000000000000034 /* XunfeiTTSProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XunfeiTTSProvider.swift; sourceTree = "<group>"; };
+		B200000000000000000036 /* TTSPlaybackViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TTSPlaybackViewModel.swift; sourceTree = "<group>"; };
+		B200000000000000000038 /* TTSPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TTSPanelView.swift; sourceTree = "<group>"; };
+		B20000000000000000003A /* T10TTSTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = T10TTSTests.swift; sourceTree = "<group>"; };
 		B200000000000000000026 /* TINT2IntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TINT2IntegrationTests.swift; sourceTree = "<group>"; };
 		A10000000000000000000011 /* PersonalAgentApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalAgentApp.swift; sourceTree = "<group>"; };
 		A10000000000000000000012 /* MainWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainWindowView.swift; sourceTree = "<group>"; };
@@ -98,6 +111,7 @@
 		B200000000000000000000FA /* ConfigStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConfigStore.swift; sourceTree = "<group>"; };
 		B200000000000000000000FB /* T03ConfigTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = T03ConfigTests.swift; sourceTree = "<group>"; };
 		B200000000000000000000FC /* JSONLResultStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONLResultStore.swift; sourceTree = "<group>"; };
+		B20000000000000000003C /* TTSSettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TTSSettingsStore.swift; sourceTree = "<group>"; };
 		B200000000000000000000FD /* T11aJSONLStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = T11aJSONLStoreTests.swift; sourceTree = "<group>"; };
 		B200000000000000000000FE /* LLMHTTPClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMHTTPClient.swift; sourceTree = "<group>"; };
 		B200000000000000000000FF /* OpenAICompatibleLLMProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAICompatibleLLMProvider.swift; sourceTree = "<group>"; };
@@ -200,6 +214,8 @@
 		A10000000000000000000033 /* UI */ = {
 			isa = PBXGroup;
 			children = (
+				B200000000000000000036 /* TTSPlaybackViewModel.swift */,
+				B200000000000000000038 /* TTSPanelView.swift */,
 				A10000000000000000000012 /* MainWindowView.swift */,
 				B200000000000000000000C5 /* ContentQueryViewModel.swift */,
 				B200000000000000000022 /* RegionSelectionController.swift */,
@@ -237,6 +253,7 @@
 				B200000000000000000000F6 /* ProviderAdapter.swift */,
 				B200000000000000000000FE /* LLMHTTPClient.swift */,
 				B200000000000000000000A6 /* TranslateHTTPClient.swift */,
+				B200000000000000000032 /* TTSWebSocketClient.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -245,6 +262,7 @@
 			isa = PBXGroup;
 			children = (
 				B200000000000000000000FC /* JSONLResultStore.swift */,
+				B20000000000000000003C /* TTSSettingsStore.swift */,
 			);
 			path = Persistence;
 			sourceTree = "<group>";
@@ -252,6 +270,7 @@
 		B200000000000000000000C1 /* Config */ = {
 			isa = PBXGroup;
 			children = (
+				B200000000000000000030 /* TTSConfig.swift */,
 				B200000000000000000000F8 /* ProviderConfig.swift */,
 				B200000000000000000000F9 /* SecretStore.swift */,
 				B200000000000000000000FA /* ConfigStore.swift */,
@@ -310,6 +329,7 @@
 		A1000000000000000000003B /* Providers */ = {
 			isa = PBXGroup;
 			children = (
+				B200000000000000000034 /* XunfeiTTSProvider.swift */,
 				B200000000000000000000FF /* OpenAICompatibleLLMProvider.swift */,
 				B200000000000000000000A7 /* FreeWebTranslateProvider.swift */,
 				B200000000000000000000A9 /* RetryingLLMProvider.swift */,
@@ -337,6 +357,7 @@
 		A10000000000000000000041 /* PersonalAgentTests */ = {
 			isa = PBXGroup;
 			children = (
+				B20000000000000000003A /* T10TTSTests.swift */,
 				A10000000000000000000015 /* PersonalAgentTests.swift */,
 				B200000000000000000000F7 /* TCContractsTests.swift */,
 				B200000000000000000000FB /* T03ConfigTests.swift */,
@@ -480,9 +501,15 @@
 				B200000000000000000000E9 /* SecretStore.swift in Sources */,
 				B200000000000000000000EA /* ConfigStore.swift in Sources */,
 				B200000000000000000000EC /* JSONLResultStore.swift in Sources */,
+				B20000000000000000003D /* TTSSettingsStore.swift in Sources */,
 				B200000000000000000000EE /* LLMHTTPClient.swift in Sources */,
 				B200000000000000000000EF /* OpenAICompatibleLLMProvider.swift in Sources */,
 				B200000000000000000000C4 /* ContentQueryViewModel.swift in Sources */,
+				B200000000000000000031 /* TTSConfig.swift in Sources */,
+				B200000000000000000033 /* TTSWebSocketClient.swift in Sources */,
+				B200000000000000000035 /* XunfeiTTSProvider.swift in Sources */,
+				B200000000000000000037 /* TTSPlaybackViewModel.swift in Sources */,
+				B200000000000000000039 /* TTSPanelView.swift in Sources */,
 				B200000000000000000000C6 /* AppComposition.swift in Sources */,
 				B200000000000000000000CB /* InputEntry.swift in Sources */,
 				B200000000000000000000CC /* AccessibilityAuthorizing.swift in Sources */,
@@ -531,6 +558,7 @@
 				B200000000000000000019 /* T12FailurePersistRetryTests.swift in Sources */,
 				B20000000000000000001B /* T12CancelTimeoutTests.swift in Sources */,
 				B20000000000000000001D /* T12HistoryTests.swift in Sources */,
+				B20000000000000000003B /* T10TTSTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
