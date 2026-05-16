@@ -41,8 +41,8 @@
 | P0 | 核心契约层 | 纯类型与协议、统一错误模型 | DONE |
 | P1 | 最薄垂直闭环 | 剪贴板→LLM→JSONL→展示 跑通 | DONE |
 | P2 | 截屏/OCR 重路径 | 快捷键、截屏、OCR、取词入口 | DONE（真机验收通过）|
-| P3 | 次要 Provider | 免费翻译、指定 TTS | TODO |
-| P4 | 收敛与硬化 | 容灾矩阵、本地化、历史读取 | TODO |
+| P3 | 次要 Provider | 免费翻译、指定 TTS | 翻译 DONE；TTS(T10) BLOCKED |
+| P4 | 收敛与硬化 | 容灾矩阵、本地化、历史读取 | DONE（T12 A/B/C/D，TTS 路径随 T10）|
 
 ## 任务看板
 
