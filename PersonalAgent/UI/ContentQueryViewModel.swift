@@ -18,6 +18,11 @@ final class ContentQueryViewModel: ObservableObject {
     @Published private(set) var state: State = .idle
     @Published var inputText: String = ""
 
+    /// 历史记录（最近在前），UI 历史面板消费。`historyError` 非 nil 时
+    /// 表示读取失败的分类（损坏行/IO），UI 显示对应本地化文案。
+    @Published private(set) var history: [ResultModel] = []
+    @Published private(set) var historyError: AgentError.Category?
+
     private let provider: LLMProvider
     private let translateProvider: TranslateProvider
     private let clipboard: ClipboardTextGrabber
@@ -187,6 +192,25 @@ final class ContentQueryViewModel: ObservableObject {
                            sourceKind: a.sourceKind, action: action)
         case .translate:
             await runTranslate(a.rawText, sourceKind: a.sourceKind)
+        }
+    }
+
+    // MARK: - T12-D 历史读取
+
+    /// 读取本地 JSONL 历史（最近在前，最多 `limit` 条）。读取失败
+    /// （损坏行/IO，T11a 约定抛 `.persistence`）记 `historyError` 供 UI
+    /// 提示，不崩溃；缺失/空文件按 T11a 返回空列表（非错误）。
+    func loadHistory(limit: Int = 200) {
+        do {
+            let all = try store.readAll()
+            history = Array(all.reversed().prefix(limit))
+            historyError = nil
+        } catch let error as AgentError {
+            history = []
+            historyError = error.category
+        } catch {
+            history = []
+            historyError = .persistence
         }
     }
 

@@ -3,6 +3,7 @@ import SwiftUI
 struct MainWindowView: View {
     @EnvironmentObject private var controller: AppController
     @ObservedObject private var viewModel: ContentQueryViewModel
+    @State private var showingHistory = false
 
     init(viewModel: ContentQueryViewModel) {
         self.viewModel = viewModel
@@ -69,6 +70,13 @@ struct MainWindowView: View {
                     Text("clipboard.translate")
                 }
                 .disabled(isLoading)
+
+                Button {
+                    showingHistory.toggle()
+                    if showingHistory { viewModel.loadHistory() }
+                } label: {
+                    Text(showingHistory ? "history.hide" : "history.show")
+                }
             }
 
             Text("capture.hint")
@@ -77,8 +85,14 @@ struct MainWindowView: View {
 
             Divider()
 
-            resultArea
-                .frame(maxWidth: .infinity, alignment: .leading)
+            Group {
+                if showingHistory {
+                    historyArea
+                } else {
+                    resultArea
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             Spacer()
         }
@@ -143,8 +157,52 @@ struct MainWindowView: View {
         }
     }
 
+    @ViewBuilder
+    private var historyArea: some View {
+        if let cat = viewModel.historyError {
+            Label {
+                Text(Self.messageKey(for: cat))
+            } icon: {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundStyle(.orange)
+            }
+        } else if viewModel.history.isEmpty {
+            Text("history.empty").foregroundStyle(.secondary)
+        } else {
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 10) {
+                    ForEach(viewModel.history, id: \.id) { item in
+                        VStack(alignment: .leading, spacing: 2) {
+                            HStack {
+                                Text(item.provider)
+                                    .font(.caption.monospaced())
+                                    .foregroundStyle(.secondary)
+                                if item.error != nil {
+                                    Text("history.failed_tag")
+                                        .font(.caption2)
+                                        .foregroundStyle(.orange)
+                                }
+                                Spacer()
+                                Text(item.createdAt, style: .date)
+                                    .font(.caption2)
+                                    .foregroundStyle(.secondary)
+                            }
+                            Text(resultText(item).isEmpty
+                                 ? "—" : resultText(item))
+                                .font(.body)
+                                .textSelection(.enabled)
+                                .lineLimit(4)
+                        }
+                        Divider()
+                    }
+                }
+            }
+        }
+    }
+
     private func resultText(_ model: ResultModel) -> String {
         if case let .text(value) = model.content { return value }
+        if case let .translation(t, _, _) = model.content { return t }
         return ""
     }
 
