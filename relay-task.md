@@ -1,6 +1,6 @@
 # Relay Task
 
-_updated: 2026-05-16 (T-INT2 真机验收通过)_
+_updated: 2026-05-16 (T08/T09 取词 UI 分发真机验收通过)_
 _project: /Users/macmini/Documents/fanyibiji (PersonalAgent macOS App)_
 _branch: main_
 
@@ -41,15 +41,20 @@ T10 TTS（BLOCKED 待 James 决策）、T12 收敛硬化。
   f2df335。详见看板 T-INT2「真机验收结果」。
   关键修复：中文 OCR 默认语言、截屏坐标系 Y 翻转、辅助功能主动
   prompt+自愈、后台截屏不抢焦点、本地自签证书稳定签名。
+- [x] T08/T09 取词 UI 动作分发：**真机验收通过**（2026-05-16，
+  commit 305c188）。「取词问 AI」剪贴板→LLM；「取词翻译」剪贴板→
+  T09（主翻译通道，免 key）。+7 单测，全量回归绿无告警。截屏
+  `.translate` 走 LLM+prompt、取词 `.translate` 走 T09 provider——
+  两条有意不同，各经 James 确认。详见看板 T09「UI 接入」。
 
 ## 下一步（具体到能直接动手）
 1. 按序读 `AGENTS.md` → `relay-task.md` → `project-board.md` → `prd-mvp.md`。
-2. **P2 已全部完成（T-INT2 真机验收通过）**。下一步候选：
-   - T08 取词入口、T09 翻译动作的 UI 动作分发（仅逻辑层就绪，未接
-     UI 按钮）作独立小任务。
-   - **T12 收敛硬化**，其中明确含 T-INT2 暴露的：截屏空图/坐标防御
-     机制（空图检测报专用诊断 + AppKit↔CG 坐标翻转纯函数单测，覆盖
+2. **P2 全部完成 + T08/T09 取词 UI 分发已接并真机验收通过**。
+   剩余下一步候选：
+   - **T12 收敛硬化**，明确含 T-INT2 暴露的：截屏空图/坐标防御机制
+     （空图检测报专用诊断 + AppKit↔CG 坐标翻转纯函数单测，覆盖
      多屏/高分/边界）——见看板 T12 条目，James 已确认记录待做。
+     另含 `prd-mvp.md` §8 八种失败路径覆盖、本地化完整性、历史读取。
    - T10 TTS 仍 BLOCKED 待 James 决策（供应商/鉴权/格式/流式）。
 3. 每个任务完成后验证（**本机用稳定签名构建参数**）：
    ```bash

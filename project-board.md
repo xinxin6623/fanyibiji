@@ -59,9 +59,9 @@
 | T04 | P2 | 全局快捷键与输入入口 | DONE | TC | 快捷键注册、入口路由 |
 | T05 | P2 | 截屏区域选择 | DONE | T04 | 截屏区域选择与图片输出 |
 | T06 | P2 | Vision OCR | DONE | T05 | OCRResult 与 Vision OCR pipeline |
-| T08 | P2 | 划线/剪贴板取词 | DONE | T04 | 选中文本或剪贴板输入链路 |
+| T08 | P2 | 划线/剪贴板取词 | DONE（UI 已接，真机验收通过）| T04 | 选中文本或剪贴板输入链路 |
 | T-INT2 | P2 | P2 整合与可视化验收 | DONE（真机验收通过）| T04,T05,T06,T08 | overlay+热键+截屏→OCR→翻译 App 接线 |
-| T09 | P3 | 免费翻译 Provider | DONE | T03、TC | 一个稳定翻译 provider |
+| T09 | P3 | 免费翻译 Provider | DONE（UI 已接为主翻译通道，真机验收通过）| T03、TC | 一个稳定翻译 provider |
 | T10 | P3 | 指定 TTS Provider | BLOCKED | T03、TC | 可配置 TTS provider 与播放链路 |
 | T07b | P3 | LLM Provider 硬化 | DONE | T07a | 多模型配置已由 T03/T07a 承载；新增重试装饰器；流式推迟 |
 | T12 | P4 | 收敛与硬化 | TODO | P1–P3 | 容灾矩阵、本地化完整性、历史读取接口 |
@@ -334,7 +334,21 @@ T00 文档骨架、T01 MVP PRD、T02 SwiftUI 骨架均已 DONE 并通过构建�
   `Features/Providers/FreeWebTranslateProvider.swift`、
   `PersonalAgentTests/T09TranslateProviderTests.swift`。
 - 备注（AGENTS 边界）：逆向 Web API 隔离在可替换 provider 层，未成为
-  核心依赖；接入 UI/动作分发在 T-INT2 之后或独立小任务。
+  核心依赖。
+- **UI 接入（2026-05-16，commit 305c188，真机验收通过）**：经 James
+  确认 T09 作**主翻译通道**。`ContentQueryViewModel` 新增
+  `TranslateProvider`+`ClipboardTextGrabber` 依赖与
+  `queryFromClipboard`/`translateFromClipboard`/`runTranslate`；
+  `MainWindowView` 加「取词问 AI」（剪贴板→LLM `.query`）「取词翻译」
+  （剪贴板→T09，免 key）两按钮 + `clipboard.query`/`clipboard.translate`
+  中英键；`AppComposition` 装配 `FreeWebTranslateProvider`+
+  `SystemPasteboard`。取词翻译经 `languageHints=["zh"]` 传目标语言给
+  T09 的 `tl` 参数。落盘 `ResultModel.provider` 区分 LLM/翻译通道可
+  溯源。**与截屏路径区分**：截屏 `.translate` 仍走 LLM+翻译 prompt
+  （OpenRouter），取词 `.translate` 走 T09 provider——两条有意不同，
+  按 James 各自确认。新增 7 单测（`TClipboardDispatchTests`），既有
+  VM 构造点迁移到共享 `makeTestViewModel`。空/纯空白剪贴板→
+  `.invalidInput` 不触发空 provider 调用。
 
 ### T10 指定 TTS Provider（P3，BLOCKED）
 
