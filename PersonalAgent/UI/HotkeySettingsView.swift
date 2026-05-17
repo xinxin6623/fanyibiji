@@ -70,13 +70,14 @@ struct HotkeySettingsView: View {
     @Environment(\.dismiss) private var dismiss
 
     private enum Tab: String, CaseIterable {
-        case general, hotkey, secret, prompt
+        case general, hotkey, secret, prompt, tts
         var titleKey: String {
             switch self {
             case .general: return "settings.tab.general"
             case .hotkey:  return "settings.tab.hotkey"
             case .secret:  return "settings.tab.secret"
             case .prompt:  return "settings.tab.prompt"
+            case .tts:     return "settings.tab.tts"
             }
         }
         var icon: String {
@@ -85,6 +86,7 @@ struct HotkeySettingsView: View {
             case .hotkey:  return "command"
             case .secret:  return "key"
             case .prompt:  return "text.bubble"
+            case .tts:     return "speaker.wave.2"
             }
         }
     }
@@ -124,6 +126,7 @@ struct HotkeySettingsView: View {
                     case .hotkey:  hotkeyPage
                     case .secret:  secretPage
                     case .prompt:  promptPage
+                    case .tts:     ttsPage
                     }
                 }
                 .padding(24)
@@ -269,6 +272,80 @@ struct HotkeySettingsView: View {
                 systemPrompt = PromptConfig.defaultSystemPrompt
             }
             .controlSize(.small)
+        }
+    }
+
+    // MARK: - TTS 页（语音合成设置，实时生效）
+
+    /// 引擎/发音人/口语化/语速/音量/音调。绑定 controller.ttsViewModel，
+    /// didSet 即时重建 provider + debounce 存盘，故不走底部统一保存。
+    private var ttsPage: some View {
+        let tts = controller.ttsViewModel
+        return settingsGroup("settings.tab.tts", hint: "settings.tts.hint") {
+            HStack {
+                Text("tts.engine")
+                Spacer()
+                Picker("", selection: Binding(
+                    get: { tts.engine },
+                    set: { tts.engine = $0 })) {
+                    Text("tts.engine.super").tag(TTSEngine.superHuman)
+                    Text("tts.engine.standard").tag(TTSEngine.standard)
+                }
+                .labelsHidden().fixedSize()
+            }
+            Divider()
+            HStack {
+                Text("tts.voice")
+                Spacer()
+                Picker("", selection: Binding(
+                    get: { tts.vcn },
+                    set: { tts.vcn = $0 })) {
+                    ForEach(TTSPlaybackViewModel.vcnOptions(for: tts.engine),
+                            id: \.value) { opt in
+                        Text(opt.label).tag(opt.value)
+                    }
+                }
+                .labelsHidden().fixedSize()
+            }
+            if tts.engine == .superHuman {
+                Divider()
+                HStack {
+                    Text("tts.oral")
+                    Spacer()
+                    Picker("", selection: Binding(
+                        get: { tts.oralLevel },
+                        set: { tts.oralLevel = $0 })) {
+                        Text("tts.oral.high").tag(TTSOralLevel.high)
+                        Text("tts.oral.mid").tag(TTSOralLevel.mid)
+                        Text("tts.oral.low").tag(TTSOralLevel.low)
+                    }
+                    .labelsHidden().fixedSize()
+                }
+            }
+            Divider()
+            ttsSlider("tts.speed",
+                      get: { tts.speed }, set: { tts.speed = $0 })
+            ttsSlider("tts.volume",
+                      get: { tts.volume }, set: { tts.volume = $0 })
+            ttsSlider("tts.pitch",
+                      get: { tts.pitch }, set: { tts.pitch = $0 })
+        }
+    }
+
+    @ViewBuilder
+    private func ttsSlider(_ titleKey: LocalizedStringKey,
+                           get: @escaping () -> Double,
+                           set: @escaping (Double) -> Void) -> some View {
+        HStack(spacing: 10) {
+            Text(titleKey)
+                .font(.caption).foregroundStyle(.secondary)
+                .frame(width: 44, alignment: .leading)
+            Slider(value: Binding(get: get, set: set),
+                   in: 0...100, step: 1)
+            Text("\(Int(get()))")
+                .font(.caption.monospacedDigit())
+                .foregroundStyle(.secondary)
+                .frame(width: 28, alignment: .trailing)
         }
     }
 

@@ -1,9 +1,11 @@
 import SwiftUI
 
-/// TTS 面板：输入框 → 一键「合成并播放」→ 可拖动进度条 + 播放/暂停。
+/// TTS 播放状态条（仅状态/进度/暂停/失败）。
 ///
-/// 失败仅按 `AgentError.Category` 显示本地化文案（不拼 provider 私有
-/// 错误，与主窗口 `messageKey(for:)` 同策略）。
+/// 文本输入框与合成设置已移除：
+///  - 合成由主窗口"朗读输入/朗读结果"图标按钮触发（直接传文本）。
+///  - 引擎/发音人/语速等设置移入设置 sheet 的 TTS Tab。
+/// 本视图只在有合成任务时显示进度与播放控制，空闲不占位。
 struct TTSPanelView: View {
     @ObservedObject private var viewModel: TTSPlaybackViewModel
 
@@ -12,106 +14,48 @@ struct TTSPanelView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("tts.section")
-                .font(.headline)
-                .foregroundStyle(.secondary)
-
-            TextEditor(text: $viewModel.inputText)
-                .font(.body)
-                .frame(minHeight: 72)
-                .overlay(RoundedRectangle(cornerRadius: 6)
-                    .stroke(Color.secondary.opacity(0.3)))
-
-            settingsControls
-
-            HStack(spacing: 12) {
-                Button {
-                    viewModel.synthesizeAndPlay()
-                } label: {
-                    Text("tts.run")
-                }
-                .disabled(isSynthesizing
-                          || viewModel.inputText.trimmingCharacters(
-                              in: .whitespacesAndNewlines).isEmpty)
-
+        if shouldShow {
+            VStack(alignment: .leading, spacing: 8) {
                 if isSynthesizing {
-                    ProgressView().controlSize(.small)
-                    Text("tts.synthesizing")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                    if viewModel.canCancel {
-                        Button("tts.cancel") { viewModel.cancelSynthesis() }
+                    HStack(spacing: 8) {
+                        ProgressView().controlSize(.small)
+                        Text("tts.synthesizing")
+                            .font(.caption).foregroundStyle(.secondary)
+                        Spacer()
+                        if viewModel.canCancel {
+                            Button("tts.cancel") {
+                                viewModel.cancelSynthesis()
+                            }
+                            .controlSize(.small)
+                        }
+                    }
+                }
+
+                if case .ready = viewModel.state {
+                    playbackControls
+                }
+
+                if case let .failure(category) = viewModel.state {
+                    Label {
+                        Text(Self.messageKey(for: category))
+                    } icon: {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                            .foregroundStyle(.orange)
                     }
                 }
             }
-
-            if case .ready = viewModel.state {
-                playbackControls
-            }
-
-            if case let .failure(category) = viewModel.state {
-                Label {
-                    Text(Self.messageKey(for: category))
-                } icon: {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundStyle(.orange)
-                }
-            }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color(nsColor: .controlBackgroundColor))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
         }
     }
 
-    /// 引擎下拉 + 发音人下拉（随引擎联动两套）+ 超拟人口语化下拉
-    /// + 语速/音量/音调三滑块。改动经 ViewModel 即时重建 provider 并
-    /// debounce 存盘（下次开 App 保留）。
-    @ViewBuilder
-    private var settingsControls: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Picker("tts.engine", selection: $viewModel.engine) {
-                Text("tts.engine.super").tag(TTSEngine.superHuman)
-                Text("tts.engine.standard").tag(TTSEngine.standard)
-            }
-            .pickerStyle(.menu)
-            .fixedSize()
-
-            Picker("tts.voice", selection: $viewModel.vcn) {
-                ForEach(TTSPlaybackViewModel.vcnOptions(for: viewModel.engine),
-                        id: \.value) { opt in
-                    Text(opt.label).tag(opt.value)
-                }
-            }
-            .pickerStyle(.menu)
-            .fixedSize()
-
-            if viewModel.engine == .superHuman {
-                Picker("tts.oral", selection: $viewModel.oralLevel) {
-                    Text("tts.oral.high").tag(TTSOralLevel.high)
-                    Text("tts.oral.mid").tag(TTSOralLevel.mid)
-                    Text("tts.oral.low").tag(TTSOralLevel.low)
-                }
-                .pickerStyle(.menu)
-                .fixedSize()
-            }
-
-            sliderRow("tts.speed", value: $viewModel.speed)
-            sliderRow("tts.volume", value: $viewModel.volume)
-            sliderRow("tts.pitch", value: $viewModel.pitch)
-        }
-    }
-
-    @ViewBuilder
-    private func sliderRow(_ titleKey: LocalizedStringKey,
-                           value: Binding<Double>) -> some View {
-        HStack(spacing: 10) {
-            Text(titleKey)
-                .font(.caption)
-                .foregroundStyle(.secondary)
-                .frame(width: 44, alignment: .leading)
-            Slider(value: value, in: 0...100, step: 1)
-            Text("\(Int(value.wrappedValue))")
-                .font(.caption.monospacedDigit())
-                .foregroundStyle(.secondary)
-                .frame(width: 28, alignment: .trailing)
+    /// 空闲态不渲染（不占卡片位）；合成中/可播放/失败才显示。
+    private var shouldShow: Bool {
+        switch viewModel.state {
+        case .idle: return false
+        case .synthesizing, .ready, .failure: return true
         }
     }
 

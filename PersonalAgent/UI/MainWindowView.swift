@@ -39,8 +39,8 @@ struct MainWindowView: View {
                     Group {
                         if showingHistory { historyCard } else { resultCard }
                     }
+                    // 空闲不渲染;合成中/可播放/失败时自带卡片显示。
                     TTSPanelView(viewModel: controller.ttsViewModel)
-                        .card()
                 }
                 .padding(16)
             }
@@ -122,6 +122,14 @@ struct MainWindowView: View {
                 }
                 .disabled(isLoading)
 
+                // 朗读输入框文本（TTS 文本框已移除，直接传文本）。
+                iconButton("speaker.wave.2", "tts.speak_input") {
+                    controller.ttsViewModel.synthesizeAndPlay(
+                        text: viewModel.inputText)
+                }
+                .disabled(viewModel.inputText.trimmingCharacters(
+                    in: .whitespacesAndNewlines).isEmpty)
+
                 Spacer()
 
                 if isLoading {
@@ -186,7 +194,7 @@ struct MainWindowView: View {
                     Text("query.loading").foregroundStyle(.secondary)
                 }
             case let .success(model):
-                resultHeader
+                resultHeader(text: resultText(model))
                 Text(resultText(model))
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -209,7 +217,7 @@ struct MainWindowView: View {
         .card()
     }
 
-    private var resultHeader: some View {
+    private func resultHeader(text: String) -> some View {
         HStack {
             Image(systemName: "text.bubble.fill")
                 .foregroundStyle(.tint)
@@ -217,6 +225,13 @@ struct MainWindowView: View {
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.secondary)
             Spacer()
+            // 朗读结果文本（TTS 文本框已移除，直接传结果）。
+            iconButton("speaker.wave.2", "tts.speak_result") {
+                controller.ttsViewModel.synthesizeAndPlay(text: text)
+            }
+            .font(.subheadline)
+            .disabled(text.trimmingCharacters(
+                in: .whitespacesAndNewlines).isEmpty)
         }
     }
 
