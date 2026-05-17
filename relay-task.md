@@ -1,53 +1,58 @@
 # Relay Task
 
-_updated: 2026-05-17 16:00_
-_project: /Users/qoragufimo390gmail.com/Documents/New project 3 (PersonalAgent / fanyibiji)_
+_updated: 2026-05-17 (笔记原料包 + 多草稿 Tab + Markdown 预览改 WebView)_
+_project: /Users/qoragufimo390gmail.com/Documents/New project 3 (PersonalAgent)_
 _branch: main_
 
 ## 任务
-给 PersonalAgent 翻译 App 加右侧笔记编辑区：左右可拖动分栏，右侧
-Markdown 编辑/预览双模式，译文一键插入，草稿独立归档 +「保存笔记」
-另存导出。本轮功能闭环，构建+14 单测全绿。
+笔记区新增「原料包导出 + 多草稿并行 Tab」。App 侧只采集+导出
+(草稿 + 相关翻译历史 → 单 .md),结构化交下游知识库 Claude。
+本轮功能闭环:xcodebuild build + 全量 test 全绿。
 
 ## 当前进度
-- [x] NoteDraftStore 原子写持久化
-- [x] NoteEditorViewModel（防抖自动保存 + insert + 导出回调）
-- [x] NoteEditorView（双模式 + NSSavePanel 另存导出）
-- [x] MainWindowView 左右分栏 + 结果卡"插入到编辑区"按钮
-- [x] pbxproj 4 文件登记、本地化键、14 单测全绿、构建通过
-- [x] 三轮 bug 修复（保存状态机短路 / 空操作无反馈 / 保存语义→另存）
-- [~] 真机手验：由 James 把关，未由 agent 验收
+- [x] NotePackComposer 纯函数(A源追∪B文本兜底,清洗)
+- [x] ResultModel 加 sourceText + 改写入点存原文
+- [x] NoteDraftStore 多文件 + manifest + sidecar
+- [x] NoteEditorViewModel 加源追(内部逻辑不动)
+- [x] NoteDocumentsViewModel 多 Tab 编排
+- [x] MainWindowView Tab条+历史+原料包导出按钮
+- [x] pbxproj 2 新文件各 4 处 + xcstrings 6 键
+- [x] 单测(TNote 三套)+ 全量 test 全绿
+- [x] Markdown 预览改 WKWebView + 离线 marked/highlight.js
+      (逐行 AttributedString 补不全块级,代码块/表格/ASCII 图)
+- [~] 真机手验:由 James 把关,未由 agent 验收
+- [ ] **未 commit**(原料包+多草稿那批已 commit dc29c3e;
+      WebView 这批未 commit)
 
 ## 下一步
-当前没有必须接力的工程下一步。
+无必须接力工程项。可选:
+1. 真机验收:Tab 新建/切换/关闭留盘、历史草稿重开、
+   原料包导出内容(原文→译文配对是否齐)、跨 Tab 不串。
+2. James 要求时 commit(本轮所有改动未提交)。
+3. 下游闭环验证:导出的原料包用 `/kb add <文件>` 喂知识库。
 
-如需继续，可选动作：
-1. 真机验收分栏拖动手感、Markdown 预览（当前仅逐行行内渲染，
-   表格/嵌套引用等块级语法未做完整解析——如需增强见下）
-2. 实现「最终笔记生成」：调 LLM 对草稿做结构化处理，处理时抓
-   `results.jsonl` 原始翻译历史（设计意图已定，代码未写）
-3. 用户要求 commit 时再提交（本轮所有改动未 commit）
+## 关键文件
+- 合成器:`PersonalAgent/Core/Services/NotePackComposer.swift`
+- 多文档:`PersonalAgent/UI/NoteDocumentsViewModel.swift`
+- 存储:`PersonalAgent/Core/Persistence/NoteDraftStore.swift`(多文件化)
+- 模型:`PersonalAgent/Core/Models/ResultModel.swift`(+sourceText)
+- 写入点:`PersonalAgent/UI/ContentQueryViewModel.swift`(两处带 sourceText)
+- UI:`PersonalAgent/UI/MainWindowView.swift`(notePane/Tab/导出)
+- 测试:`PersonalAgentTests/TNoteEditorTests.swift`(含 TNotePack/TNoteDocuments)
+- 预览:`PersonalAgent/UI/MarkdownWebView.swift` + `Resources/MarkdownWeb/`
+  (template.html + marked.min.js + highlight.min.js + css,folder
+  reference 登记,subdirectory:"MarkdownWeb" 解析)
+- 设计文档:`design-note-export-pack.md`、`知识库结构.md`
+- 落盘:`~/Library/Application Support/com.james.personalagent/notes/`
+  (draft-<id>.md / .draft-<id>.sourcemap.json / manifest.json)
 
-## 关键文件 / 路径
-- 持久化：`PersonalAgent/Core/Persistence/NoteDraftStore.swift`
-- 编排：`PersonalAgent/UI/NoteEditorViewModel.swift`
-- 视图：`PersonalAgent/UI/NoteEditorView.swift`（NSSavePanel 在此）
-- 分栏/插入按钮：`PersonalAgent/UI/MainWindowView.swift`
-- 测试：`PersonalAgentTests/TNoteEditorTests.swift`
-- 草稿落盘：`~/Library/Application Support/com.james.personalagent/notes/note-draft.md`
-- 本轮存档：`/Users/qoragufimo390gmail.com/baidu/Archives/2026-05-17-笔记编辑区与保存语义迭代.md`
-- 相关 auto memory：`feedback_2026-05-17_macos-swift-pitfalls.md`、`project_2026-05-17_note-editor.md`
-
-## 阻塞 / 风险 / 待用户决策
-- 无阻塞。Markdown 预览仅行内级渲染是已知取舍，James 如需块级
-  （表格/列表嵌套）需明确要求再做。
-
-## 上下文要点（接手前必读）
-1. 构建后必须 `pkill -x PersonalAgent` 再 `open
-   build/DerivedData/Build/Products/Debug/PersonalAgent.app`；仓库另有
-   旧的 `.DerivedData/` 产物，open 错会看到旧 UI。
-2. 保存有两条独立路径：内部草稿防抖自动保存（防丢，1.5s）+「保存
-   笔记」按钮弹 NSSavePanel 让用户选位置导出（互不影响）。
-3. SourceKit 跨文件报错在此工程是稳定误报，以 xcodebuild 为准。
-4. pbxproj 是显式引用式，新增 .swift 必须手动补 4 处条目。
-5. 翻译结果只读管线没动；笔记区是完全独立模块。
+## 上下文要点(接手前必读)
+1. 构建后 `pkill -x PersonalAgent` 再 `open
+   build/DerivedData/Build/Products/Debug/PersonalAgent.app`。
+2. SourceKit 跨文件 "Cannot find type" 海量误报,以 xcodebuild 为准。
+3. 全量 test 偶发 "TEST FAILED" 无 error/无 fail 用例 = 测试宿主
+   占用,`pkill -x` 后重跑即全绿(已确认非代码问题)。
+4. 职责边界:App **不调 LLM、不结构化**,只导原料包;结构化是
+   下游知识库 Claude(`/kb` + `~/knowledge`)的活。
+5. 旧 note-draft.md 不迁移(James 明确不怕丢),全新 notes/ 体系。
+6. pbxproj 显式引用,新增 .swift 必手动补 4 处。

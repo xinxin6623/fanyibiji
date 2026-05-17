@@ -108,7 +108,9 @@ enum AppComposition {
     /// 笔记暂存草稿文件，与其它 config / results.jsonl 同目录但单独成
     /// 文件（notes/note-draft.md）。与翻译历史完全分离，后续 LLM 结构化
     /// 「最终笔记生成」时再回头抓 results.jsonl 原始内容。
-    static func noteDraftFileURL() -> URL {
+    /// 多草稿目录(notes/)。每草稿一个 draft-<id>.md + sidecar,外加
+    /// manifest.json。不再用单一 note-draft.md(全新多草稿体系)。
+    static func notesDirectoryURL() -> URL {
         let base = (try? FileManager.default.url(
             for: .applicationSupportDirectory,
             in: .userDomainMask, appropriateFor: nil, create: true))
@@ -116,7 +118,6 @@ enum AppComposition {
         return base
             .appendingPathComponent("com.james.personalagent", isDirectory: true)
             .appendingPathComponent("notes", isDirectory: true)
-            .appendingPathComponent("note-draft.md")
     }
 
     static func resultsFileURL() -> URL {
@@ -170,8 +171,14 @@ enum AppComposition {
     }
 
     @MainActor
-    static func makeNoteEditorViewModel() -> NoteEditorViewModel {
-        NoteEditorViewModel(
-            store: NoteDraftStore(fileURL: noteDraftFileURL()))
+    static func makeNoteDocumentsViewModel() -> NoteDocumentsViewModel {
+        NoteDocumentsViewModel(
+            store: NoteDraftStore(notesDirectory: notesDirectoryURL()))
+    }
+
+    /// 笔记原料包导出需读全量翻译历史(原文→译文配对)。复用 results
+    /// 同一文件,只读。
+    static func makeResultStoreForExport() -> JSONLResultStore {
+        JSONLResultStore(fileURL: resultsFileURL())
     }
 }

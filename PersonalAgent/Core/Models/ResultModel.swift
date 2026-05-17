@@ -63,6 +63,12 @@ struct ResultModel: Codable, Sendable, Equatable {
     let tags: [String]
     let error: AgentError?
     let createdAt: Date
+    /// 原始用户输入文本(原文)。results.jsonl 历史只存译文,无原文 →
+    /// 笔记原料包「原文→译文」配对需要它。新增字段:旧 jsonl 行无此键,
+    /// 解码用 `decodeIfPresent` 容错为 nil(不破坏既有数据)。
+    /// 命名 `sourceText`→`source_text`,无首字母缩写,convertSnakeCase
+    /// 往返对称,不踩本仓 Codable 缩写坑。
+    let sourceText: String?
 
     init(
         id: UUID = UUID(),
@@ -71,7 +77,8 @@ struct ResultModel: Codable, Sendable, Equatable {
         content: ResultContent,
         tags: [String] = [],
         error: AgentError? = nil,
-        createdAt: Date = Date()
+        createdAt: Date = Date(),
+        sourceText: String? = nil
     ) {
         self.id = id
         self.contextId = contextId
@@ -80,5 +87,35 @@ struct ResultModel: Codable, Sendable, Equatable {
         self.tags = tags
         self.error = error
         self.createdAt = createdAt
+        self.sourceText = sourceText
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id, contextId, provider, content, tags, error, createdAt, sourceText
+    }
+
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(UUID.self, forKey: .id)
+        contextId = try c.decode(UUID.self, forKey: .contextId)
+        provider = try c.decode(String.self, forKey: .provider)
+        content = try c.decode(ResultContent.self, forKey: .content)
+        tags = try c.decode([String].self, forKey: .tags)
+        error = try c.decodeIfPresent(AgentError.self, forKey: .error)
+        createdAt = try c.decode(Date.self, forKey: .createdAt)
+        sourceText = try c.decodeIfPresent(String.self, forKey: .sourceText)
+    }
+
+    // 自定义 init(from:) 会同时抑制合成的 encode/Equatable,需显式补全。
+    func encode(to encoder: Encoder) throws {
+        var c = encoder.container(keyedBy: CodingKeys.self)
+        try c.encode(id, forKey: .id)
+        try c.encode(contextId, forKey: .contextId)
+        try c.encode(provider, forKey: .provider)
+        try c.encode(content, forKey: .content)
+        try c.encode(tags, forKey: .tags)
+        try c.encodeIfPresent(error, forKey: .error)
+        try c.encode(createdAt, forKey: .createdAt)
+        try c.encodeIfPresent(sourceText, forKey: .sourceText)
     }
 }

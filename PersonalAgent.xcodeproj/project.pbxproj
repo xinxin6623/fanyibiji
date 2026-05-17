@@ -29,7 +29,11 @@
 		A10000000000000000000002 /* MainWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000012 /* MainWindowView.swift */; };
 		C1A0000000000000000001 /* NoteEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F0000000000000000001 /* NoteEditorView.swift */; };
 		C1A0000000000000000002 /* NoteEditorViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F0000000000000000002 /* NoteEditorViewModel.swift */; };
+		C1A0000000000000000052 /* NoteDocumentsViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F0000000000000000052 /* NoteDocumentsViewModel.swift */; };
+		C1A0000000000000000053 /* MarkdownWebView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F0000000000000000053 /* MarkdownWebView.swift */; };
+		C1A0000000000000000054 /* MarkdownWeb in Resources */ = {isa = PBXBuildFile; fileRef = C1F0000000000000000054 /* MarkdownWeb */; };
 		C1A0000000000000000003 /* NoteDraftStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F0000000000000000003 /* NoteDraftStore.swift */; };
+		C1A0000000000000000051 /* NotePackComposer.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F0000000000000000051 /* NotePackComposer.swift */; };
 		A10000000000000000000003 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000013 /* Assets.xcassets */; };
 		A10000000000000000000004 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000014 /* Localizable.xcstrings */; };
 		A10000000000000000000005 /* PersonalAgentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000015 /* PersonalAgentTests.swift */; };
@@ -116,7 +120,11 @@
 		A10000000000000000000012 /* MainWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainWindowView.swift; sourceTree = "<group>"; };
 		C1F0000000000000000001 /* NoteEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteEditorView.swift; sourceTree = "<group>"; };
 		C1F0000000000000000002 /* NoteEditorViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteEditorViewModel.swift; sourceTree = "<group>"; };
+		C1F0000000000000000052 /* NoteDocumentsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteDocumentsViewModel.swift; sourceTree = "<group>"; };
+		C1F0000000000000000053 /* MarkdownWebView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MarkdownWebView.swift; sourceTree = "<group>"; };
+		C1F0000000000000000054 /* MarkdownWeb */ = {isa = PBXFileReference; lastKnownFileType = folder; path = MarkdownWeb; sourceTree = "<group>"; };
 		C1F0000000000000000003 /* NoteDraftStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteDraftStore.swift; sourceTree = "<group>"; };
+		C1F0000000000000000051 /* NotePackComposer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotePackComposer.swift; sourceTree = "<group>"; };
 		A10000000000000000000013 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A10000000000000000000014 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		A10000000000000000000015 /* PersonalAgentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalAgentTests.swift; sourceTree = "<group>"; };
@@ -257,6 +265,8 @@
 				A10000000000000000000012 /* MainWindowView.swift */,
 				C1F0000000000000000001 /* NoteEditorView.swift */,
 				C1F0000000000000000002 /* NoteEditorViewModel.swift */,
+				C1F0000000000000000052 /* NoteDocumentsViewModel.swift */,
+				C1F0000000000000000053 /* MarkdownWebView.swift */,
 				B200000000000000000000C5 /* ContentQueryViewModel.swift */,
 				B200000000000000000022 /* RegionSelectionController.swift */,
 				C20000000000000000000A /* HotkeySettingsView.swift */,
@@ -296,6 +306,7 @@
 				B200000000000000000000A6 /* TranslateHTTPClient.swift */,
 				B200000000000000000032 /* TTSWebSocketClient.swift */,
 				B20000000000000000003E /* SuperTTSWebSocketClient.swift */,
+				C1F0000000000000000051 /* NotePackComposer.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -401,6 +412,7 @@
 			children = (
 				A10000000000000000000013 /* Assets.xcassets */,
 				A10000000000000000000014 /* Localizable.xcstrings */,
+				C1F0000000000000000054 /* MarkdownWeb */,
 			);
 			path = Resources;
 			sourceTree = "<group>";
@@ -529,6 +541,7 @@
 			files = (
 				A10000000000000000000003 /* Assets.xcassets in Resources */,
 				A10000000000000000000004 /* Localizable.xcstrings in Resources */,
+				C1A0000000000000000054 /* MarkdownWeb in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -550,7 +563,10 @@
 				A10000000000000000000002 /* MainWindowView.swift in Sources */,
 				C1A0000000000000000001 /* NoteEditorView.swift in Sources */,
 				C1A0000000000000000002 /* NoteEditorViewModel.swift in Sources */,
+				C1A0000000000000000052 /* NoteDocumentsViewModel.swift in Sources */,
+				C1A0000000000000000053 /* MarkdownWebView.swift in Sources */,
 				C1A0000000000000000003 /* NoteDraftStore.swift in Sources */,
+				C1A0000000000000000051 /* NotePackComposer.swift in Sources */,
 				B200000000000000000000E1 /* AgentError.swift in Sources */,
 				B200000000000000000000E2 /* InputSource.swift in Sources */,
 				B200000000000000000000E3 /* OCRResult.swift in Sources */,

@@ -1,4 +1,6 @@
 import SwiftUI
+import AppKit
+import UniformTypeIdentifiers
 
 /// Easydict 风格主窗口：卡片式分区 + 顶部固定工具栏 + 语言方向条。
 ///
@@ -11,7 +13,9 @@ import SwiftUI
 struct MainWindowView: View {
     @EnvironmentObject private var controller: AppController
     @ObservedObject private var viewModel: ContentQueryViewModel
-    @ObservedObject private var noteViewModel: NoteEditorViewModel
+    @ObservedObject private var noteDocs: NoteDocumentsViewModel
+    /// 原料包导出读全量翻译历史(只读 results.jsonl)。
+    private let exportResultStore: JSONLResultStore
     @State private var showingHistory = false
     @State private var showingHotkeySettings = false
 
@@ -21,9 +25,11 @@ struct MainWindowView: View {
     private let dividerWidth: CGFloat = 8
 
     init(viewModel: ContentQueryViewModel,
-         noteViewModel: NoteEditorViewModel) {
+         noteDocs: NoteDocumentsViewModel,
+         exportResultStore: JSONLResultStore) {
         self.viewModel = viewModel
-        self.noteViewModel = noteViewModel
+        self.noteDocs = noteDocs
+        self.exportResultStore = exportResultStore
     }
 
     private var isLoading: Bool {
@@ -39,7 +45,7 @@ struct MainWindowView: View {
                 leftPane
                     .frame(width: clampedLeftWidth(total: geo.size.width))
                 splitDivider(total: geo.size.width)
-                NoteEditorView(viewModel: noteViewModel)
+                notePane
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
@@ -249,7 +255,7 @@ struct MainWindowView: View {
                     Text("query.loading").foregroundStyle(.secondary)
                 }
             case let .success(model):
-                resultHeader(text: resultText(model))
+                resultHeader(text: resultText(model), resultID: model.id)
                 Text(resultText(model))
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -272,7 +278,146 @@ struct MainWindowView: View {
         .card()
     }
 
-    private func resultHeader(text: String) -> some View {
+    // MARK: - 笔记区(多草稿 Tab + 历史 + 原料包导出)
+
+    private var notePane: some View {
+        VStack(spacing: 0) {
+            noteTabBar
+            Divider()
+            if let sel = noteDocs.selected {
+                // 用 id 强制 Tab 切换时重建 NoteEditorView,各自绑定
+                // 自己的 NoteEditorViewModel(隔离 text/saveStatus)。
+                NoteEditorView(viewModel: sel.editor)
+                    .id(sel.id)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                Spacer()
+            }
+        }
+        .background(Color(nsColor: .controlBackgroundColor))
+    }
+
+    private var noteTabBar: some View {
+        HStack(spacing: 6) {
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 4) {
+                    ForEach(noteDocs.tabs) { tab in
+                        noteTabChip(tab)
+                    }
+                }
+                .padding(.horizontal, 4)
+            }
+            Divider().frame(height: 18)
+            Button {
+                noteDocs.newDocument()
+            } label: {
+                Image(systemName: "plus")
+            }
+            .buttonStyle(.borderless)
+            .help("note.tab.new")
+
+            historyMenu
+
+            notePackExportButton
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+    }
+
+    private func noteTabChip(_ tab: NoteDocumentsViewModel.Tab) -> some View {
+        let isSel = tab.id == noteDocs.selectedID
+        return HStack(spacing: 4) {
+            Text(tab.title)
+                .font(.caption)
+                .lineLimit(1)
+                .frame(maxWidth: 140)
+            Button {
+                noteDocs.closeDocument(tab.id)
+            } label: {
+                Image(systemName: "xmark")
+                    .font(.system(size: 8, weight: .bold))
+            }
+            .buttonStyle(.borderless)
+            .help("note.tab.close")
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 4)
+        .background(isSel ? Color.accentColor.opacity(0.18)
+                          : Color.secondary.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 6))
+        .contentShape(Rectangle())
+        .onTapGesture { noteDocs.select(tab.id) }
+    }
+
+    private var historyMenu: some View {
+        Menu {
+            let items = noteDocs.history()
+            if items.isEmpty {
+                Text("note.history.empty")
+            } else {
+                ForEach(items) { it in
+                    Button(it.title) { noteDocs.openFromHistory(it.id) }
+                }
+            }
+        } label: {
+            Image(systemName: "clock.arrow.circlepath")
+        }
+        .menuStyle(.borderlessButton)
+        .fixedSize()
+        .help("note.history")
+    }
+
+    /// 导出原料包:当前 Tab 的草稿全文 + **它自己的** referencedResultIDs
+    /// → NotePackComposer(A 源追∪B 文本兜底)→ NSSavePanel 另存。
+    /// 绝不跨 Tab 取 result id(否则混入别草稿翻译历史)。
+    private var notePackExportButton: some View {
+        Button {
+            exportNotePack()
+        } label: {
+            Label("note.pack.export", systemImage: "shippingbox")
+                .labelStyle(.titleAndIcon)
+                .font(.caption)
+        }
+        .buttonStyle(.bordered)
+        .tint(.accentColor)
+        .help("note.pack.export.help")
+        .disabled(noteDocs.selected == nil)
+    }
+
+    private func exportNotePack() {
+        guard let sel = noteDocs.selected else { return }
+        let draft = sel.editor.text
+        let refIDs = sel.editor.referencedResultIDs
+        let allResults = (try? exportResultStore.readAll()) ?? []
+        let md = NotePackComposer.compose(
+            draft: draft,
+            referencedResultIDs: refIDs,
+            allResults: allResults)
+
+        let panel = NSSavePanel()
+        panel.allowedContentTypes = [.init(filenameExtension: "md") ?? .plainText]
+        panel.canCreateDirectories = true
+        panel.isExtensionHidden = false
+        let stamp = Self.packStampFormatter.string(from: Date())
+        panel.nameFieldStringValue = "note-pack-\(stamp).md"
+        panel.message = String(localized: "note.pack.export.help")
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        do {
+            try md.data(using: .utf8)?.write(to: url, options: .atomic)
+            sel.editor.markExported(to: url)
+        } catch {
+            sel.editor.markExportFailed()
+        }
+    }
+
+    private static let packStampFormatter: DateFormatter = {
+        let f = DateFormatter()
+        f.locale = Locale(identifier: "en_US_POSIX")
+        f.dateFormat = "yyyyMMdd-HHmmss"
+        return f
+    }()
+
+    private func resultHeader(text: String, resultID: UUID? = nil) -> some View {
         HStack {
             Image(systemName: "text.bubble.fill")
                 .foregroundStyle(.tint)
@@ -280,9 +425,11 @@ struct MainWindowView: View {
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.secondary)
             Spacer()
-            // 把当前译文插入右侧笔记编辑区（追加到尾部，补空行衔接）。
+            // 插入当前译文到右侧**选中 Tab** 的笔记草稿;同时登记来源
+            // result id(原料包 A 源追)。无选中 Tab 时按钮禁用。
             iconButton("text.insert", "note.insert_result") {
-                noteViewModel.insert(text)
+                noteDocs.selected?.editor.insert(
+                    text, sourceResultID: resultID)
             }
             .font(.subheadline)
             .disabled(text.trimmingCharacters(

@@ -29,11 +29,9 @@ struct NoteEditorView: View {
                         .scrollContentBackground(.hidden)
                         .padding(8)
                 case .preview:
-                    ScrollView {
-                        markdownPreview
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                            .padding(12)
-                    }
+                    // WKWebView + 离线 marked/highlight.js,全语法一致
+                    // (代码块/表格/嵌套/ASCII 图保留对齐)。
+                    MarkdownWebView(markdown: viewModel.text)
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -152,36 +150,4 @@ struct NoteEditorView: View {
         return f
     }()
 
-    // MARK: - Markdown 预览
-
-    /// SwiftUI 原生 Markdown：按行解析，空行成段。`AttributedString` 的
-    /// 单串 `.full` 解析会吃掉换行，逐行渲染才能保留 Markdown 块结构。
-    private var markdownPreview: some View {
-        let lines = viewModel.text.components(separatedBy: "\n")
-        return VStack(alignment: .leading, spacing: 6) {
-            if viewModel.text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                Text("note.preview.empty")
-                    .foregroundStyle(.secondary)
-            } else {
-                ForEach(Array(lines.enumerated()), id: \.offset) { _, line in
-                    if line.trimmingCharacters(in: .whitespaces).isEmpty {
-                        Spacer().frame(height: 6)
-                    } else {
-                        Text(Self.attributed(from: line))
-                            .textSelection(.enabled)
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                    }
-                }
-            }
-        }
-    }
-
-    /// 单行 → Markdown 行内 `AttributedString`，解析失败退化为纯文本
-    /// （绝不因渲染异常丢内容）。
-    private static func attributed(from line: String) -> AttributedString {
-        (try? AttributedString(
-            markdown: line,
-            options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)))
-            ?? AttributedString(line)
-    }
 }

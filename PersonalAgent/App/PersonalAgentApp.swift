@@ -8,7 +8,8 @@ struct PersonalAgentApp: App {
     var body: some Scene {
         WindowGroup {
             MainWindowView(viewModel: controller.queryViewModel,
-                            noteViewModel: controller.noteViewModel)
+                            noteDocs: controller.noteDocsViewModel,
+                            exportResultStore: controller.exportResultStore)
                 .environmentObject(controller)
                 .onAppear { controller.start() }
         }

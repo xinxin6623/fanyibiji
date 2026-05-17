@@ -147,7 +147,8 @@ final class ContentQueryViewModel: ObservableObject {
                 contextId: context.id,
                 provider: provider.id,
                 content: .text(assistant.text),
-                tags: assistant.model.map { ["model:\($0)"] } ?? []
+                tags: assistant.model.map { ["model:\($0)"] } ?? [],
+                sourceText: trimmed
             )
             try? store.append(model)
             state = .success(model)
@@ -282,7 +283,8 @@ final class ContentQueryViewModel: ObservableObject {
                 provider: translateProvider.id,
                 content: .text(result.text),
                 tags: [result.sourceLang, result.targetLang]
-                    .compactMap { $0 }.map { "lang:\($0)" }
+                    .compactMap { $0 }.map { "lang:\($0)" },
+                sourceText: trimmed
             )
             try? store.append(model)
             state = .success(model)
