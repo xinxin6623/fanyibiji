@@ -7,7 +7,8 @@ struct PersonalAgentApp: App {
 
     var body: some Scene {
         WindowGroup {
-            MainWindowView(viewModel: controller.queryViewModel)
+            MainWindowView(viewModel: controller.queryViewModel,
+                            noteViewModel: controller.noteViewModel)
                 .environmentObject(controller)
                 .onAppear { controller.start() }
         }

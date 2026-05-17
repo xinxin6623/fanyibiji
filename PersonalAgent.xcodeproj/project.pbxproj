@@ -27,6 +27,9 @@
 		B200000000000000000027 /* TINT2IntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000026 /* TINT2IntegrationTests.swift */; };
 		A10000000000000000000001 /* PersonalAgentApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000011 /* PersonalAgentApp.swift */; };
 		A10000000000000000000002 /* MainWindowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000012 /* MainWindowView.swift */; };
+		C1A0000000000000000001 /* NoteEditorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F0000000000000000001 /* NoteEditorView.swift */; };
+		C1A0000000000000000002 /* NoteEditorViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F0000000000000000002 /* NoteEditorViewModel.swift */; };
+		C1A0000000000000000003 /* NoteDraftStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F0000000000000000003 /* NoteDraftStore.swift */; };
 		A10000000000000000000003 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000013 /* Assets.xcassets */; };
 		A10000000000000000000004 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000014 /* Localizable.xcstrings */; };
 		A10000000000000000000005 /* PersonalAgentTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000015 /* PersonalAgentTests.swift */; };
@@ -44,6 +47,7 @@
 		B200000000000000000000EC /* JSONLResultStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000FC /* JSONLResultStore.swift */; };
 		B20000000000000000003D /* TTSSettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000003C /* TTSSettingsStore.swift */; };
 		B200000000000000000000ED /* T11aJSONLStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000FD /* T11aJSONLStoreTests.swift */; };
+		C1A0000000000000000004 /* TNoteEditorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1F0000000000000000004 /* TNoteEditorTests.swift */; };
 		B200000000000000000000EE /* LLMHTTPClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000FE /* LLMHTTPClient.swift */; };
 		B200000000000000000000EF /* OpenAICompatibleLLMProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000FF /* OpenAICompatibleLLMProvider.swift */; };
 		B200000000000000000000C2 /* T07aLLMProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000C3 /* T07aLLMProviderTests.swift */; };
@@ -110,6 +114,9 @@
 		B200000000000000000026 /* TINT2IntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TINT2IntegrationTests.swift; sourceTree = "<group>"; };
 		A10000000000000000000011 /* PersonalAgentApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalAgentApp.swift; sourceTree = "<group>"; };
 		A10000000000000000000012 /* MainWindowView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainWindowView.swift; sourceTree = "<group>"; };
+		C1F0000000000000000001 /* NoteEditorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteEditorView.swift; sourceTree = "<group>"; };
+		C1F0000000000000000002 /* NoteEditorViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteEditorViewModel.swift; sourceTree = "<group>"; };
+		C1F0000000000000000003 /* NoteDraftStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NoteDraftStore.swift; sourceTree = "<group>"; };
 		A10000000000000000000013 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		A10000000000000000000014 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		A10000000000000000000015 /* PersonalAgentTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalAgentTests.swift; sourceTree = "<group>"; };
@@ -129,6 +136,7 @@
 		B200000000000000000000FC /* JSONLResultStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JSONLResultStore.swift; sourceTree = "<group>"; };
 		B20000000000000000003C /* TTSSettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TTSSettingsStore.swift; sourceTree = "<group>"; };
 		B200000000000000000000FD /* T11aJSONLStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = T11aJSONLStoreTests.swift; sourceTree = "<group>"; };
+		C1F0000000000000000004 /* TNoteEditorTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TNoteEditorTests.swift; sourceTree = "<group>"; };
 		B200000000000000000000FE /* LLMHTTPClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LLMHTTPClient.swift; sourceTree = "<group>"; };
 		B200000000000000000000FF /* OpenAICompatibleLLMProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenAICompatibleLLMProvider.swift; sourceTree = "<group>"; };
 		B200000000000000000000C3 /* T07aLLMProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = T07aLLMProviderTests.swift; sourceTree = "<group>"; };
@@ -247,6 +255,8 @@
 				B200000000000000000036 /* TTSPlaybackViewModel.swift */,
 				B200000000000000000038 /* TTSPanelView.swift */,
 				A10000000000000000000012 /* MainWindowView.swift */,
+				C1F0000000000000000001 /* NoteEditorView.swift */,
+				C1F0000000000000000002 /* NoteEditorViewModel.swift */,
 				B200000000000000000000C5 /* ContentQueryViewModel.swift */,
 				B200000000000000000022 /* RegionSelectionController.swift */,
 				C20000000000000000000A /* HotkeySettingsView.swift */,
@@ -294,6 +304,7 @@
 			isa = PBXGroup;
 			children = (
 				B200000000000000000000FC /* JSONLResultStore.swift */,
+				C1F0000000000000000003 /* NoteDraftStore.swift */,
 				B20000000000000000003C /* TTSSettingsStore.swift */,
 				C20000000000000000001A /* LanguageSettingsStore.swift */,
 				C200000000000000000012 /* PromptSettingsStore.swift */,
@@ -402,6 +413,7 @@
 				B200000000000000000000F7 /* TCContractsTests.swift */,
 				B200000000000000000000FB /* T03ConfigTests.swift */,
 				B200000000000000000000FD /* T11aJSONLStoreTests.swift */,
+				C1F0000000000000000004 /* TNoteEditorTests.swift */,
 				B200000000000000000000C3 /* T07aLLMProviderTests.swift */,
 				B200000000000000000000AA /* T07bRetryTests.swift */,
 				B200000000000000000000C9 /* TUI1QueryFlowTests.swift */,
@@ -536,6 +548,9 @@
 			files = (
 				A10000000000000000000001 /* PersonalAgentApp.swift in Sources */,
 				A10000000000000000000002 /* MainWindowView.swift in Sources */,
+				C1A0000000000000000001 /* NoteEditorView.swift in Sources */,
+				C1A0000000000000000002 /* NoteEditorViewModel.swift in Sources */,
+				C1A0000000000000000003 /* NoteDraftStore.swift in Sources */,
 				B200000000000000000000E1 /* AgentError.swift in Sources */,
 				B200000000000000000000E2 /* InputSource.swift in Sources */,
 				B200000000000000000000E3 /* OCRResult.swift in Sources */,
@@ -599,6 +614,7 @@
 				B200000000000000000000E7 /* TCContractsTests.swift in Sources */,
 				B200000000000000000000EB /* T03ConfigTests.swift in Sources */,
 				B200000000000000000000ED /* T11aJSONLStoreTests.swift in Sources */,
+				C1A0000000000000000004 /* TNoteEditorTests.swift in Sources */,
 				B200000000000000000000C2 /* T07aLLMProviderTests.swift in Sources */,
 				B200000000000000000000A5 /* T07bRetryTests.swift in Sources */,
 				B200000000000000000000C8 /* TUI1QueryFlowTests.swift in Sources */,

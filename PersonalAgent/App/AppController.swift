@@ -15,6 +15,7 @@ final class AppController: ObservableObject {
 
     let queryViewModel: ContentQueryViewModel
     let ttsViewModel: TTSPlaybackViewModel
+    let noteViewModel: NoteEditorViewModel
 
     /// 最近一次采集链失败分类（nil 表示无未处理的权限/采集错误）。
     /// UI 据此决定是否显示权限引导横幅。
@@ -53,6 +54,7 @@ final class AppController: ObservableObject {
 
         self.queryViewModel = AppComposition.makeViewModel()
         self.ttsViewModel = AppComposition.makeTTSViewModel()
+        self.noteViewModel = AppComposition.makeNoteEditorViewModel()
         self.coordinator = P2IntegrationCoordinator(
             screenAuth: screenAuth,
             capture: ScreenCaptureCoordinator(
