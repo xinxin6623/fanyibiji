@@ -93,12 +93,17 @@ final class ContentQueryViewModel: ObservableObject {
         provider = newProvider
     }
 
-    /// 默认翻译目标语言。MVP 固定中文，可配置 UI 属后续任务。
-    /// `translateTargetLanguage`：LLM prompt 用的自然语言名（截屏路径）。
-    /// `translateTargetLangCode`：T09 provider 的 `tl` 语言代码（取词
-    /// 翻译路径，经 `languageHints` 传入）。
-    private let translateTargetLanguage = "中文"
-    nonisolated static let translateTargetLangCode = "zh"
+    /// 翻译目标语言（可在设置/语言方向条切换，持久化）。源语言始终
+    /// auto。`naturalName` 给 LLM 截屏翻译 prompt，`code` 给翻译
+    /// provider 的 `tl`。默认中文（与原写死值 "中文"/"zh" 兼容）。
+    @Published var targetLanguage: TargetLanguage = .chinese {
+        didSet { onTargetLanguageChange?(targetLanguage) }
+    }
+    /// 目标语言变更回调（AppController 注入：落盘持久化）。
+    var onTargetLanguageChange: ((TargetLanguage) -> Void)?
+
+    private var translateTargetLanguage: String { targetLanguage.naturalName }
+    private var translateTargetLangCode: String { targetLanguage.code }
 
     /// 运行一次查询（手动输入框，来源记为 `.manualInput`，问答语义）。
     func runQuery() async {
@@ -264,7 +269,7 @@ final class ContentQueryViewModel: ObservableObject {
         let context = QueryContext(
             sourceKind: sourceKind,
             inputText: trimmed,
-            languageHints: [Self.translateTargetLangCode],
+            languageHints: [translateTargetLangCode],
             userAction: .translate
         )
         lastAttempt = .init(rawText: text, sourceKind: sourceKind,

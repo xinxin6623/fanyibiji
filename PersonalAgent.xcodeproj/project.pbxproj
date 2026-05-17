@@ -67,6 +67,8 @@
 		B200000000000000000000B5 /* T06OCRTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000BA /* T06OCRTests.swift */; };
 		B200000000000000000000BB /* PasteboardReading.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000BE /* PasteboardReading.swift */; };
 		B200000000000000000000BC /* ClipboardTextGrabber.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000BF /* ClipboardTextGrabber.swift */; };
+		C200000000000000000017 /* LanguageConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = C200000000000000000018 /* LanguageConfig.swift */; };
+		C200000000000000000019 /* LanguageSettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000000000000000001A /* LanguageSettingsStore.swift */; };
 		C20000000000000000000F /* PromptConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = C200000000000000000010 /* PromptConfig.swift */; };
 		C200000000000000000011 /* PromptSettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C200000000000000000012 /* PromptSettingsStore.swift */; };
 		C200000000000000000001 /* SelectionTextGrabber.swift in Sources */ = {isa = PBXBuildFile; fileRef = C200000000000000000002 /* SelectionTextGrabber.swift */; };
@@ -75,6 +77,7 @@
 		C200000000000000000007 /* HotkeySettingsStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C200000000000000000008 /* HotkeySettingsStore.swift */; };
 		C200000000000000000009 /* HotkeySettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000000000000000000A /* HotkeySettingsView.swift */; };
 		B200000000000000000000BD /* T08ClipboardGrabTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000B0 /* T08ClipboardGrabTests.swift */; };
+		C20000000000000000001B /* T15LanguageConfigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000000000000000001C /* T15LanguageConfigTests.swift */; };
 		C200000000000000000013 /* T14PromptConfigTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C200000000000000000014 /* T14PromptConfigTests.swift */; };
 		C200000000000000000015 /* T14SystemPromptInjectionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C200000000000000000016 /* T14SystemPromptInjectionTests.swift */; };
 		C20000000000000000000B /* T13SelectionGrabTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000000000000000000C /* T13SelectionGrabTests.swift */; };
@@ -149,6 +152,8 @@
 		B200000000000000000000BA /* T06OCRTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = T06OCRTests.swift; sourceTree = "<group>"; };
 		B200000000000000000000BE /* PasteboardReading.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PasteboardReading.swift; sourceTree = "<group>"; };
 		B200000000000000000000BF /* ClipboardTextGrabber.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClipboardTextGrabber.swift; sourceTree = "<group>"; };
+		C200000000000000000018 /* LanguageConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanguageConfig.swift; sourceTree = "<group>"; };
+		C20000000000000000001A /* LanguageSettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanguageSettingsStore.swift; sourceTree = "<group>"; };
 		C200000000000000000010 /* PromptConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptConfig.swift; sourceTree = "<group>"; };
 		C200000000000000000012 /* PromptSettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptSettingsStore.swift; sourceTree = "<group>"; };
 		C200000000000000000002 /* SelectionTextGrabber.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SelectionTextGrabber.swift; sourceTree = "<group>"; };
@@ -157,6 +162,7 @@
 		C200000000000000000008 /* HotkeySettingsStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeySettingsStore.swift; sourceTree = "<group>"; };
 		C20000000000000000000A /* HotkeySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotkeySettingsView.swift; sourceTree = "<group>"; };
 		B200000000000000000000B0 /* T08ClipboardGrabTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = T08ClipboardGrabTests.swift; sourceTree = "<group>"; };
+		C20000000000000000001C /* T15LanguageConfigTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = T15LanguageConfigTests.swift; sourceTree = "<group>"; };
 		C200000000000000000014 /* T14PromptConfigTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = T14PromptConfigTests.swift; sourceTree = "<group>"; };
 		C200000000000000000016 /* T14SystemPromptInjectionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = T14SystemPromptInjectionTests.swift; sourceTree = "<group>"; };
 		C20000000000000000000C /* T13SelectionGrabTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = T13SelectionGrabTests.swift; sourceTree = "<group>"; };
@@ -289,6 +295,7 @@
 			children = (
 				B200000000000000000000FC /* JSONLResultStore.swift */,
 				B20000000000000000003C /* TTSSettingsStore.swift */,
+				C20000000000000000001A /* LanguageSettingsStore.swift */,
 				C200000000000000000012 /* PromptSettingsStore.swift */,
 				C200000000000000000008 /* HotkeySettingsStore.swift */,
 			);
@@ -302,6 +309,7 @@
 				B200000000000000000000F8 /* ProviderConfig.swift */,
 				B200000000000000000000F9 /* SecretStore.swift */,
 				B200000000000000000000FA /* ConfigStore.swift */,
+				C200000000000000000018 /* LanguageConfig.swift */,
 				C200000000000000000010 /* PromptConfig.swift */,
 				C200000000000000000006 /* HotkeyConfig.swift */,
 			);
@@ -401,6 +409,7 @@
 				B200000000000000000000C0 /* T05ScreenCaptureTests.swift */,
 				B200000000000000000000BA /* T06OCRTests.swift */,
 				B200000000000000000000B0 /* T08ClipboardGrabTests.swift */,
+				C20000000000000000001C /* T15LanguageConfigTests.swift */,
 				C200000000000000000014 /* T14PromptConfigTests.swift */,
 				C200000000000000000016 /* T14SystemPromptInjectionTests.swift */,
 				C20000000000000000000C /* T13SelectionGrabTests.swift */,
@@ -563,6 +572,8 @@
 				B200000000000000000000B3 /* OCRCoordinator.swift in Sources */,
 				B200000000000000000000B4 /* VisionTextRecognizer.swift in Sources */,
 				B200000000000000000000BB /* PasteboardReading.swift in Sources */,
+				C200000000000000000017 /* LanguageConfig.swift in Sources */,
+				C200000000000000000019 /* LanguageSettingsStore.swift in Sources */,
 				C20000000000000000000F /* PromptConfig.swift in Sources */,
 				C200000000000000000011 /* PromptSettingsStore.swift in Sources */,
 				C200000000000000000001 /* SelectionTextGrabber.swift in Sources */,
@@ -595,6 +606,7 @@
 				B200000000000000000000DC /* T05ScreenCaptureTests.swift in Sources */,
 				B200000000000000000000B5 /* T06OCRTests.swift in Sources */,
 				B200000000000000000000BD /* T08ClipboardGrabTests.swift in Sources */,
+				C20000000000000000001B /* T15LanguageConfigTests.swift in Sources */,
 				C200000000000000000013 /* T14PromptConfigTests.swift in Sources */,
 				C200000000000000000015 /* T14SystemPromptInjectionTests.swift in Sources */,
 				C20000000000000000000B /* T13SelectionGrabTests.swift in Sources */,

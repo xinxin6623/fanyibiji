@@ -3,9 +3,10 @@ import AppKit
 
 /// 快捷键录制控件：点击进入录制态，按下任意带 ⌘/⌃ 的组合键即捕获。
 ///
-/// 用 NSViewRepresentable 接一个 first-responder NSView 拿 keyDown
-/// （SwiftUI 无原生组合键捕获）。Esc 取消录制保持原值；非法组合
-/// （无 ⌘/⌃）忽略，继续等待合法输入。
+/// 关键点：带 ⌘ 的组合走 `performKeyEquivalent` 而非 `keyDown`，
+/// 只重写 keyDown 会被菜单吞掉录不到——必须重写 performKeyEquivalent
+/// 在录制态截获消费。0×0 视图无法成 firstResponder（要真实 frame +
+/// allowsHitTesting(false)）；makeFirstResponder 要 async 延后。
 struct KeyRecorderField: NSViewRepresentable {
     @Binding var binding: KeyBinding
     @Binding var recording: Bool
@@ -22,8 +23,6 @@ struct KeyRecorderField: NSViewRepresentable {
 
     func updateNSView(_ nsView: RecorderView, context: Context) {
         nsView.isRecording = recording
-        // 进入录制态后异步抢焦点：toggle 当帧 window/responder 链
-        // 可能未就绪，放到下一轮 runloop 才稳定拿到 firstResponder。
         if recording {
             DispatchQueue.main.async {
                 nsView.window?.makeFirstResponder(nsView)
@@ -31,12 +30,6 @@ struct KeyRecorderField: NSViewRepresentable {
         }
     }
 
-    /// 录制视图。关键点：
-    ///  - 有真实非零 frame（0×0 无法成为 firstResponder）；
-    ///  - 重写 `performKeyEquivalent` 拦截带 ⌘ 的组合键——否则
-    ///    ⌘C/⌘⇧D 这类会被当菜单快捷键吞掉，永远到不了 `keyDown`，
-    ///    这正是「录不到键」的根因；
-    ///  - 录制态下吞掉事件返回 true，不让其继续传播触发副作用。
     final class RecorderView: NSView {
         var onCapture: ((KeyBinding) -> Void)?
         var onCancel: (() -> Void)?
@@ -46,8 +39,6 @@ struct KeyRecorderField: NSViewRepresentable {
         override var canBecomeKeyView: Bool { true }
 
         override func performKeyEquivalent(with event: NSEvent) -> Bool {
-            // 录制态下，带修饰键的组合（含 ⌘）会先走 keyEquivalent，
-            // 必须在这里截获并消费，阻止系统/菜单处理。
             guard isRecording else {
                 return super.performKeyEquivalent(with: event)
             }
@@ -59,43 +50,64 @@ struct KeyRecorderField: NSViewRepresentable {
             _ = capture(event)
         }
 
-        /// 处理一次按键：Esc 取消；合法组合（带 ⌘/⌃）捕获；
-        /// 非法（无 ⌘/⌃）忽略并继续等待。返回是否已消费事件。
         private func capture(_ event: NSEvent) -> Bool {
             if event.keyCode == 53 { onCancel?(); return true } // Esc
             let mods = event.modifierFlags
                 .intersection(.deviceIndependentFlagsMask)
             let kb = KeyBinding(keyCode: event.keyCode,
                                 modifiers: mods.rawValue)
-            guard kb.isValid else { return true } // 吞掉但不捕获，继续等
+            guard kb.isValid else { return true }
             onCapture?(kb)
             return true
         }
     }
 }
 
-/// 快捷键设置面板（sheet 内容）。两组绑定各一个录制框，
-/// 重复绑定时给出提示（截屏 OCR 优先，划词会失效）。
+/// 设置面板：macOS 标准顶部 Tab + 每页分组列表（对齐 Easydict 设置）。
+/// 四个 Tab：通用(语言) / 快捷键 / 密钥 / 提示词。底部统一保存。
 struct HotkeySettingsView: View {
     @EnvironmentObject private var controller: AppController
     @Environment(\.dismiss) private var dismiss
+
+    private enum Tab: String, CaseIterable {
+        case general, hotkey, secret, prompt, tts
+        var titleKey: String {
+            switch self {
+            case .general: return "settings.tab.general"
+            case .hotkey:  return "settings.tab.hotkey"
+            case .secret:  return "settings.tab.secret"
+            case .prompt:  return "settings.tab.prompt"
+            case .tts:     return "settings.tab.tts"
+            }
+        }
+        var icon: String {
+            switch self {
+            case .general: return "gearshape"
+            case .hotkey:  return "command"
+            case .secret:  return "key"
+            case .prompt:  return "text.bubble"
+            case .tts:     return "speaker.wave.2"
+            }
+        }
+    }
+
+    @State private var tab: Tab = .general
 
     @State private var translateSelection: KeyBinding
     @State private var captureOCR: KeyBinding
     @State private var recordingTranslate = false
     @State private var recordingCapture = false
 
-    /// 密钥输入框的草稿值（key=Keychain account）。留空=不改动该项。
     @State private var secretDrafts: [String: String] = [:]
-    /// 各密钥是否已配置（保存后刷新，驱动"已配置/未配置"标记）。
     @State private var secretStatus: [AppController.SecretField] = []
-    /// 系统提示词草稿（编辑中，保存时写回）。
     @State private var systemPrompt: String
+    @State private var targetLanguage: TargetLanguage
 
     init(config: HotkeyConfig, promptConfig: PromptConfig) {
         _translateSelection = State(initialValue: config.translateSelection)
         _captureOCR = State(initialValue: config.captureOCR)
         _systemPrompt = State(initialValue: promptConfig.systemPrompt)
+        _targetLanguage = State(initialValue: .chinese)
     }
 
     private var hasConflict: Bool {
@@ -104,89 +116,129 @@ struct HotkeySettingsView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            Text("settings.hotkey.title")
-                .font(.title2).fontWeight(.semibold)
-
+        VStack(spacing: 0) {
+            tabBar
+            Divider()
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    row(titleKey: "settings.hotkey.translate_selection",
-                        hintKey: "settings.hotkey.translate_selection.hint",
-                        binding: $translateSelection,
-                        recording: $recordingTranslate)
-
-                    row(titleKey: "settings.hotkey.capture_ocr",
-                        hintKey: "settings.hotkey.capture_ocr.hint",
-                        binding: $captureOCR,
-                        recording: $recordingCapture)
-
-                    if hasConflict {
-                        Label("settings.hotkey.conflict",
-                              systemImage: "exclamationmark.triangle.fill")
-                            .font(.caption)
-                            .foregroundStyle(.orange)
+                    switch tab {
+                    case .general: generalPage
+                    case .hotkey:  hotkeyPage
+                    case .secret:  secretPage
+                    case .prompt:  promptPage
+                    case .tts:     ttsPage
                     }
-
-                    Divider()
-                    secretsSection
-
-                    Divider()
-                    promptSection
                 }
+                .padding(24)
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
             Divider()
-
-            HStack {
-                Button("settings.hotkey.reset") {
-                    translateSelection = .defaultTranslateSelection
-                    captureOCR = .defaultCaptureOCR
-                }
-                Spacer()
-                Button("settings.hotkey.cancel") { dismiss() }
-                    .keyboardShortcut(.cancelAction)
-                // 统一保存：快捷键 + 所有有草稿值的密钥一起存，
-                // 一个按钮管全部，避免"以为存了其实没存"。
-                Button("settings.hotkey.save") {
-                    controller.updateHotkeyConfig(HotkeyConfig(
-                        translateSelection: translateSelection,
-                        captureOCR: captureOCR))
-                    saveSecrets()
-                    controller.updatePromptConfig(
-                        PromptConfig(systemPrompt: systemPrompt))
-                    dismiss()
-                }
-                .keyboardShortcut(.defaultAction)
-                .disabled(hasConflict)
-            }
+            footer
         }
-        .padding(28)
-        .frame(width: 480, height: 640)
+        .frame(width: 520, height: 600)
+        .onAppear {
+            secretStatus = controller.secretFields()
+            targetLanguage = controller.languageConfig.target
+        }
     }
 
-    /// 密钥配置区：4 个 SecureField。已配置项 placeholder 显示
-    /// "已配置（留空不改）"，不回显明文。保存写 Keychain，ACL 自动
-    /// 绑定当前签名——这是根治反复弹密码的正解。
-    @ViewBuilder
-    private var secretsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("settings.secret.title")
-                .font(.headline)
-            Text("settings.secret.hint")
-                .font(.caption).foregroundStyle(.secondary)
+    // MARK: - 顶部 Tab 条
 
-            ForEach(secretStatus) { field in
+    private var tabBar: some View {
+        HStack(spacing: 4) {
+            ForEach(Tab.allCases, id: \.self) { t in
+                Button {
+                    tab = t
+                } label: {
+                    VStack(spacing: 4) {
+                        Image(systemName: t.icon).font(.title3)
+                        Text(LocalizedStringKey(t.titleKey))
+                            .font(.caption)
+                    }
+                    .frame(width: 76, height: 50)
+                    .background(tab == t
+                        ? Color.accentColor.opacity(0.15) : .clear)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(tab == t ? Color.accentColor : .secondary)
+            }
+            Spacer()
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+    }
+
+    // MARK: - 通用页（语言）
+
+    private var generalPage: some View {
+        settingsGroup("settings.general.lang_section") {
+            HStack {
+                Text("settings.general.target_lang")
+                Spacer()
+                Picker("", selection: $targetLanguage) {
+                    ForEach(TargetLanguage.allCases, id: \.self) { lang in
+                        Text(verbatim: "\(lang.flag) ")
+                            + Text(LocalizedStringKey(lang.displayNameKey))
+                    }
+                }
+                .labelsHidden()
+                .fixedSize()
+            }
+            Divider()
+            HStack {
+                Text("settings.general.source_lang")
+                Spacer()
+                Text("lang.auto_detect").foregroundStyle(.secondary)
+            }
+        }
+    }
+
+    // MARK: - 快捷键页
+
+    private var hotkeyPage: some View {
+        settingsGroup("settings.tab.hotkey") {
+            keyRow("settings.hotkey.translate_selection",
+                   "settings.hotkey.translate_selection.hint",
+                   binding: $translateSelection,
+                   recording: $recordingTranslate)
+            Divider()
+            keyRow("settings.hotkey.capture_ocr",
+                   "settings.hotkey.capture_ocr.hint",
+                   binding: $captureOCR,
+                   recording: $recordingCapture)
+            if hasConflict {
+                Divider()
+                Label("settings.hotkey.conflict",
+                      systemImage: "exclamationmark.triangle.fill")
+                    .font(.caption)
+                    .foregroundStyle(.orange)
+            }
+            Divider()
+            Button("settings.hotkey.reset") {
+                translateSelection = .defaultTranslateSelection
+                captureOCR = .defaultCaptureOCR
+            }
+            .controlSize(.small)
+        }
+    }
+
+    // MARK: - 密钥页
+
+    private var secretPage: some View {
+        settingsGroup("settings.secret.title", hint: "settings.secret.hint") {
+            ForEach(Array(secretStatus.enumerated()), id: \.element.id) { idx, field in
+                if idx > 0 { Divider() }
                 VStack(alignment: .leading, spacing: 4) {
                     HStack {
                         Text(LocalizedStringKey(field.titleKey))
                             .font(.subheadline)
                         if field.isSet {
                             Text("settings.secret.configured")
-                                .font(.caption2)
-                                .foregroundStyle(.green)
+                                .font(.caption2).foregroundStyle(.green)
                         } else {
                             Text("settings.secret.not_configured")
-                                .font(.caption2)
-                                .foregroundStyle(.orange)
+                                .font(.caption2).foregroundStyle(.orange)
                         }
                     }
                     SecureField(
@@ -199,15 +251,128 @@ struct HotkeySettingsView: View {
                         .textFieldStyle(.roundedBorder)
                 }
             }
-
+            Divider()
             Text("settings.secret.save_note")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
+                .font(.caption2).foregroundStyle(.secondary)
         }
-        .onAppear { secretStatus = controller.secretFields() }
     }
 
-    /// 只写有草稿值的项（留空=不动该项）。写完刷新状态、清草稿。
+    // MARK: - 提示词页
+
+    private var promptPage: some View {
+        settingsGroup("settings.prompt.title", hint: "settings.prompt.hint") {
+            TextEditor(text: $systemPrompt)
+                .font(.body)
+                .scrollContentBackground(.hidden)
+                .frame(minHeight: 200)
+                .overlay(RoundedRectangle(cornerRadius: 6)
+                    .stroke(Color.secondary.opacity(0.3)))
+            Divider()
+            Button("settings.prompt.reset") {
+                systemPrompt = PromptConfig.defaultSystemPrompt
+            }
+            .controlSize(.small)
+        }
+    }
+
+    // MARK: - TTS 页（语音合成设置，实时生效）
+
+    /// 引擎/发音人/口语化/语速/音量/音调。绑定 controller.ttsViewModel，
+    /// didSet 即时重建 provider + debounce 存盘，故不走底部统一保存。
+    private var ttsPage: some View {
+        let tts = controller.ttsViewModel
+        return settingsGroup("settings.tab.tts", hint: "settings.tts.hint") {
+            HStack {
+                Text("tts.engine")
+                Spacer()
+                Picker("", selection: Binding(
+                    get: { tts.engine },
+                    set: { tts.engine = $0 })) {
+                    Text("tts.engine.super").tag(TTSEngine.superHuman)
+                    Text("tts.engine.standard").tag(TTSEngine.standard)
+                }
+                .labelsHidden().fixedSize()
+            }
+            Divider()
+            HStack {
+                Text("tts.voice")
+                Spacer()
+                Picker("", selection: Binding(
+                    get: { tts.vcn },
+                    set: { tts.vcn = $0 })) {
+                    ForEach(TTSPlaybackViewModel.vcnOptions(for: tts.engine),
+                            id: \.value) { opt in
+                        Text(opt.label).tag(opt.value)
+                    }
+                }
+                .labelsHidden().fixedSize()
+            }
+            if tts.engine == .superHuman {
+                Divider()
+                HStack {
+                    Text("tts.oral")
+                    Spacer()
+                    Picker("", selection: Binding(
+                        get: { tts.oralLevel },
+                        set: { tts.oralLevel = $0 })) {
+                        Text("tts.oral.high").tag(TTSOralLevel.high)
+                        Text("tts.oral.mid").tag(TTSOralLevel.mid)
+                        Text("tts.oral.low").tag(TTSOralLevel.low)
+                    }
+                    .labelsHidden().fixedSize()
+                }
+            }
+            Divider()
+            ttsSlider("tts.speed",
+                      get: { tts.speed }, set: { tts.speed = $0 })
+            ttsSlider("tts.volume",
+                      get: { tts.volume }, set: { tts.volume = $0 })
+            ttsSlider("tts.pitch",
+                      get: { tts.pitch }, set: { tts.pitch = $0 })
+        }
+    }
+
+    @ViewBuilder
+    private func ttsSlider(_ titleKey: LocalizedStringKey,
+                           get: @escaping () -> Double,
+                           set: @escaping (Double) -> Void) -> some View {
+        HStack(spacing: 10) {
+            Text(titleKey)
+                .font(.caption).foregroundStyle(.secondary)
+                .frame(width: 44, alignment: .leading)
+            Slider(value: Binding(get: get, set: set),
+                   in: 0...100, step: 1)
+            Text("\(Int(get()))")
+                .font(.caption.monospacedDigit())
+                .foregroundStyle(.secondary)
+                .frame(width: 28, alignment: .trailing)
+        }
+    }
+
+    // MARK: - 底部统一保存
+
+    private var footer: some View {
+        HStack {
+            Spacer()
+            Button("settings.hotkey.cancel") { dismiss() }
+                .keyboardShortcut(.cancelAction)
+            Button("settings.hotkey.save") {
+                controller.updateHotkeyConfig(HotkeyConfig(
+                    translateSelection: translateSelection,
+                    captureOCR: captureOCR))
+                saveSecrets()
+                controller.updatePromptConfig(
+                    PromptConfig(systemPrompt: systemPrompt))
+                controller.updateLanguageConfig(
+                    LanguageConfig(target: targetLanguage))
+                dismiss()
+            }
+            .keyboardShortcut(.defaultAction)
+            .disabled(hasConflict)
+        }
+        .padding(16)
+    }
+
     private func saveSecrets() {
         for (key, value) in secretDrafts where
             !value.trimmingCharacters(in: .whitespaces).isEmpty {
@@ -217,49 +382,50 @@ struct HotkeySettingsView: View {
         secretStatus = controller.secretFields()
     }
 
-    /// 系统提示词编辑区。约束 LLM 查询行为（不影响翻译）。
-    /// 留空保存时由 store sanitize 回默认，不会让 LLM 失约束。
+    // MARK: - 复用零件
+
+    /// 分组卡：标题 + 可选说明 + 圆角容器内的行（对齐 Easydict 分区）。
     @ViewBuilder
-    private var promptSection: some View {
+    private func settingsGroup<Content: View>(
+        _ titleKey: LocalizedStringKey,
+        hint: LocalizedStringKey? = nil,
+        @ViewBuilder _ content: () -> Content) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("settings.prompt.title")
+            Text(titleKey)
                 .font(.headline)
-            Text("settings.prompt.hint")
-                .font(.caption).foregroundStyle(.secondary)
-
-            TextEditor(text: $systemPrompt)
-                .font(.body)
-                .frame(minHeight: 120)
-                .overlay(RoundedRectangle(cornerRadius: 6)
-                    .stroke(Color.secondary.opacity(0.3)))
-
-            Button("settings.prompt.reset") {
-                systemPrompt = PromptConfig.defaultSystemPrompt
+            if let hint {
+                Text(hint).font(.caption).foregroundStyle(.secondary)
             }
-            .font(.caption)
+            VStack(alignment: .leading, spacing: 10) {
+                content()
+            }
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color(nsColor: .controlBackgroundColor))
+            .clipShape(RoundedRectangle(cornerRadius: 10))
         }
     }
 
     @ViewBuilder
-    private func row(titleKey: LocalizedStringKey,
-                     hintKey: LocalizedStringKey,
-                     binding: Binding<KeyBinding>,
-                     recording: Binding<Bool>) -> some View {
+    private func keyRow(_ titleKey: LocalizedStringKey,
+                        _ hintKey: LocalizedStringKey,
+                        binding: Binding<KeyBinding>,
+                        recording: Binding<Bool>) -> some View {
         VStack(alignment: .leading, spacing: 6) {
-            Text(titleKey).font(.headline)
+            Text(titleKey).font(.subheadline.weight(.medium))
             Text(hintKey).font(.caption).foregroundStyle(.secondary)
             HStack {
                 ZStack {
                     RoundedRectangle(cornerRadius: 6)
                         .stroke(recording.wrappedValue
-                                ? Color.accentColor : Color.secondary.opacity(0.4),
+                                ? Color.accentColor
+                                : Color.secondary.opacity(0.4),
                                 lineWidth: recording.wrappedValue ? 2 : 1)
                         .frame(height: 32)
                     Text(recording.wrappedValue
                          ? String(localized: "settings.hotkey.press_keys")
                          : binding.wrappedValue.displayString)
                         .font(.body.monospaced())
-                    // 铺满录制框（0×0 无法成为 firstResponder）。
                     KeyRecorderField(binding: binding, recording: recording)
                         .frame(height: 32)
                         .allowsHitTesting(false)

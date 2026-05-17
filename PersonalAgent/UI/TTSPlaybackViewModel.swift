@@ -132,10 +132,15 @@ final class TTSPlaybackViewModel: NSObject, ObservableObject {
     }
 
     /// 合成并自动开始播放。重复点击会取消上一次。
-    func synthesizeAndPlay() {
+    /// 合成并播放指定文本。`text` 缺省读 `inputText`（向后兼容）；
+    /// 主窗口"朗读输入/朗读结果"按钮直接传对应文本，不再依赖
+    /// TTS 独立输入框（已移除）。空白文本静默不合成。
+    func synthesizeAndPlay(text overrideText: String? = nil) {
         synthesisTask?.cancel()
         stopPlayback()
-        let text = inputText
+        let text = (overrideText ?? inputText)
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !text.isEmpty else { state = .idle; return }
         state = .synthesizing
         synthesisTask = Task { [weak self] in
             guard let self else { return }
