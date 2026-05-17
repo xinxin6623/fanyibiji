@@ -1,5 +1,13 @@
 import SwiftUI
 
+/// Easydict 风格主窗口：卡片式分区 + 顶部固定工具栏 + 语言方向条。
+///
+/// 视觉重构（不动业务逻辑）：
+///  - 顶部工具栏：标题 + 设置齿轮（pin 等高级项暂不引入）
+///  - 查询卡：圆角分区，输入框 + 底部操作图标行（查询/截屏/取词/清除）
+///  - 语言方向条：源 `自动检测` ↔ 目标可选（驱动 viewModel.targetLanguage）
+///  - 结果卡：圆角分区，loading/成功/失败/历史各自成卡
+///  - TTS 卡：独立分区
 struct MainWindowView: View {
     @EnvironmentObject private var controller: AppController
     @ObservedObject private var viewModel: ContentQueryViewModel
@@ -10,109 +18,35 @@ struct MainWindowView: View {
         self.viewModel = viewModel
     }
 
+    private var isLoading: Bool {
+        if case .loading = viewModel.state { return true }
+        return false
+    }
+
+    // MARK: - Body
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                Text("app.title")
-                    .font(.largeTitle)
-                    .fontWeight(.semibold)
-                Spacer()
-                Button {
-                    showingHotkeySettings = true
-                } label: {
-                    Image(systemName: "gearshape")
-                        .font(.title2)
-                }
-                .buttonStyle(.plain)
-                .help("settings.hotkey.title")
-            }
-
-            if let category = controller.captureFailure {
-                permissionBanner(category)
-            }
-
-            Text("query.prompt")
-                .font(.headline)
-                .foregroundStyle(.secondary)
-
-            TextEditor(text: $viewModel.inputText)
-                .font(.body)
-                .frame(minHeight: 100)
-                .overlay(RoundedRectangle(cornerRadius: 6)
-                    .stroke(Color.secondary.opacity(0.3)))
-
-            HStack(spacing: 12) {
-                Button {
-                    viewModel.dispatch { await viewModel.runQuery() }
-                } label: {
-                    Text("query.run")
-                }
-                .keyboardShortcut(.return, modifiers: .command)
-                .disabled(isLoading)
-
-                Button {
-                    controller.triggerCapture()
-                } label: {
-                    Text("capture.run")
-                }
-                .disabled(isLoading)
-
-                if isLoading {
-                    ProgressView().controlSize(.small)
-                    if viewModel.canCancel {
-                        Button("query.cancel") { viewModel.cancelCurrent() }
-                    }
-                }
-            }
-
-            HStack(spacing: 12) {
-                Button {
-                    viewModel.dispatch { await viewModel.queryFromClipboard() }
-                } label: {
-                    Text("clipboard.query")
-                }
-                .disabled(isLoading)
-
-                Button {
-                    viewModel.dispatch {
-                        await viewModel.translateFromClipboard()
-                    }
-                } label: {
-                    Text("clipboard.translate")
-                }
-                .disabled(isLoading)
-
-                Button {
-                    showingHistory.toggle()
-                    if showingHistory { viewModel.loadHistory() }
-                } label: {
-                    Text(showingHistory ? "history.hide" : "history.show")
-                }
-            }
-
-            Text("capture.hint")
-                .font(.caption)
-                .foregroundStyle(.secondary)
-
+        VStack(spacing: 0) {
+            toolbar
             Divider()
-
-            Group {
-                if showingHistory {
-                    historyArea
-                } else {
-                    resultArea
+            ScrollView {
+                VStack(spacing: 14) {
+                    if let category = controller.captureFailure {
+                        permissionBanner(category)
+                    }
+                    queryCard
+                    languageBar
+                    Group {
+                        if showingHistory { historyCard } else { resultCard }
+                    }
+                    TTSPanelView(viewModel: controller.ttsViewModel)
+                        .card()
                 }
+                .padding(16)
             }
-            .frame(maxWidth: .infinity, alignment: .leading)
-
-            Divider()
-
-            TTSPanelView(viewModel: controller.ttsViewModel)
-
-            Spacer()
         }
-        .padding(28)
-        .frame(minWidth: 560, minHeight: 520)
+        .frame(minWidth: 560, minHeight: 560)
+        .background(Color(nsColor: .windowBackgroundColor))
         .sheet(isPresented: $showingHotkeySettings) {
             HotkeySettingsView(config: controller.hotkeyConfig,
                                promptConfig: controller.promptConfig)
@@ -120,9 +54,238 @@ struct MainWindowView: View {
         }
     }
 
-    private var isLoading: Bool {
-        if case .loading = viewModel.state { return true }
-        return false
+    // MARK: - 顶部工具栏
+
+    private var toolbar: some View {
+        HStack(spacing: 14) {
+            Image(systemName: "character.bubble")
+                .font(.title3)
+                .foregroundStyle(.tint)
+            Text("app.title")
+                .font(.headline)
+            Spacer()
+            Button {
+                showingHistory.toggle()
+                if showingHistory { viewModel.loadHistory() }
+            } label: {
+                Image(systemName: showingHistory
+                      ? "clock.fill" : "clock")
+                    .font(.title3)
+            }
+            .buttonStyle(.plain)
+            .help(showingHistory ? "history.hide" : "history.show")
+
+            Button {
+                showingHotkeySettings = true
+            } label: {
+                Image(systemName: "gearshape")
+                    .font(.title3)
+            }
+            .buttonStyle(.plain)
+            .help("settings.hotkey.title")
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+    }
+
+    // MARK: - 查询卡
+
+    private var queryCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            TextEditor(text: $viewModel.inputText)
+                .font(.body)
+                .scrollContentBackground(.hidden)
+                .frame(minHeight: 96)
+
+            Divider()
+
+            HStack(spacing: 16) {
+                iconButton("paperplane.fill", "query.run") {
+                    viewModel.dispatch { await viewModel.runQuery() }
+                }
+                .disabled(isLoading)
+
+                iconButton("camera.viewfinder", "capture.run") {
+                    controller.triggerCapture()
+                }
+                .disabled(isLoading)
+
+                iconButton("doc.on.clipboard", "clipboard.translate") {
+                    viewModel.dispatch {
+                        await viewModel.translateFromClipboard()
+                    }
+                }
+                .disabled(isLoading)
+
+                iconButton("brain", "clipboard.query") {
+                    viewModel.dispatch { await viewModel.queryFromClipboard() }
+                }
+                .disabled(isLoading)
+
+                Spacer()
+
+                if isLoading {
+                    ProgressView().controlSize(.small)
+                    if viewModel.canCancel {
+                        iconButton("xmark.circle.fill", "query.cancel") {
+                            viewModel.cancelCurrent()
+                        }
+                    }
+                } else if !viewModel.inputText.isEmpty {
+                    iconButton("xmark.circle", "query.clear") {
+                        viewModel.inputText = ""
+                    }
+                }
+            }
+            .font(.title3)
+        }
+        .card()
+    }
+
+    // MARK: - 语言方向条
+
+    private var languageBar: some View {
+        HStack {
+            // 源语言固定自动检测（provider 已 sl=auto），只读展示。
+            Label("lang.auto_detect", systemImage: "globe")
+                .font(.subheadline)
+                .foregroundStyle(.secondary)
+
+            Spacer()
+            Image(systemName: "arrow.right")
+                .foregroundStyle(.secondary)
+            Spacer()
+
+            // 目标语言可选 → 改 viewModel.targetLanguage（didSet 落盘）。
+            Picker(selection: $viewModel.targetLanguage) {
+                ForEach(TargetLanguage.allCases, id: \.self) { lang in
+                    Text(verbatim: "\(lang.flag) ")
+                        + Text(LocalizedStringKey(lang.displayNameKey))
+                }
+            } label: { EmptyView() }
+            .pickerStyle(.menu)
+            .fixedSize()
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(Color(nsColor: .controlBackgroundColor))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+    }
+
+    // MARK: - 结果卡
+
+    @ViewBuilder
+    private var resultCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            switch viewModel.state {
+            case .idle:
+                cardHint("query.idle")
+            case .loading:
+                HStack(spacing: 8) {
+                    ProgressView().controlSize(.small)
+                    Text("query.loading").foregroundStyle(.secondary)
+                }
+            case let .success(model):
+                resultHeader
+                Text(resultText(model))
+                    .textSelection(.enabled)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            case let .failure(category):
+                Label {
+                    Text(Self.messageKey(for: category))
+                } icon: {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                }
+                if viewModel.canRetry {
+                    Button("query.retry") {
+                        viewModel.dispatch { await viewModel.retryLast() }
+                    }
+                    .controlSize(.small)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .card()
+    }
+
+    private var resultHeader: some View {
+        HStack {
+            Image(systemName: "text.bubble.fill")
+                .foregroundStyle(.tint)
+            Text("result.title")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.secondary)
+            Spacer()
+        }
+    }
+
+    // MARK: - 历史卡
+
+    @ViewBuilder
+    private var historyCard: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack {
+                Image(systemName: "clock.fill").foregroundStyle(.tint)
+                Text("history.show").font(.subheadline.weight(.semibold))
+                Spacer()
+            }
+            if let cat = viewModel.historyError {
+                Label {
+                    Text(Self.messageKey(for: cat))
+                } icon: {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(.orange)
+                }
+            } else if viewModel.history.isEmpty {
+                cardHint("history.empty")
+            } else {
+                ForEach(viewModel.history, id: \.id) { item in
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack {
+                            Text(item.provider)
+                                .font(.caption.monospaced())
+                                .foregroundStyle(.secondary)
+                            if item.error != nil {
+                                Text("history.failed_tag")
+                                    .font(.caption2)
+                                    .foregroundStyle(.orange)
+                            }
+                            Spacer()
+                            Text(item.createdAt, style: .date)
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                        Text(resultText(item).isEmpty
+                             ? "—" : resultText(item))
+                            .font(.body)
+                            .textSelection(.enabled)
+                            .lineLimit(4)
+                        Divider()
+                    }
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .card()
+    }
+
+    // MARK: - 复用零件
+
+    private func iconButton(_ systemName: String,
+                            _ helpKey: LocalizedStringKey,
+                            _ action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+        }
+        .buttonStyle(.plain)
+        .help(helpKey)
+    }
+
+    private func cardHint(_ key: LocalizedStringKey) -> some View {
+        Text(key)
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     @ViewBuilder
@@ -140,84 +303,13 @@ struct MainWindowView: View {
                 Button("permission.open_settings") {
                     controller.openPrivacySettings()
                 }
+                .controlSize(.small)
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(12)
         .background(Color.orange.opacity(0.12))
-        .clipShape(RoundedRectangle(cornerRadius: 8))
-    }
-
-    @ViewBuilder
-    private var resultArea: some View {
-        switch viewModel.state {
-        case .idle:
-            Text("query.idle").foregroundStyle(.secondary)
-        case .loading:
-            Text("query.loading").foregroundStyle(.secondary)
-        case let .success(model):
-            ScrollView {
-                Text(resultText(model))
-                    .textSelection(.enabled)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            }
-        case let .failure(category):
-            VStack(alignment: .leading, spacing: 10) {
-                Label {
-                    Text(Self.messageKey(for: category))
-                } icon: {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundStyle(.orange)
-                }
-                if viewModel.canRetry {
-                    Button("query.retry") {
-                        viewModel.dispatch { await viewModel.retryLast() }
-                    }
-                }
-            }
-        }
-    }
-
-    @ViewBuilder
-    private var historyArea: some View {
-        if let cat = viewModel.historyError {
-            Label {
-                Text(Self.messageKey(for: cat))
-            } icon: {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .foregroundStyle(.orange)
-            }
-        } else if viewModel.history.isEmpty {
-            Text("history.empty").foregroundStyle(.secondary)
-        } else {
-            ScrollView {
-                LazyVStack(alignment: .leading, spacing: 10) {
-                    ForEach(viewModel.history, id: \.id) { item in
-                        VStack(alignment: .leading, spacing: 2) {
-                            HStack {
-                                Text(item.provider)
-                                    .font(.caption.monospaced())
-                                    .foregroundStyle(.secondary)
-                                if item.error != nil {
-                                    Text("history.failed_tag")
-                                        .font(.caption2)
-                                        .foregroundStyle(.orange)
-                                }
-                                Spacer()
-                                Text(item.createdAt, style: .date)
-                                    .font(.caption2)
-                                    .foregroundStyle(.secondary)
-                            }
-                            Text(resultText(item).isEmpty
-                                 ? "—" : resultText(item))
-                                .font(.body)
-                                .textSelection(.enabled)
-                                .lineLimit(4)
-                        }
-                        Divider()
-                    }
-                }
-            }
-        }
+        .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 
     private func resultText(_ model: ResultModel) -> String {
@@ -239,4 +331,19 @@ struct MainWindowView: View {
         case .unknown:          return "error.unknown"
         }
     }
+}
+
+/// 统一卡片容器修饰：圆角 + 背景 + 内边距，对齐 Easydict 卡片观感。
+private struct CardModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .padding(14)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color(nsColor: .controlBackgroundColor))
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+    }
+}
+
+private extension View {
+    func card() -> some View { modifier(CardModifier()) }
 }

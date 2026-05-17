@@ -26,10 +26,13 @@ final class AppController: ObservableObject {
     private let selectionGrabber: SelectionTextGrabber
     private let hotkeyStore: HotkeySettingsStore
     private let promptStore: PromptSettingsStore
+    private let languageStore: LanguageSettingsStore
     private let secrets: SecretStore
 
     /// 当前系统提示词配置（设置界面读这个回显，保存后重建 LLM）。
     @Published private(set) var promptConfig: PromptConfig
+    /// 当前语言配置（设置/语言方向条读这个回显）。
+    @Published private(set) var languageConfig: LanguageConfig
     private var captureTask: Task<Void, Never>?
     private var selectionTask: Task<Void, Never>?
 
@@ -65,6 +68,11 @@ final class AppController: ObservableObject {
             fileURL: AppComposition.promptSettingsFileURL())
         self.promptStore = pStore
         self.promptConfig = pStore.load()
+        let lStore = LanguageSettingsStore(
+            fileURL: AppComposition.languageSettingsFileURL())
+        let lConfig = lStore.load()
+        self.languageStore = lStore
+        self.languageConfig = lConfig
         self.secrets = KeychainSecretStore()
         self.hotkeyConfig = config
         self.hotkey = GlobalHotkeyMonitor(
@@ -82,6 +90,14 @@ final class AppController: ObservableObject {
     /// 发，比 SwiftUI scenePhase 可靠），用户在系统设置授权辅助功能后
     /// 切回本 App 即重试装热键，无需重启。
     func start() {
+        // 把持久化的目标语言注入 ViewModel，并接变更回调落盘
+        // （语言方向条切换 → didSet → 这里 → store.save）。
+        queryViewModel.targetLanguage = languageConfig.target
+        queryViewModel.onTargetLanguageChange = { [weak self] lang in
+            guard let self else { return }
+            self.languageConfig = LanguageConfig(target: lang)
+            try? self.languageStore.save(self.languageConfig)
+        }
         hotkey.onCaptureOCR = { [weak self] in
             Task { @MainActor in self?.triggerCapture() }
         }
@@ -219,6 +235,13 @@ final class AppController: ObservableObject {
         } catch {
             return false
         }
+    }
+
+    /// 保存语言配置：写盘 + 推到 ViewModel（语言方向条同步生效）。
+    func updateLanguageConfig(_ config: LanguageConfig) {
+        languageConfig = config
+        try? languageStore.save(config)
+        queryViewModel.targetLanguage = config.target
     }
 
     /// 保存系统提示词：写盘 + 重建 LLM provider（立即生效，无需

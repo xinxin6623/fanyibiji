@@ -83,6 +83,17 @@ enum AppComposition {
             .appendingPathComponent("hotkey-config.json")
     }
 
+    /// 语言配置持久化文件，与其它 config 同目录。
+    static func languageSettingsFileURL() -> URL {
+        let base = (try? FileManager.default.url(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask, appropriateFor: nil, create: true))
+            ?? FileManager.default.temporaryDirectory
+        return base
+            .appendingPathComponent("com.james.personalagent", isDirectory: true)
+            .appendingPathComponent("language-config.json")
+    }
+
     /// 系统提示词配置持久化文件，与其它 config 同目录。
     static func promptSettingsFileURL() -> URL {
         let base = (try? FileManager.default.url(
