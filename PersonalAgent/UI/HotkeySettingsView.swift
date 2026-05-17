@@ -95,8 +95,10 @@ struct HotkeySettingsView: View {
 
     @State private var translateSelection: KeyBinding
     @State private var captureOCR: KeyBinding
+    @State private var selectionToNote: KeyBinding
     @State private var recordingTranslate = false
     @State private var recordingCapture = false
+    @State private var recordingToNote = false
 
     @State private var secretDrafts: [String: String] = [:]
     @State private var secretStatus: [AppController.SecretField] = []
@@ -106,13 +108,19 @@ struct HotkeySettingsView: View {
     init(config: HotkeyConfig, promptConfig: PromptConfig) {
         _translateSelection = State(initialValue: config.translateSelection)
         _captureOCR = State(initialValue: config.captureOCR)
+        _selectionToNote = State(initialValue: config.selectionToNote)
         _systemPrompt = State(initialValue: promptConfig.systemPrompt)
         _targetLanguage = State(initialValue: .chinese)
     }
 
+    /// 三组绑定两两不可相同（任一对撞键即冲突，禁用保存）。
     private var hasConflict: Bool {
-        translateSelection.keyCode == captureOCR.keyCode &&
-        translateSelection.modifierFlags == captureOCR.modifierFlags
+        func same(_ a: KeyBinding, _ b: KeyBinding) -> Bool {
+            a.keyCode == b.keyCode && a.modifierFlags == b.modifierFlags
+        }
+        return same(translateSelection, captureOCR)
+            || same(translateSelection, selectionToNote)
+            || same(captureOCR, selectionToNote)
     }
 
     var body: some View {
@@ -207,6 +215,11 @@ struct HotkeySettingsView: View {
                    "settings.hotkey.capture_ocr.hint",
                    binding: $captureOCR,
                    recording: $recordingCapture)
+            Divider()
+            keyRow("settings.hotkey.selection_to_note",
+                   "settings.hotkey.selection_to_note.hint",
+                   binding: $selectionToNote,
+                   recording: $recordingToNote)
             if hasConflict {
                 Divider()
                 Label("settings.hotkey.conflict",
@@ -218,6 +231,7 @@ struct HotkeySettingsView: View {
             Button("settings.hotkey.reset") {
                 translateSelection = .defaultTranslateSelection
                 captureOCR = .defaultCaptureOCR
+                selectionToNote = .defaultSelectionToNote
             }
             .controlSize(.small)
         }
@@ -359,7 +373,8 @@ struct HotkeySettingsView: View {
             Button("settings.hotkey.save") {
                 controller.updateHotkeyConfig(HotkeyConfig(
                     translateSelection: translateSelection,
-                    captureOCR: captureOCR))
+                    captureOCR: captureOCR,
+                    selectionToNote: selectionToNote))
                 saveSecrets()
                 controller.updatePromptConfig(
                     PromptConfig(systemPrompt: systemPrompt))

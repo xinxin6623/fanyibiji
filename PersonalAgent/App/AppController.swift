@@ -78,7 +78,7 @@ final class AppController: ObservableObject {
         let lConfig = lStore.load()
         self.languageStore = lStore
         self.languageConfig = lConfig
-        self.secrets = KeychainSecretStore()
+        self.secrets = AppComposition.makeSecretStore()
         self.hotkeyConfig = config
         self.hotkey = GlobalHotkeyMonitor(
             authorizer: accessibility, config: config)
@@ -108,6 +108,9 @@ final class AppController: ObservableObject {
         }
         hotkey.onTranslateSelection = { [weak self] in
             Task { @MainActor in self?.triggerSelectionTranslate() }
+        }
+        hotkey.onSelectionToNote = { [weak self] in
+            Task { @MainActor in self?.triggerSelectionToNote() }
         }
         NotificationCenter.default.addObserver(
             forName: NSApplication.didBecomeActiveNotification,
@@ -182,6 +185,36 @@ final class AppController: ObservableObject {
                 await queryViewModel.runQuery(
                     with: text, sourceKind: .selectedText,
                     action: .translate)
+            case .failure:
+                // 无选中/空白：静默，不打扰用户。
+                break
+            }
+        }
+    }
+
+    /// 触发一次「划词进草稿」：模拟 ⌘C 取选中文字 → 原文直接追加到
+    /// 当前选中的草稿 Tab（不走翻译/LLM，纯摘录沉淀，James 决策）。
+    /// 串行：进行中再次触发被忽略。抓不到选中文字静默不做事
+    /// （与划词翻译一致，不弹窗不抢焦点）。成功后把主窗口调到前台
+    /// 并切到该草稿 Tab，便于立即查看/续写。
+    func triggerSelectionToNote() {
+        guard selectionTask == nil else { return }
+        selectionTask = Task { @MainActor in
+            defer { selectionTask = nil }
+            switch await selectionGrabber.grab() {
+            case .success(let text):
+                let trimmed = text.trimmingCharacters(
+                    in: .whitespacesAndNewlines)
+                guard !trimmed.isEmpty else { break }
+                // 没有打开的草稿 Tab 时先开一个，保证摘录有去处。
+                if noteDocsViewModel.selected == nil {
+                    noteDocsViewModel.newDocument()
+                }
+                guard let tab = noteDocsViewModel.selected else { break }
+                tab.editor.insert(trimmed)
+                // 摘录完把窗口调前台并切到该草稿 Tab（James 决策）。
+                noteDocsViewModel.select(tab.id)
+                NSApp.activate(ignoringOtherApps: true)
             case .failure:
                 // 无选中/空白：静默，不打扰用户。
                 break
