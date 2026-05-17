@@ -6,24 +6,24 @@ _branch: main_
 
 ## 任务
 PersonalAgent 加划词翻译（Easydict 式）+ 统一设置体系（快捷键/密钥/系统提示词均可配置持久化），
-并修掉过程中暴露的 5 个 bug。功能与测试全部完成，处于「用户验收中、改动未提交」状态。
+并修掉过程中暴露的 5 个 bug。**已全部完成并验收通过，5 主题 commit 推送，PR #1 待合并。**
 
 ## 当前进度
-- [x] 划词翻译（SelectionTextGrabber + 模拟⌘C，已真机验收通过）
-- [x] 快捷键自定义（KeyRecorder 已验收通过）
-- [x] 密钥进设置（已验收：能存、显示"已配置"，弹密码问题解决）
-- [x] LLM provider 重建（已验收：查询通了）
-- [x] 系统提示词功能（PromptConfig + 注入 + 设置 UI，测试全绿）
-- [~] 用户正在验收「发起查询」的系统提示词实际效果（待用户反馈）
-- [ ] 24 文件改动提交（等验收通过）
+- [x] 划词翻译（已真机验收通过）
+- [x] 快捷键自定义（已验收通过）
+- [x] 密钥进设置 + 修弹密码（已验收通过）
+- [x] LLM provider 重建（已验收）
+- [x] 系统提示词功能 + 「发起查询」效果（用户验收通过 2026-05-17）
+- [x] 5 主题 commit 推送 feat/selection-translate-settings
+- [x] PR #1 已创建
 
 ## 下一步
-1. 等用户确认「发起查询」按系统提示词风格回答（简洁/中文/不闲聊）
-2. 验收通过后整理 commit，建议按主题拆 5 个：
-   划词翻译 / 快捷键设置 / 密钥设置UI / 系统提示词 / bug修复(codable+keychain+keyrecorder+provider重建+测试宿主)
-3. commit 信息末尾加 `Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>`，按需 push
 
-如验收发现问题，常见排查见「上下文要点」。
+当前没有必须接力的工程下一步——功能闭环、测试绿、验收通过、PR 已开。
+
+如需继续，可选动作：
+1. 合并 PR #1（https://github.com/xinxin6623/fanyibiji/pull/1）后删分支、回 main
+2. 合并后 `git checkout main && git pull` 同步主干
 
 ## 关键文件 / 路径
 - 划词：`PersonalAgent/Core/Input/SelectionTextGrabber.swift`、`SystemCopyKeystrokeSender.swift`

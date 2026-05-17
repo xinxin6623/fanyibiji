@@ -446,12 +446,12 @@ T00 文档骨架、T01 MVP PRD、T02 SwiftUI 骨架均已 DONE 并通过构建�
   纯色正常截图理论上可能误报（阈值 tolerance=8 已留余量，可调）；
   TTS（§8-6）已随 T10（双引擎）收口，错误经 `AgentError` 统一映射。
 
-### T13 划词翻译 + 设置体系（P5 增量，DONE 待提交）
+### T13 划词翻译 + 设置体系（P5 增量，DONE 已验收推送）
 
 - 阶段：MVP 后增量（2026-05-17，James 逐项提需求驱动）。
 - 目标：选中文字按快捷键直接翻译（Easydict 式）；快捷键/密钥/系统
   提示词三类设置统一进齿轮 sheet，可改可持久化。
-- 状态：**功能+单测完成、全量测试绿、用户验收中、改动未提交**。
+- 状态：**全部真机验收通过，5 主题 commit 推送，PR #1**。
 - 交付物：
   - 划词：`Core/Input/SelectionTextGrabber.swift`（模拟 ⌘C + 还原
     剪贴板，抓不到静默）、`SystemCopyKeystrokeSender.swift`（CGEvent）。
@@ -465,11 +465,11 @@ T00 文档骨架、T01 MVP PRD、T02 SwiftUI 骨架均已 DONE 并通过构建�
   - 测试：`PersonalAgentTests/T13{SelectionGrab,HotkeySettings}Tests.swift`。
 - 验收：划词/快捷键/密钥均真机验收通过。
 
-### T14 LLM 系统提示词（P5 增量，DONE 待提交）
+### T14 LLM 系统提示词（P5 增量，DONE 已验收推送）
 
 - 目标：LLM 查询加系统提示词约束（默认简洁助手、中文优先），
   可在设置里改并持久化；只约束 LLM 查询，不影响免费翻译通道。
-- 状态：**功能+单测完成、测试绿、用户验收 LLM 查询效果中、未提交**。
+- 状态：**功能完成、测试绿、用户验收通过（2026-05-17），PR #1**。
 - 交付物：`Core/Config/PromptConfig.swift`、
   `Core/Persistence/PromptSettingsStore.swift`，
   `OpenAICompatibleLLMProvider` messages 注入 system role（空退化原
