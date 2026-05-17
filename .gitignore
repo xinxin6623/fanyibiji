@@ -16,6 +16,9 @@ xcuserdata/
 # macOS metadata
 .DS_Store
 
+# Claude Code local tooling (memory/state, not for version control)
+.claude/
+
 # Local secrets and machine config
 .env
 .env.*

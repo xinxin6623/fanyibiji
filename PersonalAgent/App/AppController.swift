@@ -15,7 +15,9 @@ final class AppController: ObservableObject {
 
     let queryViewModel: ContentQueryViewModel
     let ttsViewModel: TTSPlaybackViewModel
-    let noteViewModel: NoteEditorViewModel
+    let noteDocsViewModel: NoteDocumentsViewModel
+    /// 原料包导出读全量翻译历史用(只读 results.jsonl)。
+    let exportResultStore: JSONLResultStore
 
     /// 最近一次采集链失败分类（nil 表示无未处理的权限/采集错误）。
     /// UI 据此决定是否显示权限引导横幅。
@@ -54,7 +56,8 @@ final class AppController: ObservableObject {
 
         self.queryViewModel = AppComposition.makeViewModel()
         self.ttsViewModel = AppComposition.makeTTSViewModel()
-        self.noteViewModel = AppComposition.makeNoteEditorViewModel()
+        self.noteDocsViewModel = AppComposition.makeNoteDocumentsViewModel()
+        self.exportResultStore = AppComposition.makeResultStoreForExport()
         self.coordinator = P2IntegrationCoordinator(
             screenAuth: screenAuth,
             capture: ScreenCaptureCoordinator(

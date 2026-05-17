@@ -40,6 +40,13 @@ final class NoteEditorViewModel: ObservableObject {
     @Published private(set) var saveStatus: SaveStatus = .clean
 
     private let store: NoteDraftStore
+    /// 本草稿在 notes/ 下的 id(决定读写哪个文件 + sidecar)。
+    let draftID: UUID
+    /// 本草稿「插入到编辑区」记录过的来源 result id(原料包 A 源追)。
+    /// D1-b:只记 id 集合,不记字符区间——编辑不影响,导出本就给下游
+    /// 再加工,不需字符级精确。变更即随 sidecar 持久化。
+    private(set) var referencedResultIDs: Set<UUID> = []
+
     private var autosaveTask: Task<Void, Never>?
     private var loadingFromDisk = false
 
@@ -51,8 +58,10 @@ final class NoteEditorViewModel: ObservableObject {
     /// 自动保存防抖窗口（停止输入后多久落盘）。
     private let autosaveDelay: Duration = .milliseconds(1500)
 
-    init(store: NoteDraftStore) {
+    init(store: NoteDraftStore, draftID: UUID) {
         self.store = store
+        self.draftID = draftID
+        self.referencedResultIDs = store.loadSourceIDs(id: draftID)
         loadDraft()
     }
 
@@ -62,7 +71,7 @@ final class NoteEditorViewModel: ObservableObject {
         loadingFromDisk = true
         defer { loadingFromDisk = false }
         do {
-            let loaded = try store.load()
+            let loaded = try store.load(id: draftID)
             text = loaded
             lastPersistedText = loaded
             saveStatus = .clean
@@ -77,7 +86,15 @@ final class NoteEditorViewModel: ObservableObject {
     /// 视图传 `at:` 时按字符偏移插入到光标处。插入算用户改动 → 触发
     /// 防抖自动保存。返回插入后光标应落的字符偏移，供视图回设选区。
     @discardableResult
-    func insert(_ snippet: String, at offset: Int? = nil) -> Int {
+    func insert(_ snippet: String,
+                at offset: Int? = nil,
+                sourceResultID: UUID? = nil) -> Int {
+        // 记来源 id(原料包 A 源追)。即便 snippet 为空也先登记——
+        // 用户点了「插入」即视为引用该结果。集合变更立即写 sidecar。
+        if let sid = sourceResultID, referencedResultIDs.contains(sid) == false {
+            referencedResultIDs.insert(sid)
+            try? store.saveSourceIDs(id: draftID, ids: referencedResultIDs)
+        }
         guard !snippet.isEmpty else { return offset ?? text.count }
         // 衔接处补换行：尾部插入且已有内容不以换行结尾时，前置空行。
         let chars = Array(text)
@@ -140,7 +157,7 @@ final class NoteEditorViewModel: ObservableObject {
         }
         saveStatus = .saving
         do {
-            try store.save(text)
+            try store.save(id: draftID, text: text)
             lastPersistedText = text
             saveStatus = .saved(Date())
         } catch let error as AgentError {
