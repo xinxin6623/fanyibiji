@@ -4,6 +4,7 @@ struct MainWindowView: View {
     @EnvironmentObject private var controller: AppController
     @ObservedObject private var viewModel: ContentQueryViewModel
     @State private var showingHistory = false
+    @State private var showingHotkeySettings = false
 
     init(viewModel: ContentQueryViewModel) {
         self.viewModel = viewModel
@@ -11,9 +12,20 @@ struct MainWindowView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("app.title")
-                .font(.largeTitle)
-                .fontWeight(.semibold)
+            HStack {
+                Text("app.title")
+                    .font(.largeTitle)
+                    .fontWeight(.semibold)
+                Spacer()
+                Button {
+                    showingHotkeySettings = true
+                } label: {
+                    Image(systemName: "gearshape")
+                        .font(.title2)
+                }
+                .buttonStyle(.plain)
+                .help("settings.hotkey.title")
+            }
 
             if let category = controller.captureFailure {
                 permissionBanner(category)
@@ -43,7 +55,6 @@ struct MainWindowView: View {
                 } label: {
                     Text("capture.run")
                 }
-                .keyboardShortcut("d", modifiers: [.command, .shift])
                 .disabled(isLoading)
 
                 if isLoading {
@@ -102,6 +113,11 @@ struct MainWindowView: View {
         }
         .padding(28)
         .frame(minWidth: 560, minHeight: 520)
+        .sheet(isPresented: $showingHotkeySettings) {
+            HotkeySettingsView(config: controller.hotkeyConfig,
+                               promptConfig: controller.promptConfig)
+                .environmentObject(controller)
+        }
     }
 
     private var isLoading: Bool {

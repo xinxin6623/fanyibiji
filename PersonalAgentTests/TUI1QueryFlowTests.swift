@@ -23,6 +23,9 @@ struct NoopTranslateProvider: TranslateProvider {
 struct SharedStubPasteboard: PasteboardReading {
     let value: String?
     func readString() -> String? { value }
+    var changeCount: Int { 0 }
+    func writeString(_ value: String) {}
+    func clearContents() {}
 }
 
 @MainActor

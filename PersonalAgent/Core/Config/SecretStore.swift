@@ -58,6 +58,12 @@ struct KeychainSecretStore: SecretStore {
         }
         var attributes = baseQuery(key)
         attributes[kSecValueData as String] = data
+        // 关键：只在写入(SecItemAdd)时设可访问性，不能进 baseQuery
+        // ——它同时用于读/删查询，带 kSecAttrAccessible 会匹配不到。
+        // AfterFirstUnlock：开机首次解锁后本进程免密访问，不再每个
+        // key 项各弹一次系统密码框（开发期 rebuild 后 ACL 失效的根因）。
+        attributes[kSecAttrAccessible as String] =
+            kSecAttrAccessibleAfterFirstUnlock
         let addStatus = SecItemAdd(attributes as CFDictionary, nil)
         guard addStatus == errSecSuccess else {
             throw KeychainSecretStore.persistenceError(addStatus)
