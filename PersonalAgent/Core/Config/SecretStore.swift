@@ -109,6 +109,34 @@ final class FileSecretStore: SecretStore, @unchecked Sendable {
         self.fileURL = fileURL
     }
 
+    /// 一次性迁移：把旧 `KeychainSecretStore` 里仍存在、而本文件**还
+    /// 没有**的 key 读出来加密落新文件。幂等——已迁移/新文件已有则
+    /// 跳过该 key，故每次启动调都安全。读旧 Keychain 这一步可能弹一
+    /// 次系统密码框（仅迁移当次；迁完后全部走文件，永不再弹）。
+    /// 任何单个 key 迁移失败（旧库读不到/写盘错）只跳过它、不抛、不
+    /// 阻断启动——缺的那项 UI 仍显示「未配置」引导重填。
+    /// 返回实际迁移成功的 key 数（0 表示无需迁移或全失败，调用方仅
+    /// 用于日志/无副作用）。
+    @discardableResult
+    func migrateFromKeychainIfNeeded(
+        keys: [String],
+        legacy: SecretStore) -> Int {
+        var migrated = 0
+        for key in keys {
+            // 新文件已有 → 视为已迁移，跳过（幂等）。
+            if (try? secret(forKey: key)) ?? nil != nil { continue }
+            guard let old = (try? legacy.secret(forKey: key)) ?? nil,
+                  !old.isEmpty else { continue }
+            do {
+                try setSecret(old, forKey: key)
+                migrated += 1
+            } catch {
+                continue   // 单项失败不阻断其它 key 与启动
+            }
+        }
+        return migrated
+    }
+
     func secret(forKey key: String) throws -> String? {
         lock.lock(); defer { lock.unlock() }
         let map = try load()
