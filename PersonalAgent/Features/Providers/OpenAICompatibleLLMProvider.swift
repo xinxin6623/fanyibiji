@@ -10,10 +10,16 @@ struct OpenAICompatibleLLMProvider: LLMProvider {
 
     private let config: ResolvedProviderConfig
     private let client: LLMHTTPClient
+    /// 系统提示词。约束 LLM 不退化成无约束闲聊。空串=不加 system
+    /// message（保留原行为，向后兼容、单测可关闭）。
+    private let systemPrompt: String
 
-    init(config: ResolvedProviderConfig, client: LLMHTTPClient) {
+    init(config: ResolvedProviderConfig,
+         client: LLMHTTPClient,
+         systemPrompt: String = "") {
         self.config = config
         self.client = client
+        self.systemPrompt = systemPrompt
     }
 
     /// 仅形状检查，零网络（契约层约定）。
@@ -78,9 +84,17 @@ struct OpenAICompatibleLLMProvider: LLMProvider {
         request.timeoutInterval = config.timeoutSeconds
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         request.setValue("Bearer \(config.apiKey)", forHTTPHeaderField: "Authorization")
+        // 系统提示词非空时置于 messages 首位，约束模型行为
+        // （不闲聊/不复述/直接给结论）；为空退化为纯 user 单轮。
+        var messages: [[String: String]] = []
+        let sys = systemPrompt.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !sys.isEmpty {
+            messages.append(["role": "system", "content": sys])
+        }
+        messages.append(["role": "user", "content": prompt])
         let body: [String: Any] = [
             "model": config.model,
-            "messages": [["role": "user", "content": prompt]]
+            "messages": messages
         ]
         do {
             request.httpBody = try JSONSerialization.data(withJSONObject: body)

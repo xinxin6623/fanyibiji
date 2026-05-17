@@ -23,7 +23,10 @@ final class ContentQueryViewModel: ObservableObject {
     @Published private(set) var history: [ResultModel] = []
     @Published private(set) var historyError: AgentError.Category?
 
-    private let provider: LLMProvider
+    /// var 而非 let：密钥在设置界面填入后需重建 provider（启动时
+    /// 无 key 注入的是 FailingLLMProvider，填 key 后必须换掉，
+    /// 否则一直报配置缺失。与 TTSPlaybackViewModel 同模式）。
+    private var provider: LLMProvider
     private let translateProvider: TranslateProvider
     private let clipboard: ClipboardTextGrabber
     private let store: JSONLResultStore
@@ -82,6 +85,12 @@ final class ContentQueryViewModel: ObservableObject {
         self.translateProvider = translateProvider
         self.clipboard = clipboard
         self.store = store
+    }
+
+    /// 密钥保存后由 AppController 调用，用新解析的 provider 替换。
+    /// 失败态 provider 也能被换成可用的，无需重启 App。
+    func replaceProvider(_ newProvider: LLMProvider) {
+        provider = newProvider
     }
 
     /// 默认翻译目标语言。MVP 固定中文，可配置 UI 属后续任务。
