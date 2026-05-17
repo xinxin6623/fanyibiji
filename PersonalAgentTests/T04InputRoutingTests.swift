@@ -1,17 +1,22 @@
 import XCTest
+import AppKit
 @testable import PersonalAgent
 
 private final class StubHotkeyMonitor: HotkeyMonitoring {
-    var onTrigger: (() -> Void)?
+    var onTranslateSelection: (() -> Void)?
+    var onCaptureOCR: (() -> Void)?
     var startError: AgentError?
     private(set) var started = false
+    private(set) var lastConfig: HotkeyConfig?
 
     func start() throws {
         if let startError { throw startError }
         started = true
     }
     func stop() { started = false }
-    func fire() { onTrigger?() }
+    func update(_ config: HotkeyConfig) { lastConfig = config }
+    func fireCapture() { onCaptureOCR?() }
+    func fireSelection() { onTranslateSelection?() }
 }
 
 final class T04InputRoutingTests: XCTestCase {
@@ -59,13 +64,27 @@ final class T04InputRoutingTests: XCTestCase {
 
     func testHotkeyTriggerInvokesCallback() throws {
         let monitor = StubHotkeyMonitor()
-        var fired = 0
-        monitor.onTrigger = { fired += 1 }
+        var capture = 0
+        var selection = 0
+        monitor.onCaptureOCR = { capture += 1 }
+        monitor.onTranslateSelection = { selection += 1 }
         try monitor.start()
         XCTAssertTrue(monitor.started)
-        monitor.fire()
-        monitor.fire()
-        XCTAssertEqual(fired, 2)
+        monitor.fireCapture()
+        monitor.fireCapture()
+        monitor.fireSelection()
+        XCTAssertEqual(capture, 2)
+        XCTAssertEqual(selection, 1)
+    }
+
+    func testHotkeyUpdatePropagatesConfig() {
+        let monitor = StubHotkeyMonitor()
+        let cfg = HotkeyConfig(
+            translateSelection: KeyBinding(keyCode: 17, modifiers:
+                NSEvent.ModifierFlags([.command, .option]).rawValue),
+            captureOCR: .defaultCaptureOCR)
+        monitor.update(cfg)
+        XCTAssertEqual(monitor.lastConfig, cfg)
     }
 
     func testHotkeyStartThrowsPermissionWhenUnauthorized() {

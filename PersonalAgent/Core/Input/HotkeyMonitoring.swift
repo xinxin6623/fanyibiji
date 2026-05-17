@@ -3,34 +3,48 @@ import AppKit
 
 /// 全局快捷键监听边界。抽象成协议便于单测注入桩（无法对真实
 /// NSEvent 全局监听做确定性单测，桩手动触发回调验证路由）。
+///
+/// 两路独立回调：划词翻译 / 截屏 OCR。绑定可经 `update(_:)` 热重载
+/// （用户在设置里改快捷键后立即生效，无需重启）。
 protocol HotkeyMonitoring: AnyObject {
-    var onTrigger: (() -> Void)? { get set }
+    var onTranslateSelection: (() -> Void)? { get set }
+    var onCaptureOCR: (() -> Void)? { get set }
     /// 未授权时抛 `AgentError(.permission)`。
     func start() throws
     func stop()
+    /// 热重载绑定（设置变更后调用，无需重启 App）。
+    func update(_ config: HotkeyConfig)
 }
 
 /// 生产实现：NSEvent 全局 + 应用内监听。
 ///
 /// 注意（诚实范围）：NSEvent 全局监听是**非独占**的，无法真正"注册"
 /// 系统级快捷键，也无法检测与其它 App 的快捷键冲突——冲突检测需
-/// Carbon `RegisterEventHotKey`，按 James 决策本任务用 NSEvent，
-/// 冲突检测推迟。本类型只做监听与授权失败提示。
+/// Carbon `RegisterEventHotKey`，按既有决策本项目用 NSEvent，冲突
+/// 检测推迟。本类型只做监听、分派与授权失败提示。
+///
+/// 绑定由 `HotkeyConfig` 注入并可热重载；默认值见 `HotkeyConfig()`
+/// （划词 ⌘⇧C、截屏 OCR ⌘⇧D）。
 final class GlobalHotkeyMonitor: HotkeyMonitoring, @unchecked Sendable {
-    var onTrigger: (() -> Void)?
+    var onTranslateSelection: (() -> Void)?
+    var onCaptureOCR: (() -> Void)?
 
     private let authorizer: AccessibilityAuthorizing
     private var globalToken: Any?
     private var localToken: Any?
+    private var config: HotkeyConfig
+    private let lock = NSLock()
 
-    /// 默认快捷键：⌘⇧D（经 James 确认，⌘⇧A 与其常用 App 冲突；
-    /// NSEvent 全局监听非独占、无法检测冲突，故改默认值规避。
-    /// 可配置 UI 属后续任务）。
-    private let requiredModifiers: NSEvent.ModifierFlags = [.command, .shift]
-    private let requiredKey = "d"
-
-    init(authorizer: AccessibilityAuthorizing) {
+    init(authorizer: AccessibilityAuthorizing,
+         config: HotkeyConfig = HotkeyConfig()) {
         self.authorizer = authorizer
+        self.config = config
+    }
+
+    func update(_ config: HotkeyConfig) {
+        lock.lock()
+        self.config = config
+        lock.unlock()
     }
 
     func start() throws {
@@ -65,11 +79,25 @@ final class GlobalHotkeyMonitor: HotkeyMonitoring, @unchecked Sendable {
     deinit { stop() }
 
     private func handle(_ event: NSEvent) {
+        lock.lock()
+        let cfg = config
+        lock.unlock()
+
         let mods = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
-        guard mods.contains(requiredModifiers),
-              event.charactersIgnoringModifiers?.lowercased() == requiredKey else {
+        // 截屏 OCR 优先匹配（保持历史 ⌘⇧D 行为稳定）；两组绑定相同时
+        // 截屏 OCR 胜出，但 sanitize/UI 应避免用户配重复绑定。
+        if matches(event, mods: mods, binding: cfg.captureOCR) {
+            onCaptureOCR?()
             return
         }
-        onTrigger?()
+        if matches(event, mods: mods, binding: cfg.translateSelection) {
+            onTranslateSelection?()
+        }
+    }
+
+    private func matches(_ event: NSEvent,
+                         mods: NSEvent.ModifierFlags,
+                         binding: KeyBinding) -> Bool {
+        event.keyCode == binding.keyCode && mods == binding.modifierFlags
     }
 }
