@@ -1,58 +1,45 @@
 # Relay Task
 
-_updated: 2026-05-17 (笔记原料包 + 多草稿 Tab + Markdown 预览改 WebView)_
-_project: /Users/qoragufimo390gmail.com/Documents/New project 3 (PersonalAgent)_
-_branch: main_
+_updated: 2026-05-18 00:15_
+_project: /Users/qoragufimo390gmail.com/Documents/New project 3 (PersonalAgent macOS App)_
+_branch: main (PR #5 已合并)_
 
 ## 任务
-笔记区新增「原料包导出 + 多草稿并行 Tab」。App 侧只采集+导出
-(草稿 + 相关翻译历史 → 单 .md),结构化交下游知识库 Claude。
-本轮功能闭环:xcodebuild build + 全量 test 全绿。
+PersonalAgent 本轮多功能迭代（笔记/翻译）+ 根治反复弹钥匙串密码。**工程全部完成，PR #5 已合并入 main。** 唯一剩余是用户侧动作（重开 App 触发密钥迁移）。
 
 ## 当前进度
-- [x] NotePackComposer 纯函数(A源追∪B文本兜底,清洗)
-- [x] ResultModel 加 sourceText + 改写入点存原文
-- [x] NoteDraftStore 多文件 + manifest + sidecar
-- [x] NoteEditorViewModel 加源追(内部逻辑不动)
-- [x] NoteDocumentsViewModel 多 Tab 编排
-- [x] MainWindowView Tab条+历史+原料包导出按钮
-- [x] pbxproj 2 新文件各 4 处 + xcstrings 6 键
-- [x] 单测(TNote 三套)+ 全量 test 全绿
-- [x] Markdown 预览改 WKWebView + 离线 marked/highlight.js
-      (逐行 AttributedString 补不全块级,代码块/表格/ASCII 图)
-- [~] 真机手验:由 James 把关,未由 agent 验收
-- [ ] **未 commit**(原料包+多草稿那批已 commit dc29c3e;
-      WebView 这批未 commit)
+- [x] 划词进草稿快捷键（⌘⇧N）/ 直接翻译按钮 / 结果带原文进草稿 / 草稿撤销重做（栈深20）
+- [x] Keychain 反复弹密码根治：改 FileSecretStore（AES-GCM 文件存储）
+- [x] 旧 Keychain → 新文件一次性自动迁移代码
+- [x] 双 app 实体清理（删项目内 build/，注销陈旧 LaunchServices 注册）
+- [x] commit 7e97f1c + e75ec76
+- [x] **PR #5 已 merge 入 main**（merge commit bae2a81，2026-05-17 15:13 UTC，远程分支已删，本地 main 已同步）
+- [ ] 密钥迁移生效：需 **James 重开 App** 触发（代码已在 main，未实跑验证）
 
-## 下一步
-无必须接力工程项。可选:
-1. 真机验收:Tab 新建/切换/关闭留盘、历史草稿重开、
-   原料包导出内容(原文→译文配对是否齐)、跨 Tab 不串。
-2. James 要求时 commit(本轮所有改动未提交)。
-3. 下游闭环验证:导出的原料包用 `/kb add <文件>` 喂知识库。
+## 下一步（具体到能直接动手）
+当前没有必须接力的工程下一步——本轮代码已全部合并入 main。
 
-## 关键文件
-- 合成器:`PersonalAgent/Core/Services/NotePackComposer.swift`
-- 多文档:`PersonalAgent/UI/NoteDocumentsViewModel.swift`
-- 存储:`PersonalAgent/Core/Persistence/NoteDraftStore.swift`(多文件化)
-- 模型:`PersonalAgent/Core/Models/ResultModel.swift`(+sourceText)
-- 写入点:`PersonalAgent/UI/ContentQueryViewModel.swift`(两处带 sourceText)
-- UI:`PersonalAgent/UI/MainWindowView.swift`(notePane/Tab/导出)
-- 测试:`PersonalAgentTests/TNoteEditorTests.swift`(含 TNotePack/TNoteDocuments)
-- 预览:`PersonalAgent/UI/MarkdownWebView.swift` + `Resources/MarkdownWeb/`
-  (template.html + marked.min.js + highlight.min.js + css,folder
-  reference 登记,subdirectory:"MarkdownWeb" 解析)
-- 设计文档:`design-note-export-pack.md`、`知识库结构.md`
-- 落盘:`~/Library/Application Support/com.james.personalagent/notes/`
-  (draft-<id>.md / .draft-<id>.sourcemap.json / manifest.json)
+如需继续，可选动作：
+1. **James 重开 PersonalAgent.app**（标准 DerivedData 那个，见下方路径）触发一次性 Keychain→文件迁移。迁移读旧 Keychain 可能弹**最后一次**密码框（点"始终允许"即可），之后 LLM/翻译恢复且永不再弹。
+2. 验证迁移：检查 `~/Library/Application Support/com.james.personalagent/secrets.enc` 是否含 4 个条目（只看 key 数，不解密、不碰明文）。
+3. 若迁移后 LLM/翻译仍异常：检查 `secrets.enc` 是否生成、旧 Keychain 是否仍有 key（`security find-generic-password -s com.james.personalagent -a llm.apiKey -w`）。
 
-## 上下文要点(接手前必读)
-1. 构建后 `pkill -x PersonalAgent` 再 `open
-   build/DerivedData/Build/Products/Debug/PersonalAgent.app`。
-2. SourceKit 跨文件 "Cannot find type" 海量误报,以 xcodebuild 为准。
-3. 全量 test 偶发 "TEST FAILED" 无 error/无 fail 用例 = 测试宿主
-   占用,`pkill -x` 后重跑即全绿(已确认非代码问题)。
-4. 职责边界:App **不调 LLM、不结构化**,只导原料包;结构化是
-   下游知识库 Claude(`/kb` + `~/knowledge`)的活。
-5. 旧 note-draft.md 不迁移(James 明确不怕丢),全新 notes/ 体系。
-6. pbxproj 显式引用,新增 .swift 必手动补 4 处。
+## 关键文件 / 路径
+- 真实 App 实体：`~/Library/Developer/Xcode/DerivedData/PersonalAgent-enavgdqvurkwwkbkutkbnxuixlaw/Build/Products/Debug/PersonalAgent.app`
+- 密钥存储：`PersonalAgent/Core/Config/SecretStore.swift`（FileSecretStore + migrateFromKeychainIfNeeded）
+- 组合根：`PersonalAgent/App/AppComposition.swift`（makeSecretStore 缓存单例+迁移）
+- 加密文件落点：`~/Library/Application Support/com.james.personalagent/secrets.enc`
+- 本轮存档：`/Users/qoragufimo390gmail.com/baidu/Archives/2026-05-17-note-hotkey-undo-filesecret.md`
+- kanban 完成卡：`~/baidu/kanban/done/PersonalAgent 笔记翻译迭代与Keychain根治.md`
+- auto memory：`project_2026-05-17_keychain-to-filesecret.md`、`project_2026-05-17_note-hotkey-undo.md`
+
+## 阻塞 / 风险 / 待用户决策
+- **必须 James 亲自重开 App** 才能触发迁移（agent 无法代跑 GUI App + 处理可能的密码框）
+- 安全取舍已 James 确认：FileSecretStore 弱于 Keychain，同机知算法可解
+
+## 上下文要点（接手前必读）
+1. 反复弹钥匙串密码的真根因是**开发期签名指纹漂移**（非代码 bug），已绕过（改文件存储），别再回头查 Keychain 读写代码
+2. SourceKit 单文件诊断的 "Cannot find type" 在本项目全是误报，以 `xcodebuild` 结果为准
+3. 本项目 pbxproj 是显式引用式，新增 .swift 要手动补 4 处（本轮无新增文件，未触发）
+4. 跑 `xcodebuild test` 前先 `pkill -x PersonalAgent`，否则 runner 挂起
+5. PR #5 已合并，仓库 github.com/xinxin6623/fanyibiji，main 是最新
