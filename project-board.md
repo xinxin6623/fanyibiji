@@ -446,6 +446,47 @@ T00 文档骨架、T01 MVP PRD、T02 SwiftUI 骨架均已 DONE 并通过构建�
   纯色正常截图理论上可能误报（阈值 tolerance=8 已留余量，可调）；
   TTS（§8-6）已随 T10（双引擎）收口，错误经 `AgentError` 统一映射。
 
+### T13 划词翻译 + 设置体系（P5 增量，DONE 待提交）
+
+- 阶段：MVP 后增量（2026-05-17，James 逐项提需求驱动）。
+- 目标：选中文字按快捷键直接翻译（Easydict 式）；快捷键/密钥/系统
+  提示词三类设置统一进齿轮 sheet，可改可持久化。
+- 状态：**功能+单测完成、全量测试绿、用户验收中、改动未提交**。
+- 交付物：
+  - 划词：`Core/Input/SelectionTextGrabber.swift`（模拟 ⌘C + 还原
+    剪贴板，抓不到静默）、`SystemCopyKeystrokeSender.swift`（CGEvent）。
+  - 快捷键：`Core/Config/HotkeyConfig.swift`、
+    `Core/Persistence/HotkeySettingsStore.swift`，
+    `GlobalHotkeyMonitor` 改双可配回调 + 热重载。
+  - 密钥：`AppController.secretFields()/saveSecret()`，
+    `HotkeySettingsView` 4 个 SecureField，写入触发 LLM 重建。
+  - 设置 UI：`UI/HotkeySettingsView.swift`（KeyRecorder/密钥/提示词
+    三区，ScrollView 480×640，底部统一保存）。
+  - 测试：`PersonalAgentTests/T13{SelectionGrab,HotkeySettings}Tests.swift`。
+- 验收：划词/快捷键/密钥均真机验收通过。
+
+### T14 LLM 系统提示词（P5 增量，DONE 待提交）
+
+- 目标：LLM 查询加系统提示词约束（默认简洁助手、中文优先），
+  可在设置里改并持久化；只约束 LLM 查询，不影响免费翻译通道。
+- 状态：**功能+单测完成、测试绿、用户验收 LLM 查询效果中、未提交**。
+- 交付物：`Core/Config/PromptConfig.swift`、
+  `Core/Persistence/PromptSettingsStore.swift`，
+  `OpenAICompatibleLLMProvider` messages 注入 system role（空退化原
+  行为），`HotkeySettingsView` 加提示词编辑区，
+  `PersonalAgentTests/T14{PromptConfig,SystemPromptInjection}Tests.swift`。
+- 设计约束：翻译维持 `FreeWebTranslateProvider`（免费/快/不耗额度），
+  系统提示词仅对「发起查询」「取词问 AI」生效。
+
+### T13/T14 过程修复（5 个 bug）
+
+- pbxproj 显式引用需手动加新文件 4 处（脚本化）。
+- Codable snake_case 对缩写不对称 → 显式 CodingKeys + store 不设
+  key 转换策略。
+- 测试宿主被残留实例占用 → 跑 test 前 `pkill -x PersonalAgent`。
+- KeyRecorder 录 ⌘ 组合走 `performKeyEquivalent`，需重写截获。
+- ViewModel provider 为 let 致配置变更不生效 → 改 var + 重建。
+
 ## 看板维护规则
 
 - 每次任务完成后更新状态、备注和下一推荐任务。

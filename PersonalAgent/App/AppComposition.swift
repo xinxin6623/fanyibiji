@@ -71,6 +71,29 @@ enum AppComposition {
             makeProvider: makeTTSProvider)
     }
 
+    /// 快捷键配置持久化文件，与 tts-config.json / results.jsonl 同目录。
+    /// 设置界面改动写这里，启动读回；缺失/损坏回 `HotkeyConfig()` 默认。
+    static func hotkeySettingsFileURL() -> URL {
+        let base = (try? FileManager.default.url(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask, appropriateFor: nil, create: true))
+            ?? FileManager.default.temporaryDirectory
+        return base
+            .appendingPathComponent("com.james.personalagent", isDirectory: true)
+            .appendingPathComponent("hotkey-config.json")
+    }
+
+    /// 系统提示词配置持久化文件，与其它 config 同目录。
+    static func promptSettingsFileURL() -> URL {
+        let base = (try? FileManager.default.url(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask, appropriateFor: nil, create: true))
+            ?? FileManager.default.temporaryDirectory
+        return base
+            .appendingPathComponent("com.james.personalagent", isDirectory: true)
+            .appendingPathComponent("prompt-config.json")
+    }
+
     static func resultsFileURL() -> URL {
         let base = (try? FileManager.default.url(
             for: .applicationSupportDirectory,
@@ -81,22 +104,34 @@ enum AppComposition {
             .appendingPathComponent("results.jsonl")
     }
 
-    @MainActor
-    static func makeViewModel() -> ContentQueryViewModel {
-        let store = JSONLResultStore(fileURL: resultsFileURL())
+    /// 按当前 Keychain 里的 LLM key 解析造 provider。缺 key/非法
+    /// → `FailingLLMProvider` 降级（UI 可见，不崩）。供启动组装
+    /// 与"设置里填完 key 后重建"两处共用（单一事实源）。
+    static func makeLLMProvider() -> LLMProvider {
+        // 系统提示词从持久化读（缺失/损坏回默认，不让 LLM 失约束）。
+        let prompt = PromptSettingsStore(
+            fileURL: promptSettingsFileURL()).load().systemPrompt
         let configStore = ConfigStore(secrets: KeychainSecretStore())
-        let provider: LLMProvider
         do {
-            let resolved = try configStore.resolve(defaultConfig, apiKeyRef: apiKeyRef)
-            provider = OpenAICompatibleLLMProvider(
-                config: resolved, client: URLSessionLLMHTTPClient())
+            let resolved = try configStore.resolve(
+                defaultConfig, apiKeyRef: apiKeyRef)
+            return OpenAICompatibleLLMProvider(
+                config: resolved,
+                client: URLSessionLLMHTTPClient(),
+                systemPrompt: prompt)
         } catch let error as AgentError {
-            provider = FailingLLMProvider(error: error)
+            return FailingLLMProvider(error: error)
         } catch {
-            provider = FailingLLMProvider(
+            return FailingLLMProvider(
                 error: AgentError(category: .unknown,
                                   diagnosticMessage: "composition failed"))
         }
+    }
+
+    @MainActor
+    static func makeViewModel() -> ContentQueryViewModel {
+        let store = JSONLResultStore(fileURL: resultsFileURL())
+        let provider = makeLLMProvider()
         // T09 免费翻译 provider 作主翻译通道（免 key、零配置；逆向公开
         // 端点隔离在可替换 provider 层，AGENTS 边界）。
         let translate = FreeWebTranslateProvider(
