@@ -11,11 +11,19 @@ import SwiftUI
 struct MainWindowView: View {
     @EnvironmentObject private var controller: AppController
     @ObservedObject private var viewModel: ContentQueryViewModel
+    @ObservedObject private var noteViewModel: NoteEditorViewModel
     @State private var showingHistory = false
     @State private var showingHotkeySettings = false
 
-    init(viewModel: ContentQueryViewModel) {
+    /// 左栏宽度（可拖动分隔条调整）。范围夹在 [minPane, total-minPane]。
+    @State private var leftPaneWidth: CGFloat = 360
+    private let minPaneWidth: CGFloat = 280
+    private let dividerWidth: CGFloat = 8
+
+    init(viewModel: ContentQueryViewModel,
+         noteViewModel: NoteEditorViewModel) {
         self.viewModel = viewModel
+        self.noteViewModel = noteViewModel
     }
 
     private var isLoading: Bool {
@@ -26,6 +34,27 @@ struct MainWindowView: View {
     // MARK: - Body
 
     var body: some View {
+        GeometryReader { geo in
+            HStack(spacing: 0) {
+                leftPane
+                    .frame(width: clampedLeftWidth(total: geo.size.width))
+                splitDivider(total: geo.size.width)
+                NoteEditorView(viewModel: noteViewModel)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+        .frame(minWidth: 920, minHeight: 560)
+        .background(Color(nsColor: .windowBackgroundColor))
+        .sheet(isPresented: $showingHotkeySettings) {
+            HotkeySettingsView(config: controller.hotkeyConfig,
+                               promptConfig: controller.promptConfig)
+                .environmentObject(controller)
+        }
+    }
+
+    // MARK: - 左栏（原查询/结果/历史）
+
+    private var leftPane: some View {
         VStack(spacing: 0) {
             toolbar
             Divider()
@@ -45,13 +74,39 @@ struct MainWindowView: View {
                 .padding(16)
             }
         }
-        .frame(minWidth: 560, minHeight: 560)
-        .background(Color(nsColor: .windowBackgroundColor))
-        .sheet(isPresented: $showingHotkeySettings) {
-            HotkeySettingsView(config: controller.hotkeyConfig,
-                               promptConfig: controller.promptConfig)
-                .environmentObject(controller)
-        }
+    }
+
+    // MARK: - 可拖动分隔条
+
+    private func clampedLeftWidth(total: CGFloat) -> CGFloat {
+        let maxLeft = max(minPaneWidth, total - minPaneWidth - dividerWidth)
+        return min(max(leftPaneWidth, minPaneWidth), maxLeft)
+    }
+
+    private func splitDivider(total: CGFloat) -> some View {
+        Rectangle()
+            .fill(Color(nsColor: .separatorColor))
+            .frame(width: dividerWidth)
+            .overlay(
+                Rectangle()
+                    .fill(Color(nsColor: .separatorColor))
+                    .frame(width: 1)
+            )
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture()
+                    .onChanged { value in
+                        let proposed = clampedLeftWidth(total: total)
+                            + value.translation.width
+                        let maxLeft = max(minPaneWidth,
+                                          total - minPaneWidth - dividerWidth)
+                        leftPaneWidth = min(max(proposed, minPaneWidth), maxLeft)
+                    }
+            )
+            .onHover { inside in
+                if inside { NSCursor.resizeLeftRight.push() }
+                else { NSCursor.pop() }
+            }
     }
 
     // MARK: - 顶部工具栏
@@ -225,6 +280,13 @@ struct MainWindowView: View {
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.secondary)
             Spacer()
+            // 把当前译文插入右侧笔记编辑区（追加到尾部，补空行衔接）。
+            iconButton("text.insert", "note.insert_result") {
+                noteViewModel.insert(text)
+            }
+            .font(.subheadline)
+            .disabled(text.trimmingCharacters(
+                in: .whitespacesAndNewlines).isEmpty)
             // 朗读结果文本（TTS 文本框已移除，直接传结果）。
             iconButton("speaker.wave.2", "tts.speak_result") {
                 controller.ttsViewModel.synthesizeAndPlay(text: text)

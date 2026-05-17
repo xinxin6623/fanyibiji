@@ -105,6 +105,20 @@ enum AppComposition {
             .appendingPathComponent("prompt-config.json")
     }
 
+    /// 笔记暂存草稿文件，与其它 config / results.jsonl 同目录但单独成
+    /// 文件（notes/note-draft.md）。与翻译历史完全分离，后续 LLM 结构化
+    /// 「最终笔记生成」时再回头抓 results.jsonl 原始内容。
+    static func noteDraftFileURL() -> URL {
+        let base = (try? FileManager.default.url(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask, appropriateFor: nil, create: true))
+            ?? FileManager.default.temporaryDirectory
+        return base
+            .appendingPathComponent("com.james.personalagent", isDirectory: true)
+            .appendingPathComponent("notes", isDirectory: true)
+            .appendingPathComponent("note-draft.md")
+    }
+
     static func resultsFileURL() -> URL {
         let base = (try? FileManager.default.url(
             for: .applicationSupportDirectory,
@@ -153,5 +167,11 @@ enum AppComposition {
             translateProvider: translate,
             clipboard: clipboard,
             store: store)
+    }
+
+    @MainActor
+    static func makeNoteEditorViewModel() -> NoteEditorViewModel {
+        NoteEditorViewModel(
+            store: NoteDraftStore(fileURL: noteDraftFileURL()))
     }
 }
