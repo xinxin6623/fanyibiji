@@ -9,6 +9,8 @@ import AppKit
 protocol HotkeyMonitoring: AnyObject {
     var onTranslateSelection: (() -> Void)? { get set }
     var onCaptureOCR: (() -> Void)? { get set }
+    /// 划词进草稿：取选中文字 → 原文追加到当前草稿 Tab。
+    var onSelectionToNote: (() -> Void)? { get set }
     /// 未授权时抛 `AgentError(.permission)`。
     func start() throws
     func stop()
@@ -28,6 +30,7 @@ protocol HotkeyMonitoring: AnyObject {
 final class GlobalHotkeyMonitor: HotkeyMonitoring, @unchecked Sendable {
     var onTranslateSelection: (() -> Void)?
     var onCaptureOCR: (() -> Void)?
+    var onSelectionToNote: (() -> Void)?
 
     private let authorizer: AccessibilityAuthorizing
     private var globalToken: Any?
@@ -88,6 +91,10 @@ final class GlobalHotkeyMonitor: HotkeyMonitoring, @unchecked Sendable {
         // 截屏 OCR 胜出，但 sanitize/UI 应避免用户配重复绑定。
         if matches(event, mods: mods, binding: cfg.captureOCR) {
             onCaptureOCR?()
+            return
+        }
+        if matches(event, mods: mods, binding: cfg.selectionToNote) {
+            onSelectionToNote?()
             return
         }
         if matches(event, mods: mods, binding: cfg.translateSelection) {

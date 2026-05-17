@@ -166,6 +166,19 @@ struct MainWindowView: View {
                 }
                 .disabled(isLoading)
 
+                // 直接翻译输入框文本（走免 key 翻译通道，区别于
+                // paperplane 的问答语义；与取词翻译同管线，sourceKind
+                // 记 .manualInput 供溯源）。
+                iconButton("character.bubble", "manualInput.translate") {
+                    viewModel.dispatch {
+                        await viewModel.runTranslate(
+                            viewModel.inputText,
+                            sourceKind: .manualInput)
+                    }
+                }
+                .disabled(isLoading || viewModel.inputText.trimmingCharacters(
+                    in: .whitespacesAndNewlines).isEmpty)
+
                 iconButton("camera.viewfinder", "capture.run") {
                     controller.triggerCapture()
                 }
@@ -255,7 +268,9 @@ struct MainWindowView: View {
                     Text("query.loading").foregroundStyle(.secondary)
                 }
             case let .success(model):
-                resultHeader(text: resultText(model), resultID: model.id)
+                resultHeader(text: resultText(model),
+                             sourceText: model.sourceText,
+                             resultID: model.id)
                 Text(resultText(model))
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -417,7 +432,9 @@ struct MainWindowView: View {
         return f
     }()
 
-    private func resultHeader(text: String, resultID: UUID? = nil) -> some View {
+    private func resultHeader(text: String,
+                              sourceText: String? = nil,
+                              resultID: UUID? = nil) -> some View {
         HStack {
             Image(systemName: "text.bubble.fill")
                 .foregroundStyle(.tint)
@@ -425,11 +442,14 @@ struct MainWindowView: View {
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.secondary)
             Spacer()
-            // 插入当前译文到右侧**选中 Tab** 的笔记草稿;同时登记来源
+            // 插入到右侧**选中 Tab** 的笔记草稿;同时登记来源
             // result id(原料包 A 源追)。无选中 Tab 时按钮禁用。
+            // 有原文则按「**原文:** … / **译文:** …」带标签排版一起带过去
+            // (James 决策);无原文(如纯问答)退化为只插结果文本。
             iconButton("text.insert", "note.insert_result") {
                 noteDocs.selected?.editor.insert(
-                    text, sourceResultID: resultID)
+                    Self.noteSnippet(source: sourceText, result: text),
+                    sourceResultID: resultID)
             }
             .font(.subheadline)
             .disabled(text.trimmingCharacters(
@@ -442,6 +462,17 @@ struct MainWindowView: View {
             .disabled(text.trimmingCharacters(
                 in: .whitespacesAndNewlines).isEmpty)
         }
+    }
+
+    /// 组装插入草稿的片段：有原文则「**原文:** … / 空行 / **译文:** …」
+    /// 带标签排版（James 决策），原文为空/纯空白（如纯问答无 sourceText）
+    /// 退化为只给结果文本。纯函数便于单测断言形状。
+    nonisolated static func noteSnippet(source: String?,
+                                        result: String) -> String {
+        let src = source?.trimmingCharacters(
+            in: .whitespacesAndNewlines) ?? ""
+        guard !src.isEmpty else { return result }
+        return "**原文:** \(src)\n\n**译文:** \(result)"
     }
 
     // MARK: - 历史卡

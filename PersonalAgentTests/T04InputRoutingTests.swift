@@ -5,6 +5,7 @@ import AppKit
 private final class StubHotkeyMonitor: HotkeyMonitoring {
     var onTranslateSelection: (() -> Void)?
     var onCaptureOCR: (() -> Void)?
+    var onSelectionToNote: (() -> Void)?
     var startError: AgentError?
     private(set) var started = false
     private(set) var lastConfig: HotkeyConfig?
@@ -17,6 +18,7 @@ private final class StubHotkeyMonitor: HotkeyMonitoring {
     func update(_ config: HotkeyConfig) { lastConfig = config }
     func fireCapture() { onCaptureOCR?() }
     func fireSelection() { onTranslateSelection?() }
+    func fireSelectionToNote() { onSelectionToNote?() }
 }
 
 final class T04InputRoutingTests: XCTestCase {

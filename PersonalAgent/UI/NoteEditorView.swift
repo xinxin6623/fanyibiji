@@ -49,6 +49,33 @@ struct NoteEditorView: View {
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.secondary)
 
+            // 撤销 / 重做：按钮 + ⌘Z / ⌘⇧Z。程序化插入(插译文/划词进
+            // 草稿)与手敲都走 ViewModel 自建快照栈,故这对按钮对两者
+            // 都生效(系统 TextEditor 内建 undo 退不掉程序化写入)。
+            // 紧挨标题靠左放(James 指定)。
+            HStack(spacing: 2) {
+                Button {
+                    viewModel.undo()
+                } label: {
+                    Image(systemName: "arrow.uturn.backward")
+                }
+                .buttonStyle(.borderless)
+                .disabled(!viewModel.canUndo)
+                .help("note.undo")
+                .keyboardShortcut("z", modifiers: .command)
+
+                Button {
+                    viewModel.redo()
+                } label: {
+                    Image(systemName: "arrow.uturn.forward")
+                }
+                .buttonStyle(.borderless)
+                .disabled(!viewModel.canRedo)
+                .help("note.redo")
+                .keyboardShortcut("z", modifiers: [.command, .shift])
+            }
+            .font(.subheadline)
+
             Spacer()
 
             Picker("", selection: $viewModel.mode) {
@@ -81,22 +108,11 @@ struct NoteEditorView: View {
     @ViewBuilder
     private var saveStatusLabel: some View {
         switch viewModel.saveStatus {
-        case .clean:
+        // 自动保存相关态(clean/dirty/saving/saved)一律不显示——James
+        // 指定去掉「已保存 HH:mm」这类自动保存图示,草稿本就防抖兜底。
+        // 仅保留「另存导出」结果(用户主动操作,需可见反馈)。
+        case .clean, .dirty, .saving, .saved:
             EmptyView()
-        case .dirty:
-            Text("note.status.unsaved")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
-        case .saving:
-            HStack(spacing: 4) {
-                ProgressView().controlSize(.mini)
-                Text("note.status.saving")
-                    .font(.caption2).foregroundStyle(.secondary)
-            }
-        case let .saved(date):
-            Text("\(Text("note.status.saved")) \(date, style: .time)")
-                .font(.caption2)
-                .foregroundStyle(.secondary)
         case let .exported(url):
             Label {
                 Text("\(Text("note.status.exported")) \(url.lastPathComponent)")

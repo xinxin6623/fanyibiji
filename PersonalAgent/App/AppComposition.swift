@@ -41,7 +41,7 @@ enum AppComposition {
     /// 设置变更时按新 config 重建。
     @Sendable
     static func makeTTSProvider(_ config: TTSConfig) -> TTSProvider {
-        let configStore = TTSConfigStore(secrets: KeychainSecretStore())
+        let configStore = TTSConfigStore(secrets: makeSecretStore())
         do {
             let resolved = try configStore.resolve(config)
             switch resolved.engine {
@@ -81,6 +81,24 @@ enum AppComposition {
         return base
             .appendingPathComponent("com.james.personalagent", isDirectory: true)
             .appendingPathComponent("hotkey-config.json")
+    }
+
+    /// 加密密钥库文件（AES-GCM），与其它 config 同目录。换掉
+    /// Keychain：开发期反复 rebuild 不再弹系统密码框（根因是本地
+    /// 签名指纹漂移使 Keychain ACL 对不上）。
+    static func secretStoreFileURL() -> URL {
+        let base = (try? FileManager.default.url(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask, appropriateFor: nil, create: true))
+            ?? FileManager.default.temporaryDirectory
+        return base
+            .appendingPathComponent("com.james.personalagent", isDirectory: true)
+            .appendingPathComponent("secrets.enc")
+    }
+
+    /// 全 App 统一的密钥库实例工厂（单一事实源，便于将来再切实现）。
+    static func makeSecretStore() -> SecretStore {
+        FileSecretStore(fileURL: secretStoreFileURL())
     }
 
     /// 语言配置持久化文件，与其它 config 同目录。
@@ -137,7 +155,7 @@ enum AppComposition {
         // 系统提示词从持久化读（缺失/损坏回默认，不让 LLM 失约束）。
         let prompt = PromptSettingsStore(
             fileURL: promptSettingsFileURL()).load().systemPrompt
-        let configStore = ConfigStore(secrets: KeychainSecretStore())
+        let configStore = ConfigStore(secrets: makeSecretStore())
         do {
             let resolved = try configStore.resolve(
                 defaultConfig, apiKeyRef: apiKeyRef)

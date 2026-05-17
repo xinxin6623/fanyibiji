@@ -66,19 +66,40 @@ struct HotkeyConfig: Codable, Sendable, Equatable {
     var translateSelection: KeyBinding
     /// 截屏 OCR 取词（框选 → 截图 → OCR → 翻译）。
     var captureOCR: KeyBinding
+    /// 划词进草稿（模拟 ⌘C 取选中文字 → 原文直接追加到当前草稿 Tab）。
+    /// 不走翻译/LLM，纯摘录沉淀；按 James 决策插入原文并把主窗口调前台。
+    var selectionToNote: KeyBinding
 
     /// 显式 CodingKeys：`captureOCR` 自动 snake_case 编码为
     /// `capture_ocr`、但 `.convertFromSnakeCase` 会还原成 `captureOcr`
     /// 致解码 keyNotFound。固定字面量绕开此不对称。
+    /// 旧配置无 `selection_to_note` 字段：解码缺省回默认（见下方 init
+    /// + decoder 容错）。
     enum CodingKeys: String, CodingKey {
         case translateSelection = "translate_selection"
         case captureOCR = "capture_ocr"
+        case selectionToNote = "selection_to_note"
     }
 
     init(translateSelection: KeyBinding = .defaultTranslateSelection,
-         captureOCR: KeyBinding = .defaultCaptureOCR) {
+         captureOCR: KeyBinding = .defaultCaptureOCR,
+         selectionToNote: KeyBinding = .defaultSelectionToNote) {
         self.translateSelection = translateSelection
         self.captureOCR = captureOCR
+        self.selectionToNote = selectionToNote
+    }
+
+    /// 自定义 decoder：`selection_to_note` 是后加字段，旧落盘文件没有
+    /// 它——`decodeIfPresent` 缺省回默认，避免老用户升级后解码
+    /// keyNotFound 直接丢失全部快捷键配置。
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        translateSelection = try c.decode(
+            KeyBinding.self, forKey: .translateSelection)
+        captureOCR = try c.decode(KeyBinding.self, forKey: .captureOCR)
+        selectionToNote = try c.decodeIfPresent(
+            KeyBinding.self, forKey: .selectionToNote)
+            ?? .defaultSelectionToNote
     }
 }
 
@@ -91,5 +112,10 @@ extension KeyBinding {
     /// ⌘⇧D —— keyCode 2 = 'D'（与历史 GlobalHotkeyMonitor 默认一致）。
     static let defaultCaptureOCR = KeyBinding(
         keyCode: 2,
+        modifiers: NSEvent.ModifierFlags([.command, .shift]).rawValue)
+
+    /// ⌘⇧N —— keyCode 45 = 'N'（N = Note，不与上面两个默认冲突）。
+    static let defaultSelectionToNote = KeyBinding(
+        keyCode: 45,
         modifiers: NSEvent.ModifierFlags([.command, .shift]).rawValue)
 }

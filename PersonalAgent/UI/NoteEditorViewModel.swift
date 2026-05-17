@@ -29,11 +29,107 @@ final class NoteEditorViewModel: ObservableObject {
     @Published var text: String = "" {
         didSet {
             guard text != oldValue else { return }
+            // undo/redo 自身回写 text 时不再入撤销栈、不标脏触发新快照
+            // （否则栈被自己污染、redo 立刻被清空）。但仍需落盘——撤销
+            // 后的内容也是要持久化的状态，故 isApplyingHistory 只跳过
+            // 入栈，scheduleAutosave 照走。
+            if isApplyingHistory {
+                saveStatus = .dirty
+                scheduleAutosave()
+                return
+            }
             // 来自 load() 的首次灌入不算用户改动（loadingFromDisk 守门）。
             guard !loadingFromDisk else { return }
             saveStatus = .dirty
             scheduleAutosave()
+            // 连续输入用防抖合并成「一段编辑」一个撤销点；程序化
+            // insert() 走 commitUndoSnapshot() 立即落点（见下）。
+            scheduleUndoSnapshot(from: oldValue)
         }
+    }
+
+    // MARK: - 撤销 / 重做（⌘Z / ⌘⇧Z + 顶栏 ← → 按钮）
+
+    /// 撤销/重做基于**整段文本快照**栈（非字符级 diff）：实现简单、
+    /// 对程序化 `insert` 与手敲都稳；连续手敲经防抖合并成一个撤销点，
+    /// 避免一次退一个字母。栈深上限防长文档无限增长。
+    private var undoStack: [String] = []
+    private var redoStack: [String] = []
+    private let historyLimit = 20
+    /// true 期间 text 的写入来自 undo()/redo() 自身，didSet 跳过入栈。
+    private var isApplyingHistory = false
+    private var undoSnapshotTask: Task<Void, Never>?
+    /// undo 栈里最后一个已记录的稳定状态（防抖期间的中间态不算）。
+    private var lastSnapshot: String = ""
+
+    @Published private(set) var canUndo = false
+    @Published private(set) var canRedo = false
+
+    /// 防抖落撤销点：停手 `undoCoalesceDelay` 后把 `from`（这段连续
+    /// 编辑的**起点**）压栈。压的是起点而非当前值——撤销应回到「这段
+    /// 编辑开始前」。被新输入打断则重排，于是整段连续编辑只留一个点。
+    private let undoCoalesceDelay: Duration = .milliseconds(600)
+
+    private func scheduleUndoSnapshot(from previous: String) {
+        undoSnapshotTask?.cancel()
+        undoSnapshotTask = Task { [weak self] in
+            guard let self else { return }
+            try? await Task.sleep(for: self.undoCoalesceDelay)
+            guard !Task.isCancelled else { return }
+            self.pushUndo(previous)
+        }
+    }
+
+    /// 立即落一个撤销点（值=`snapshot`，应为这次动作**前**的内容）。
+    /// 程序化 `insert()` 用它：插入是一次明确动作，整体应可一步撤销，
+    /// 不该被防抖合并进随后的手敲。
+    private func commitUndoSnapshot(_ snapshot: String) {
+        undoSnapshotTask?.cancel()
+        undoSnapshotTask = nil
+        pushUndo(snapshot)
+    }
+
+    private func pushUndo(_ value: String) {
+        guard value != lastSnapshot else { return }
+        undoStack.append(value)
+        if undoStack.count > historyLimit { undoStack.removeFirst() }
+        lastSnapshot = value
+        redoStack.removeAll()   // 新的改动让 redo 失效（标准编辑器语义）
+        refreshHistoryFlags()
+    }
+
+    private func refreshHistoryFlags() {
+        canUndo = !undoStack.isEmpty
+        canRedo = !redoStack.isEmpty
+    }
+
+    /// 撤销：当前内容入 redo 栈，恢复上一个快照。无快照则无操作。
+    func undo() {
+        undoSnapshotTask?.cancel()
+        undoSnapshotTask = nil
+        guard let previous = undoStack.popLast() else { return }
+        redoStack.append(text)
+        if redoStack.count > historyLimit { redoStack.removeFirst() }
+        applyHistory(previous)
+        refreshHistoryFlags()
+    }
+
+    /// 重做：当前内容入 undo 栈，恢复被撤销的状态。无记录则无操作。
+    func redo() {
+        guard let next = redoStack.popLast() else { return }
+        undoStack.append(text)
+        if undoStack.count > historyLimit { undoStack.removeFirst() }
+        applyHistory(next)
+        refreshHistoryFlags()
+    }
+
+    /// 把历史值写回 text，期间置 isApplyingHistory 让 didSet 不再入栈。
+    /// lastSnapshot 同步到该值，避免下次防抖把它当「新起点」重复压栈。
+    private func applyHistory(_ value: String) {
+        isApplyingHistory = true
+        text = value
+        lastSnapshot = value
+        isApplyingHistory = false
     }
 
     @Published var mode: Mode = .edit
@@ -74,6 +170,9 @@ final class NoteEditorViewModel: ObservableObject {
             let loaded = try store.load(id: draftID)
             text = loaded
             lastPersistedText = loaded
+            // 载入的内容是撤销基线：第一次编辑应能一路退回到它，
+            // 但它本身不进 undo 栈（没有「比初始更早」的状态可退）。
+            lastSnapshot = loaded
             saveStatus = .clean
         } catch let error as AgentError {
             saveStatus = .failed(error.category)
@@ -96,6 +195,9 @@ final class NoteEditorViewModel: ObservableObject {
             try? store.saveSourceIDs(id: draftID, ids: referencedResultIDs)
         }
         guard !snippet.isEmpty else { return offset ?? text.count }
+        // 程序化插入是一次明确动作：插入**前**的内容立即落一个撤销点，
+        // 这样一次 ⌘Z 能整段撤掉刚插入的片段，不被随后的手敲防抖合并。
+        commitUndoSnapshot(text)
         // 衔接处补换行：尾部插入且已有内容不以换行结尾时，前置空行。
         let chars = Array(text)
         let idx = min(max(offset ?? chars.count, 0), chars.count)

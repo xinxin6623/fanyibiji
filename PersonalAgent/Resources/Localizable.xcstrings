@@ -401,6 +401,22 @@
         }
       }
     },
+    "manualInput.translate": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Translate Input"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "直接翻译"
+          }
+        }
+      }
+    },
     "note.export": {
       "localizations": {
         "en": {
@@ -561,6 +577,22 @@
         }
       }
     },
+    "note.redo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Redo (⌘⇧Z)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "重做 (⌘⇧Z)"
+          }
+        }
+      }
+    },
     "note.save": {
       "localizations": {
         "en": {
@@ -717,6 +749,22 @@
           "stringUnit": {
             "state": "translated",
             "value": "笔记"
+          }
+        }
+      }
+    },
+    "note.undo": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Undo (⌘Z)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "撤销 (⌘Z)"
           }
         }
       }
@@ -1069,6 +1117,38 @@
           "stringUnit": {
             "state": "translated",
             "value": "保存"
+          }
+        }
+      }
+    },
+    "settings.hotkey.selection_to_note": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Selection to Note"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "划词进草稿"
+          }
+        }
+      }
+    },
+    "settings.hotkey.selection_to_note.hint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grab selected text and append it (original, no translation) to the current draft note."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "取选中文字，把原文直接追加到当前草稿笔记（不翻译）。"
           }
         }
       }
