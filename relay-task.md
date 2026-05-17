@@ -1,6 +1,6 @@
 # Relay Task
 
-_updated: 2026-05-17 (笔记原料包 + 多草稿 Tab)_
+_updated: 2026-05-17 (笔记原料包 + 多草稿 Tab + Markdown 预览改 WebView)_
 _project: /Users/qoragufimo390gmail.com/Documents/New project 3 (PersonalAgent)_
 _branch: main_
 
@@ -17,9 +17,12 @@ _branch: main_
 - [x] NoteDocumentsViewModel 多 Tab 编排
 - [x] MainWindowView Tab条+历史+原料包导出按钮
 - [x] pbxproj 2 新文件各 4 处 + xcstrings 6 键
-- [x] 单测 31 用例(TNote 三套)+ 全量 test 全绿
+- [x] 单测(TNote 三套)+ 全量 test 全绿
+- [x] Markdown 预览改 WKWebView + 离线 marked/highlight.js
+      (逐行 AttributedString 补不全块级,代码块/表格/ASCII 图)
 - [~] 真机手验:由 James 把关,未由 agent 验收
-- [ ] **未 commit**(等 James 要求再提交)
+- [ ] **未 commit**(原料包+多草稿那批已 commit dc29c3e;
+      WebView 这批未 commit)
 
 ## 下一步
 无必须接力工程项。可选:
@@ -36,6 +39,9 @@ _branch: main_
 - 写入点:`PersonalAgent/UI/ContentQueryViewModel.swift`(两处带 sourceText)
 - UI:`PersonalAgent/UI/MainWindowView.swift`(notePane/Tab/导出)
 - 测试:`PersonalAgentTests/TNoteEditorTests.swift`(含 TNotePack/TNoteDocuments)
+- 预览:`PersonalAgent/UI/MarkdownWebView.swift` + `Resources/MarkdownWeb/`
+  (template.html + marked.min.js + highlight.min.js + css,folder
+  reference 登记,subdirectory:"MarkdownWeb" 解析)
 - 设计文档:`design-note-export-pack.md`、`知识库结构.md`
 - 落盘:`~/Library/Application Support/com.james.personalagent/notes/`
   (draft-<id>.md / .draft-<id>.sourcemap.json / manifest.json)

@@ -191,6 +191,7 @@ final class TNoteEditorTests: XCTestCase {
         vm.insert("手敲译文")
         XCTAssertTrue(vm.referencedResultIDs.isEmpty)
     }
+
 }
 
 // MARK: - NotePackComposer(原料包 A∪B 去重 + 清洗)
