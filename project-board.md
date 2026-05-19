@@ -478,7 +478,54 @@ T00 文档骨架、T01 MVP PRD、T02 SwiftUI 骨架均已 DONE 并通过构建�
 - 设计约束：翻译维持 `FreeWebTranslateProvider`（免费/快/不耗额度），
   系统提示词仅对「发起查询」「取词问 AI」生效。
 
-### T13/T14 过程修复（5 个 bug）
+### T15 语言配置 + Easydict 风格 UI/TTS 交互（P5 增量，DONE 已合并）
+
+- 阶段：MVP 后增量（2026-05-17）。
+- 目标：把目标语言、TTS 交互和主界面布局从临时 MVP 形态收敛到可日常使用。
+- 状态：DONE（PR #2 已合并，`xcodebuild build/test` 通过）。
+- 交付物：
+  - `Core/Config/LanguageConfig.swift`、
+    `Core/Persistence/LanguageSettingsStore.swift`，
+    目标语言选择持久化。
+  - `UI/MainWindowView.swift` Easydict 风格左右分栏、历史/结果/TTS 卡片。
+  - `UI/TTSPanelView.swift` / `TTSPlaybackViewModel.swift` 交互重构。
+  - `PersonalAgentTests/T15LanguageConfigTests.swift`。
+
+### T16 笔记编辑、多草稿 Tab 与原料包导出（P5 增量，DONE 已合并）
+
+- 阶段：MVP 后增量（2026-05-17）。
+- 目标：右侧笔记区支持长期草稿、Markdown 预览、多草稿 Tab、结果插入和
+  「笔记原料包」导出，给下游知识库 Claude 处理。
+- 状态：DONE（PR #3/#4 已合并，2026-05-18 复查 `xcodebuild build/test` 通过）。
+- 交付物：
+  - `UI/NoteEditorView.swift` / `UI/NoteEditorViewModel.swift`：
+    Markdown 编辑/预览、另存导出、撤销/重做、结果带原文插入。
+  - `UI/NoteDocumentsViewModel.swift`：多草稿 Tab、历史草稿重开、关闭留盘。
+  - `Core/Persistence/NoteDraftStore.swift`：`notes/` 目录、manifest、
+    每草稿 sidecar source id。
+  - `Core/Services/NotePackComposer.swift`：草稿 + A 源追 + B 文本兜底
+    合成单个 Markdown 原料包。
+  - `PersonalAgentTests/TNoteEditorTests.swift` 内覆盖
+    `TNoteEditorTests`、`TNotePackTests`、`TNoteDocumentsTests`。
+- 关键边界：App 只导出原料包，不调 LLM、不结构化、不直接并入知识库；
+  导出只作用于当前选中 Tab，避免跨草稿混入翻译历史。
+
+### T17 FileSecretStore 密钥存储切换（P5 增量，DONE 已合并）
+
+- 阶段：MVP 后增量（2026-05-17）。
+- 目标：根治开发期重签导致 Keychain ACL 漂移、反复弹系统密码的问题。
+- 状态：DONE（PR #5 已合并；2026-05-18 复查 `secrets.enc` 已生成，
+  `xcodebuild build/test` 通过）。
+- 交付物：
+  - `Core/Config/SecretStore.swift`：`FileSecretStore`，AES-GCM 文件加密，
+    根密钥由本机硬件 UUID + App 固定盐经 HKDF 派生。
+  - `App/AppComposition.swift`：全 App 共享 SecretStore 单例，首次构造时
+    从旧 Keychain 迁移 `llm.apiKey`、`tts.appId`、`tts.apiKey`、
+    `tts.apiSecret`。
+- 关键取舍：安全性弱于 Keychain，但解决本地开发反复弹框；同机知算法可解，
+  James 已确认接受。敏感明文仍不进仓库/日志。
+
+### P5 过程修复（5 个 bug）
 
 - pbxproj 显式引用需手动加新文件 4 处（脚本化）。
 - Codable snake_case 对缩写不对称 → 显式 CodingKeys + store 不设

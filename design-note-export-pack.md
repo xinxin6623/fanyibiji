@@ -1,6 +1,19 @@
 # 架构设计 — 笔记原料包导出(草稿 + 相关翻译历史)
 
-_2026-05-17 · 设计稿,待 James 拍板,未写代码_
+_2026-05-17 设计稿；2026-05-18 复查：已按推荐方案实现并合并，`xcodebuild build/test` 通过_
+
+## 0. 实现状态
+
+- 状态：DONE，已落地在 PR #3/#4 后续迭代中。
+- 当前代码采用本文推荐的 D1-b（引用 id 集合）、D2-a（sidecar 文件）、
+  B 整段文本兜底，以及多草稿 Tab 方案。
+- 关键文件：
+  - `UI/NoteEditorViewModel.swift`：维护 `referencedResultIDs`。
+  - `UI/NoteDocumentsViewModel.swift`：多草稿 Tab 与历史草稿重开。
+  - `Core/Persistence/NoteDraftStore.swift`：`notes/`、manifest、sidecar。
+  - `Core/Services/NotePackComposer.swift`：原料包纯函数合成。
+  - `UI/MainWindowView.swift`：当前 Tab 导出原料包。
+  - `PersonalAgentTests/TNoteEditorTests.swift`：覆盖编辑、原料包、多草稿测试。
 
 ## 1. 目标与边界
 
