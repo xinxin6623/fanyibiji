@@ -141,11 +141,15 @@ final class TTSPlaybackViewModel: NSObject, ObservableObject {
         let text = (overrideText ?? inputText)
             .trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { state = .idle; return }
+        // 讯飞合成会吞掉首字（首帧建流时第一个音被截）。送合成前
+        // 在文本最前面垫 3 个空格当"起跑缓冲"，让首字完整发出；
+        // 仅影响送 provider 的副本，不动 inputText / 不进笔记。
+        let synthText = "   " + text
         state = .synthesizing
         synthesisTask = Task { [weak self] in
             guard let self else { return }
             do {
-                let result = try await self.provider.synthesize(text)
+                let result = try await self.provider.synthesize(synthText)
                 try Task.checkCancellation()
                 try self.loadAndPlay(result)
             } catch let error as AgentError {

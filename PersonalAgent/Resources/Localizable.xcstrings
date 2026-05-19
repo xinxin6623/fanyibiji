@@ -401,6 +401,22 @@
         }
       }
     },
+    "lang.toggle": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toggle Chinese / English"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "中英文切换"
+          }
+        }
+      }
+    },
     "manualInput.translate": {
       "localizations": {
         "en": {

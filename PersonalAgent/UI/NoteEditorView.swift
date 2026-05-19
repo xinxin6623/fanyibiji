@@ -20,7 +20,7 @@ struct NoteEditorView: View {
     var body: some View {
         VStack(spacing: 0) {
             header
-            Divider()
+            ClaudeTheme.separator.frame(height: 1)
             Group {
                 switch viewModel.mode {
                 case .edit:
@@ -36,7 +36,7 @@ struct NoteEditorView: View {
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .background(Color(nsColor: .controlBackgroundColor))
+        .background(ClaudeTheme.background)
     }
 
     // MARK: - 顶栏
@@ -44,10 +44,10 @@ struct NoteEditorView: View {
     private var header: some View {
         HStack(spacing: 12) {
             Image(systemName: "square.and.pencil")
-                .foregroundStyle(.tint)
+                .foregroundStyle(ClaudeTheme.accent)
             Text("note.title")
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.secondary)
+                .foregroundStyle(ClaudeTheme.secondaryText)
 
             // 撤销 / 重做：按钮 + ⌘Z / ⌘⇧Z。程序化插入(插译文/划词进
             // 草稿)与手敲都走 ViewModel 自建快照栈,故这对按钮对两者
@@ -62,6 +62,7 @@ struct NoteEditorView: View {
                 .buttonStyle(.borderless)
                 .disabled(!viewModel.canUndo)
                 .help("note.undo")
+                .nativeTooltip(String(localized: "note.undo"))
                 .keyboardShortcut("z", modifiers: .command)
 
                 Button {
@@ -72,18 +73,19 @@ struct NoteEditorView: View {
                 .buttonStyle(.borderless)
                 .disabled(!viewModel.canRedo)
                 .help("note.redo")
+                .nativeTooltip(String(localized: "note.redo"))
                 .keyboardShortcut("z", modifiers: [.command, .shift])
             }
             .font(.subheadline)
 
             Spacer()
 
-            Picker("", selection: $viewModel.mode) {
-                Text("note.mode.edit").tag(NoteEditorViewModel.Mode.edit)
-                Text("note.mode.preview").tag(NoteEditorViewModel.Mode.preview)
+            // 轻量文字分段：选中项赤陶橙加粗、其余灰，无填充块，
+            // 与整体扁平风一致（James 决策，替代橙色 segmented）。
+            HStack(spacing: 14) {
+                modeTextButton("note.mode.edit", .edit)
+                modeTextButton("note.mode.preview", .preview)
             }
-            .pickerStyle(.segmented)
-            .labelsHidden()
             .fixedSize()
 
             saveStatusLabel
@@ -96,13 +98,28 @@ struct NoteEditorView: View {
                     .font(.caption)
             }
             .buttonStyle(.bordered)
-            .tint(.accentColor)
+            .tint(ClaudeTheme.accent)
             .help("note.export.help")
             .disabled(viewModel.text.trimmingCharacters(
                 in: .whitespacesAndNewlines).isEmpty)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
+    }
+
+    /// 编辑/预览文字分段项：选中赤陶橙加粗，未选灰常规。
+    private func modeTextButton(_ key: LocalizedStringKey,
+                                _ mode: NoteEditorViewModel.Mode) -> some View {
+        let selected = viewModel.mode == mode
+        return Button {
+            viewModel.mode = mode
+        } label: {
+            Text(key)
+                .font(.subheadline.weight(selected ? .semibold : .regular))
+                .foregroundStyle(selected ? ClaudeTheme.accent
+                                          : ClaudeTheme.secondaryText)
+        }
+        .buttonStyle(.plain)
     }
 
     @ViewBuilder
