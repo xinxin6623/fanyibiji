@@ -162,6 +162,32 @@ final class TTSPlaybackViewModel: NSObject, ObservableObject {
         }
     }
 
+    /// 划词朗读用：合成 → MP3 落盘缓存目录 → 播放 → 返回 file URL
+    /// （笔记插链接用）。与 `synthesizeAndPlay` 同管线（含垫 3 空格
+    /// 防吞字），但 await 完成并把文件 URL 交回调用方。失败返回 nil
+    /// 并把 `state` 置 `.failure`（UI 可见）。
+    func synthesizeSaveAndPlay(text: String) async -> URL? {
+        synthesisTask?.cancel()
+        stopPlayback()
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { state = .idle; return nil }
+        state = .synthesizing
+        do {
+            let result = try await provider.synthesize("   " + trimmed)
+            let url = AppComposition.ttsAudioCacheDirectory()
+                .appendingPathComponent("\(UUID().uuidString).mp3")
+            try result.data.write(to: url, options: .atomic)
+            try loadAndPlay(result)
+            return url
+        } catch let error as AgentError {
+            state = .failure(error.category)
+            return nil
+        } catch {
+            state = .failure(.unknown)
+            return nil
+        }
+    }
+
     func cancelSynthesis() {
         synthesisTask?.cancel()
         synthesisTask = nil

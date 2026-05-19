@@ -497,6 +497,22 @@
         }
       }
     },
+    "note.insert_input": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Insert input into notes"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "插入输入到笔记"
+          }
+        }
+      }
+    },
     "note.insert_result": {
       "localizations": {
         "en": {
@@ -918,13 +934,13 @@
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Run Query"
+            "value": "Ask AI"
           }
         },
         "zh-Hans": {
           "stringUnit": {
             "state": "translated",
-            "value": "发起查询"
+            "value": "问 AI"
           }
         }
       }

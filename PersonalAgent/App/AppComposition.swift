@@ -35,6 +35,22 @@ enum AppComposition {
             .appendingPathComponent("tts-config.json")
     }
 
+    /// 划词朗读生成的 MP3 落盘目录：`applicationSupport/
+    /// com.james.personalagent/tts-audio/`。笔记里插的 file:// 链接
+    /// 指向这里，离线可重听。目录不存在则创建。
+    static func ttsAudioCacheDirectory() -> URL {
+        let base = (try? FileManager.default.url(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask, appropriateFor: nil, create: true))
+            ?? FileManager.default.temporaryDirectory
+        let dir = base
+            .appendingPathComponent("com.james.personalagent", isDirectory: true)
+            .appendingPathComponent("tts-audio", isDirectory: true)
+        try? FileManager.default.createDirectory(
+            at: dir, withIntermediateDirectories: true)
+        return dir
+    }
+
     /// 按给定 `TTSConfig` 解析三件套密钥并造 provider；按 `engine` 选
     /// 普通 / 超拟人接口（**同一套 Keychain key**）。缺 key/非法配置
     /// → `FailingTTSProvider` 降级（UI 可见，不崩）。供 ViewModel 在

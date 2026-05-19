@@ -19,6 +19,9 @@ struct MainWindowView: View {
     @State private var showingHistory = false
     @State private var showingHotkeySettings = false
 
+    /// app 内划词朗读控制器（监听选区→鼠标上方弹朗读浮层）。
+    @State private var selectionSpeak = SelectionSpeakController()
+
     /// 左栏宽度（可拖动分隔条调整）。范围夹在 [minPane, total-minPane]。
     @State private var leftPaneWidth: CGFloat = 360
     private let minPaneWidth: CGFloat = 280
@@ -63,6 +66,25 @@ struct MainWindowView: View {
             HotkeySettingsView(config: controller.hotkeyConfig,
                                promptConfig: controller.promptConfig)
                 .environmentObject(controller)
+        }
+        .onAppear {
+            selectionSpeak.onSpeak = { text in
+                handleSelectionSpeak(text)
+            }
+            selectionSpeak.start()
+        }
+        .onDisappear { selectionSpeak.stop() }
+    }
+
+    /// 划词浮层「朗读」点击：合成落盘 → 播放 → 在选中笔记 Tab
+    /// 头部插「🔊 [语音](file://路径)」+ 原文（James 决策：链接在
+    /// 原文之前）。无选中 Tab 时只播放（无处可插，静默跳过插入）。
+    private func handleSelectionSpeak(_ text: String) {
+        Task { @MainActor in
+            guard let url = await controller.ttsViewModel
+                .synthesizeSaveAndPlay(text: text) else { return }
+            let snippet = "🔊 [语音](\(url.absoluteString)) \(text)"
+            noteDocs.selected?.editor.insert(snippet)
         }
     }
 
@@ -237,14 +259,9 @@ struct MainWindowView: View {
     private var queryToolbarRow: some View {
         VStack(spacing: 0) {
             HStack(spacing: 16) {
-                iconButton("paperplane", "query.run") {
-                    viewModel.dispatch { await viewModel.runQuery() }
-                }
-                .disabled(isLoading)
-
-                // 直接翻译输入框文本（走免 key 翻译通道，区别于
-                // paperplane 的问答语义；与取词翻译同管线，sourceKind
-                // 记 .manualInput 供溯源）。
+                // 直接翻译输入框文本（走免 key 翻译通道）。按 James
+                // 要求排第一位。与取词翻译同管线，sourceKind 记
+                // .manualInput 供溯源。
                 iconButton("character.bubble", "manualInput.translate") {
                     viewModel.dispatch {
                         await viewModel.runTranslate(
@@ -255,22 +272,27 @@ struct MainWindowView: View {
                 .disabled(isLoading || viewModel.inputText.trimmingCharacters(
                     in: .whitespacesAndNewlines).isEmpty)
 
+                // 问 AI（原 paperplane 发送查询，图标换 brain，
+                // 提示改「问AI」，James 决策）。
+                iconButton("brain", "query.run") {
+                    viewModel.dispatch { await viewModel.runQuery() }
+                }
+                .disabled(isLoading)
+
                 iconButton("camera.viewfinder", "capture.run") {
                     controller.triggerCapture()
                 }
                 .disabled(isLoading)
 
-                iconButton("doc.on.clipboard", "clipboard.translate") {
-                    viewModel.dispatch {
-                        await viewModel.translateFromClipboard()
-                    }
+                // 直接把输入框内容原样插入选中 Tab 笔记（无原文/译文
+                // 标签，不登记 sourceResultID——这只是手敲原料不是翻译
+                // 结果，James 决策）。空输入或无选中 Tab 时禁用。
+                iconButton("text.append", "note.insert_input") {
+                    noteDocs.selected?.editor.insert(viewModel.inputText)
                 }
-                .disabled(isLoading)
-
-                iconButton("brain", "clipboard.query") {
-                    viewModel.dispatch { await viewModel.queryFromClipboard() }
-                }
-                .disabled(isLoading)
+                .disabled(noteDocs.selected == nil
+                          || viewModel.inputText.trimmingCharacters(
+                            in: .whitespacesAndNewlines).isEmpty)
 
                 if isLoading {
                     ProgressView().controlSize(.small)
@@ -509,7 +531,7 @@ struct MainWindowView: View {
             // result id(原料包 A 源追)。无选中 Tab 时按钮禁用。
             // 有原文则按「**原文:** … / **译文:** …」带标签排版一起带过去
             // (James 决策);无原文(如纯问答)退化为只插结果文本。
-            iconButton("text.insert", "note.insert_result") {
+            iconButton("text.append", "note.insert_result") {
                 noteDocs.selected?.editor.insert(
                     Self.noteSnippet(source: sourceText, result: text),
                     sourceResultID: resultID)
