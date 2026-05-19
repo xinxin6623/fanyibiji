@@ -24,6 +24,13 @@ struct MainWindowView: View {
     private let minPaneWidth: CGFloat = 280
     private let dividerWidth: CGFloat = 8
 
+    /// 左栏内"输入区"占比（0–1，可拖动横向分隔条调整）。
+    /// 输入/输出上下分栏，各自独立滚动；分隔条夹在 [0.2, 0.8]。
+    @State private var inputFraction: CGFloat = 0.45
+    private let minInputFraction: CGFloat = 0.2
+    private let maxInputFraction: CGFloat = 0.8
+    private let hDividerHeight: CGFloat = 8
+
     init(viewModel: ContentQueryViewModel,
          noteDocs: NoteDocumentsViewModel,
          exportResultStore: JSONLResultStore) {
@@ -50,7 +57,8 @@ struct MainWindowView: View {
             }
         }
         .frame(minWidth: 920, minHeight: 560)
-        .background(Color(nsColor: .windowBackgroundColor))
+        .background(ClaudeTheme.background)
+        .tint(ClaudeTheme.accent)
         .sheet(isPresented: $showingHotkeySettings) {
             HotkeySettingsView(config: controller.hotkeyConfig,
                                promptConfig: controller.promptConfig)
@@ -60,26 +68,80 @@ struct MainWindowView: View {
 
     // MARK: - 左栏（原查询/结果/历史）
 
+    /// 固定头部（工具栏 / TTS 播放条 / 语言条）+ 下方输入·输出
+    /// 上下可拖动分栏。TTS 按 James 要求常驻左栏顶部。
     private var leftPane: some View {
         VStack(spacing: 0) {
             toolbar
-            Divider()
-            ScrollView {
-                VStack(spacing: 14) {
-                    if let category = controller.captureFailure {
-                        permissionBanner(category)
-                    }
-                    queryCard
-                    languageBar
-                    Group {
-                        if showingHistory { historyCard } else { resultCard }
-                    }
-                    // 空闲不渲染;合成中/可播放/失败时自带卡片显示。
-                    TTSPanelView(viewModel: controller.ttsViewModel)
-                }
-                .padding(16)
+            hairline
+            if let category = controller.captureFailure {
+                permissionBanner(category)
+                    .padding(.horizontal, 16)
+                    .padding(.top, 10)
             }
+
+            GeometryReader { geo in
+                let inputH = clampedInputHeight(total: geo.size.height)
+                VStack(spacing: 0) {
+                    // 输入区：仅文字框独立滚动
+                    ScrollView {
+                        queryEditor
+                            .frame(minHeight: inputH - 44)
+                            .padding(.horizontal, 16)
+                            .padding(.top, 12)
+                    }
+                    .frame(height: inputH)
+
+                    // 工具行钉在分隔线正上方，不随输入滚动
+                    queryToolbarRow
+
+                    hSplitDivider(total: geo.size.height)
+
+                    // 输出区（结果/历史）：独立滚动
+                    ScrollView {
+                        Group {
+                            if showingHistory { historyCard } else { resultCard }
+                        }
+                        .padding(.horizontal, 16)
+                    }
+                    .frame(maxHeight: .infinity)
+                }
+            }
+            .padding(.bottom, 12)
         }
+    }
+
+    // MARK: - 输入/输出上下可拖动分隔
+
+    private func clampedInputHeight(total: CGFloat) -> CGFloat {
+        let usable = max(total - hDividerHeight, 1)
+        let f = min(max(inputFraction, minInputFraction), maxInputFraction)
+        return usable * f
+    }
+
+    private func hSplitDivider(total: CGFloat) -> some View {
+        Rectangle()
+            .fill(ClaudeTheme.separator)
+            .frame(height: hDividerHeight)
+            .overlay(
+                RoundedRectangle(cornerRadius: 1.5)
+                    .fill(ClaudeTheme.secondaryText.opacity(0.4))
+                    .frame(width: 36, height: 3))
+            .contentShape(Rectangle())
+            .gesture(
+                DragGesture()
+                    .onChanged { value in
+                        let usable = max(total - hDividerHeight, 1)
+                        let cur = clampedInputHeight(total: total)
+                        let proposed = (cur + value.translation.height) / usable
+                        inputFraction = min(max(proposed, minInputFraction),
+                                            maxInputFraction)
+                    }
+            )
+            .onHover { inside in
+                if inside { NSCursor.resizeUpDown.push() }
+                else { NSCursor.pop() }
+            }
     }
 
     // MARK: - 可拖动分隔条
@@ -91,12 +153,12 @@ struct MainWindowView: View {
 
     private func splitDivider(total: CGFloat) -> some View {
         Rectangle()
-            .fill(Color(nsColor: .separatorColor))
+            .fill(ClaudeTheme.separator)
             .frame(width: dividerWidth)
             .overlay(
-                Rectangle()
-                    .fill(Color(nsColor: .separatorColor))
-                    .frame(width: 1)
+                RoundedRectangle(cornerRadius: 1.5)
+                    .fill(ClaudeTheme.secondaryText.opacity(0.4))
+                    .frame(width: 3, height: 36)
             )
             .contentShape(Rectangle())
             .gesture(
@@ -117,14 +179,13 @@ struct MainWindowView: View {
 
     // MARK: - 顶部工具栏
 
+    /// 顶栏：左侧 TTS 播放条（播放/进度/速度，占主空间），右侧
+    /// 历史/设置图标。原 `字` 图标与 "Personal Agent" 标题按 James
+    /// 要求去掉（无信息量、占地方）。
     private var toolbar: some View {
         HStack(spacing: 14) {
-            Image(systemName: "character.bubble")
-                .font(.title3)
-                .foregroundStyle(.tint)
-            Text("app.title")
-                .font(.headline)
-            Spacer()
+            TTSPanelView(viewModel: controller.ttsViewModel)
+
             Button {
                 showingHistory.toggle()
                 if showingHistory { viewModel.loadHistory() }
@@ -135,6 +196,8 @@ struct MainWindowView: View {
             }
             .buttonStyle(.plain)
             .help(showingHistory ? "history.hide" : "history.show")
+            .nativeTooltip(String(localized: showingHistory
+                                   ? "history.hide" : "history.show"))
 
             Button {
                 showingHotkeySettings = true
@@ -144,24 +207,37 @@ struct MainWindowView: View {
             }
             .buttonStyle(.plain)
             .help("settings.hotkey.title")
+            .nativeTooltip(String(localized: "settings.hotkey.title"))
         }
         .padding(.horizontal, 16)
-        .padding(.vertical, 10)
+        .padding(.vertical, 8)
+    }
+
+    /// 极细分隔线（1px 暖灰，参考 James 给的设计图）。Divider 默认
+    /// 偏粗且系统色，统一换成这个。
+    private var hairline: some View {
+        ClaudeTheme.separator
+            .frame(height: 1)
     }
 
     // MARK: - 查询卡
 
-    private var queryCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            TextEditor(text: $viewModel.inputText)
-                .font(.body)
-                .scrollContentBackground(.hidden)
-                .frame(minHeight: 96)
+    /// 输入文字框（无边框、落窗口底色，James 决策）。放进可滚动区，
+    /// 长文本在此滚动；工具行已抽出钉在分隔线上方不随其滚。
+    private var queryEditor: some View {
+        TextEditor(text: $viewModel.inputText)
+            .font(.body)
+            .scrollContentBackground(.hidden)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
 
-            Divider()
-
+    /// 工具行（图标 + 中英切换 + 朗读图标）。从输入框内抽出，钉在
+    /// 可拖动分隔线**正上方**，不随输入文字滚动（James 决策）。
+    /// 上方那条 hairline 已按 James 要求去掉。
+    private var queryToolbarRow: some View {
+        VStack(spacing: 0) {
             HStack(spacing: 16) {
-                iconButton("paperplane.fill", "query.run") {
+                iconButton("paperplane", "query.run") {
                     viewModel.dispatch { await viewModel.runQuery() }
                 }
                 .disabled(isLoading)
@@ -196,16 +272,6 @@ struct MainWindowView: View {
                 }
                 .disabled(isLoading)
 
-                // 朗读输入框文本（TTS 文本框已移除，直接传文本）。
-                iconButton("speaker.wave.2", "tts.speak_input") {
-                    controller.ttsViewModel.synthesizeAndPlay(
-                        text: viewModel.inputText)
-                }
-                .disabled(viewModel.inputText.trimmingCharacters(
-                    in: .whitespacesAndNewlines).isEmpty)
-
-                Spacer()
-
                 if isLoading {
                     ProgressView().controlSize(.small)
                     if viewModel.canCancel {
@@ -218,40 +284,37 @@ struct MainWindowView: View {
                         viewModel.inputText = ""
                     }
                 }
-            }
-            .font(.title3)
-        }
-        .card()
-    }
 
-    // MARK: - 语言方向条
+                Spacer()
 
-    private var languageBar: some View {
-        HStack {
-            // 源语言固定自动检测（provider 已 sl=auto），只读展示。
-            Label("lang.auto_detect", systemImage: "globe")
-                .font(.subheadline)
-                .foregroundStyle(.secondary)
-
-            Spacer()
-            Image(systemName: "arrow.right")
-                .foregroundStyle(.secondary)
-            Spacer()
-
-            // 目标语言可选 → 改 viewModel.targetLanguage（didSet 落盘）。
-            Picker(selection: $viewModel.targetLanguage) {
-                ForEach(TargetLanguage.allCases, id: \.self) { lang in
-                    Text(verbatim: "\(lang.flag) ")
-                        + Text(LocalizedStringKey(lang.displayNameKey))
+                // 中英切换按钮（James 决策：只留中英两种，点击在
+                // 中文 ⇄ English 间 toggle，去掉多语言下拉）。
+                Button {
+                    viewModel.targetLanguage =
+                        viewModel.targetLanguage == .chinese ? .english
+                                                             : .chinese
+                } label: {
+                    Text(viewModel.targetLanguage == .chinese
+                         ? "中 / EN" : "EN / 中")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(ClaudeTheme.primaryText)
                 }
-            } label: { EmptyView() }
-            .pickerStyle(.menu)
-            .fixedSize()
+                .buttonStyle(.plain)
+                .help("lang.toggle")
+                .nativeTooltip(String(localized: "lang.toggle"))
+
+                // 朗读输入框文本：只留图标（与左侧工具图标统一细线性，
+                // James 决策：去文字去描边）。
+                iconButton("speaker.wave.2", "tts.speak_input") {
+                    controller.ttsViewModel.synthesizeAndPlay(
+                        text: viewModel.inputText)
+                }
+                .disabled(viewModel.inputText.trimmingCharacters(
+                    in: .whitespacesAndNewlines).isEmpty)
+            }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 10)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
-        .background(Color(nsColor: .controlBackgroundColor))
-        .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 
     // MARK: - 结果卡
@@ -290,7 +353,7 @@ struct MainWindowView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .card()
+        .padding(.vertical, 4)
     }
 
     // MARK: - 笔记区(多草稿 Tab + 历史 + 原料包导出)
@@ -309,7 +372,7 @@ struct MainWindowView: View {
                 Spacer()
             }
         }
-        .background(Color(nsColor: .controlBackgroundColor))
+        .background(ClaudeTheme.background)
     }
 
     private var noteTabBar: some View {
@@ -330,6 +393,7 @@ struct MainWindowView: View {
             }
             .buttonStyle(.borderless)
             .help("note.tab.new")
+            .nativeTooltip(String(localized: "note.tab.new"))
 
             historyMenu
 
@@ -354,6 +418,7 @@ struct MainWindowView: View {
             }
             .buttonStyle(.borderless)
             .help("note.tab.close")
+            .nativeTooltip(String(localized: "note.tab.close"))
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
@@ -380,6 +445,7 @@ struct MainWindowView: View {
         .menuStyle(.borderlessButton)
         .fixedSize()
         .help("note.history")
+        .nativeTooltip(String(localized: "note.history"))
     }
 
     /// 导出原料包:当前 Tab 的草稿全文 + **它自己的** referencedResultIDs
@@ -436,11 +502,8 @@ struct MainWindowView: View {
                               sourceText: String? = nil,
                               resultID: UUID? = nil) -> some View {
         HStack {
-            Image(systemName: "text.bubble.fill")
-                .foregroundStyle(.tint)
-            Text("result.title")
-                .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.secondary)
+            // 「翻译结果」标题+图标已按 James 要求删掉，只留右侧
+            // 两个操作按钮（插入笔记 / 朗读结果），靠右浮在结果上方。
             Spacer()
             // 插入到右侧**选中 Tab** 的笔记草稿;同时登记来源
             // result id(原料包 A 源追)。无选中 Tab 时按钮禁用。
@@ -522,19 +585,39 @@ struct MainWindowView: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .card()
+        .padding(.vertical, 4)
     }
 
     // MARK: - 复用零件
 
+    /// 统一工具图标：细线性（调用处传无 .fill 名）、同字号同字重、
+    /// 同暖灰调（James 决策：一排图标视觉一致，不混填充/描边）。
     private func iconButton(_ systemName: String,
                             _ helpKey: LocalizedStringKey,
                             _ action: @escaping () -> Void) -> some View {
         Button(action: action) {
             Image(systemName: systemName)
+                .font(.system(size: 17, weight: .regular))
+                .foregroundStyle(ClaudeTheme.primaryText)
         }
         .buttonStyle(.plain)
+        // .help 在 .plain 按钮上不稳，叠一层原生 tooltip 兜底
+        // （两者并存无害，谁先触发都给提示）。
         .help(helpKey)
+        .nativeTooltip(Self.localized(helpKey))
+    }
+
+    /// LocalizedStringKey → 已本地化字符串（喂给 AppKit toolTip）。
+    /// 这些键都是无参短语，直接按当前语言查表。
+    private static func localized(_ key: LocalizedStringKey) -> String {
+        // LocalizedStringKey 无公开取 key 的 API，但工程里这些键与
+        // 其字符串值一一对应，String(localized:) 用 key 文本即可命中。
+        let mirror = Mirror(reflecting: key)
+        if let k = mirror.children.first(where: { $0.label == "key" })?
+            .value as? String {
+            return String(localized: String.LocalizationValue(k))
+        }
+        return ""
     }
 
     private func cardHint(_ key: LocalizedStringKey) -> some View {
@@ -588,17 +671,3 @@ struct MainWindowView: View {
     }
 }
 
-/// 统一卡片容器修饰：圆角 + 背景 + 内边距，对齐 Easydict 卡片观感。
-private struct CardModifier: ViewModifier {
-    func body(content: Content) -> some View {
-        content
-            .padding(14)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color(nsColor: .controlBackgroundColor))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-    }
-}
-
-private extension View {
-    func card() -> some View { modifier(CardModifier()) }
-}
