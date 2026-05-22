@@ -27,6 +27,10 @@ final class AppController: ObservableObject {
     private let hotkey: HotkeyMonitoring
     private let regionSelector: RegionSelectionController
     private let selectionGrabber: SelectionTextGrabber
+    /// 划词没抓到选中文字时的剪贴板兜底：若剪贴板有非空文本，按同一
+    /// 路径走（翻译/进笔记）。James 决策：两条快捷键都做此回退，无
+    /// 时间窗限制（对齐 Easydict "剪贴板有就用"）。
+    private let clipboardGrabber: ClipboardTextGrabber
     private let hotkeyStore: HotkeySettingsStore
     private let promptStore: PromptSettingsStore
     private let languageStore: LanguageSettingsStore
@@ -86,6 +90,20 @@ final class AppController: ObservableObject {
         self.selectionGrabber = SelectionTextGrabber(
             pasteboard: SystemPasteboard(),
             keystroke: SystemCopyKeystrokeSender())
+        self.clipboardGrabber = ClipboardTextGrabber(
+            pasteboard: SystemPasteboard())
+    }
+
+    /// 划词→剪贴板的回退取词：先模拟 ⌘C 抓选中；抓不到再读剪贴板。
+    /// 两者都拿不到非空文本才视作失败（调用方静默不打扰）。
+    private func grabSelectionOrClipboard() async -> String? {
+        if case .success(let text) = await selectionGrabber.grab() {
+            return text
+        }
+        if case .success(let text) = clipboardGrabber.grab() {
+            return text
+        }
+        return nil
     }
 
     /// App 启动调用：尝试接入全局热键。未授权（辅助功能）时不崩溃，
@@ -170,55 +188,50 @@ final class AppController: ObservableObject {
         }
     }
 
-    /// 触发一次划词翻译：模拟 ⌘C 取选中文字 → 翻译。串行：进行中
-    /// 再次触发被忽略。抓不到选中文字（无选中）静默不做事——不弹窗、
-    /// 不抢焦点（对齐 Easydict 默认，由 James 确认）。
+    /// 触发一次划词翻译：先模拟 ⌘C 取选中文字，没选中则回退读剪贴板，
+    /// 任一成功即翻译。串行：进行中再次触发被忽略。两路都抓不到
+    /// （无选中且剪贴板空）静默不做事——不弹窗、不抢焦点
+    /// （对齐 Easydict 默认）。
     func triggerSelectionTranslate() {
         guard selectionTask == nil else { return }
         selectionTask = Task { @MainActor in
             defer { selectionTask = nil }
-            switch await selectionGrabber.grab() {
-            case .success(let text):
-                // 拿到选中文字、要展示结果了，此时才把窗口调前台
-                // （取词阶段刻意不激活，让用户从任意 App 就地划词）。
-                NSApp.activate(ignoringOtherApps: true)
-                await queryViewModel.runQuery(
-                    with: text, sourceKind: .selectedText,
-                    action: .translate)
-            case .failure:
-                // 无选中/空白：静默，不打扰用户。
-                break
+            guard let text = await grabSelectionOrClipboard() else {
+                // 无选中且剪贴板空/空白：静默，不打扰用户。
+                return
             }
+            // 拿到文字、要展示结果了，此时才把窗口调前台
+            // （取词阶段刻意不激活，让用户从任意 App 就地划词）。
+            NSApp.activate(ignoringOtherApps: true)
+            await queryViewModel.runQuery(
+                with: text, sourceKind: .selectedText,
+                action: .translate)
         }
     }
 
-    /// 触发一次「划词进草稿」：模拟 ⌘C 取选中文字 → 原文直接追加到
-    /// 当前选中的草稿 Tab（不走翻译/LLM，纯摘录沉淀，James 决策）。
-    /// 串行：进行中再次触发被忽略。抓不到选中文字静默不做事
-    /// （与划词翻译一致，不弹窗不抢焦点）。成功后把主窗口调到前台
-    /// 并切到该草稿 Tab，便于立即查看/续写。
+    /// 触发一次「划词进草稿」：先模拟 ⌘C 取选中文字，没选中则回退
+    /// 读剪贴板，任一成功即把原文追加到当前选中的草稿 Tab（不走
+    /// 翻译/LLM，纯摘录沉淀）。串行：进行中再次触发被忽略。两路都
+    /// 抓不到（无选中且剪贴板空）静默不做事（与划词翻译一致，不弹窗
+    /// 不抢焦点）。成功后把主窗口调到前台并切到该草稿 Tab，便于立即
+    /// 查看/续写。
     func triggerSelectionToNote() {
         guard selectionTask == nil else { return }
         selectionTask = Task { @MainActor in
             defer { selectionTask = nil }
-            switch await selectionGrabber.grab() {
-            case .success(let text):
-                let trimmed = text.trimmingCharacters(
-                    in: .whitespacesAndNewlines)
-                guard !trimmed.isEmpty else { break }
-                // 没有打开的草稿 Tab 时先开一个，保证摘录有去处。
-                if noteDocsViewModel.selected == nil {
-                    noteDocsViewModel.newDocument()
-                }
-                guard let tab = noteDocsViewModel.selected else { break }
-                tab.editor.insert(trimmed)
-                // 摘录完把窗口调前台并切到该草稿 Tab（James 决策）。
-                noteDocsViewModel.select(tab.id)
-                NSApp.activate(ignoringOtherApps: true)
-            case .failure:
-                // 无选中/空白：静默，不打扰用户。
-                break
+            guard let text = await grabSelectionOrClipboard() else {
+                // 无选中且剪贴板空/空白：静默，不打扰用户。
+                return
             }
+            // 没有打开的草稿 Tab 时先开一个，保证摘录有去处。
+            if noteDocsViewModel.selected == nil {
+                noteDocsViewModel.newDocument()
+            }
+            guard let tab = noteDocsViewModel.selected else { return }
+            tab.editor.insert(text)
+            // 摘录完把窗口调前台并切到该草稿 Tab（James 决策）。
+            noteDocsViewModel.select(tab.id)
+            NSApp.activate(ignoringOtherApps: true)
         }
     }
 
