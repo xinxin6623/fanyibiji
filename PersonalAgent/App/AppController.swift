@@ -18,6 +18,9 @@ final class AppController: ObservableObject {
     let noteDocsViewModel: NoteDocumentsViewModel
     /// 原料包导出读全量翻译历史用(只读 results.jsonl)。
     let exportResultStore: JSONLResultStore
+    /// 词卡 store:词典卡双击 → 写入 ~/knowledge/words/。
+    /// 与 results.jsonl 并行,负责"用户主动归档"快照。
+    let wordCardStore: WordCardStore
 
     /// 最近一次采集链失败分类（nil 表示无未处理的权限/采集错误）。
     /// UI 据此决定是否显示权限引导横幅。
@@ -62,6 +65,7 @@ final class AppController: ObservableObject {
         self.ttsViewModel = AppComposition.makeTTSViewModel()
         self.noteDocsViewModel = AppComposition.makeNoteDocumentsViewModel()
         self.exportResultStore = AppComposition.makeResultStoreForExport()
+        self.wordCardStore = AppComposition.makeWordCardStore()
         self.coordinator = P2IntegrationCoordinator(
             screenAuth: screenAuth,
             capture: ScreenCaptureCoordinator(

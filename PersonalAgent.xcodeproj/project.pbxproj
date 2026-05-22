@@ -94,6 +94,12 @@
 		C20000000000000000000D /* T13HotkeySettingsTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C20000000000000000000E /* T13HotkeySettingsTests.swift */; };
 		B200000000000000000000A1 /* TranslateHTTPClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000A6 /* TranslateHTTPClient.swift */; };
 		B200000000000000000000A2 /* FreeWebTranslateProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000A7 /* FreeWebTranslateProvider.swift */; };
+		D10000000000000000000001 /* DictionaryEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000000000000000000011 /* DictionaryEntry.swift */; };
+		D10000000000000000000002 /* YoudaoDictProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000000000000000000012 /* YoudaoDictProvider.swift */; };
+		D10000000000000000000003 /* DictionaryCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000000000000000000013 /* DictionaryCardView.swift */; };
+		D10000000000000000000004 /* T14DictionaryProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000000000000000000014 /* T14DictionaryProviderTests.swift */; };
+		D10000000000000000000005 /* WordCardStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000000000000000000015 /* WordCardStore.swift */; };
+		D10000000000000000000006 /* T16WordCardStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D10000000000000000000016 /* T16WordCardStoreTests.swift */; };
 		B200000000000000000000A3 /* T09TranslateProviderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000A8 /* T09TranslateProviderTests.swift */; };
 		B200000000000000000000A4 /* RetryingLLMProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000A9 /* RetryingLLMProvider.swift */; };
 		B200000000000000000000A5 /* T07bRetryTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000000AA /* T07bRetryTests.swift */; };
@@ -189,6 +195,12 @@
 		C20000000000000000000E /* T13HotkeySettingsTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = T13HotkeySettingsTests.swift; sourceTree = "<group>"; };
 		B200000000000000000000A6 /* TranslateHTTPClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TranslateHTTPClient.swift; sourceTree = "<group>"; };
 		B200000000000000000000A7 /* FreeWebTranslateProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FreeWebTranslateProvider.swift; sourceTree = "<group>"; };
+		D10000000000000000000011 /* DictionaryEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictionaryEntry.swift; sourceTree = "<group>"; };
+		D10000000000000000000012 /* YoudaoDictProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = YoudaoDictProvider.swift; sourceTree = "<group>"; };
+		D10000000000000000000013 /* DictionaryCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DictionaryCardView.swift; sourceTree = "<group>"; };
+		D10000000000000000000014 /* T14DictionaryProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = T14DictionaryProviderTests.swift; sourceTree = "<group>"; };
+		D10000000000000000000015 /* WordCardStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WordCardStore.swift; sourceTree = "<group>"; };
+		D10000000000000000000016 /* T16WordCardStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = T16WordCardStoreTests.swift; sourceTree = "<group>"; };
 		B200000000000000000000A8 /* T09TranslateProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = T09TranslateProviderTests.swift; sourceTree = "<group>"; };
 		B200000000000000000000A9 /* RetryingLLMProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RetryingLLMProvider.swift; sourceTree = "<group>"; };
 		B200000000000000000000AA /* T07bRetryTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = T07bRetryTests.swift; sourceTree = "<group>"; };
@@ -276,6 +288,7 @@
 				B200000000000000000000C5 /* ContentQueryViewModel.swift */,
 				B200000000000000000022 /* RegionSelectionController.swift */,
 				C20000000000000000000A /* HotkeySettingsView.swift */,
+				D10000000000000000000013 /* DictionaryCardView.swift */,
 			);
 			path = UI;
 			sourceTree = "<group>";
@@ -300,6 +313,7 @@
 				B200000000000000000000F3 /* OCRResult.swift */,
 				B200000000000000000000F4 /* QueryContext.swift */,
 				B200000000000000000000F5 /* ResultModel.swift */,
+				D10000000000000000000011 /* DictionaryEntry.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -326,6 +340,7 @@
 				C20000000000000000001A /* LanguageSettingsStore.swift */,
 				C200000000000000000012 /* PromptSettingsStore.swift */,
 				C200000000000000000008 /* HotkeySettingsStore.swift */,
+				D10000000000000000000015 /* WordCardStore.swift */,
 			);
 			path = Persistence;
 			sourceTree = "<group>";
@@ -401,6 +416,7 @@
 				B200000000000000000000FF /* OpenAICompatibleLLMProvider.swift */,
 				B200000000000000000000A7 /* FreeWebTranslateProvider.swift */,
 				B200000000000000000000A9 /* RetryingLLMProvider.swift */,
+				D10000000000000000000012 /* YoudaoDictProvider.swift */,
 			);
 			path = Providers;
 			sourceTree = "<group>";
@@ -451,6 +467,8 @@
 				B200000000000000000018 /* T12FailurePersistRetryTests.swift */,
 				B20000000000000000001A /* T12CancelTimeoutTests.swift */,
 				B20000000000000000001C /* T12HistoryTests.swift */,
+				D10000000000000000000014 /* T14DictionaryProviderTests.swift */,
+				D10000000000000000000016 /* T16WordCardStoreTests.swift */,
 			);
 			path = PersonalAgentTests;
 			sourceTree = "<group>";
@@ -623,6 +641,10 @@
 				B200000000000000000000BC /* ClipboardTextGrabber.swift in Sources */,
 				B200000000000000000000A1 /* TranslateHTTPClient.swift in Sources */,
 				B200000000000000000000A2 /* FreeWebTranslateProvider.swift in Sources */,
+				D10000000000000000000001 /* DictionaryEntry.swift in Sources */,
+				D10000000000000000000002 /* YoudaoDictProvider.swift in Sources */,
+				D10000000000000000000003 /* DictionaryCardView.swift in Sources */,
+				D10000000000000000000005 /* WordCardStore.swift in Sources */,
 				B200000000000000000000A4 /* RetryingLLMProvider.swift in Sources */,
 				B200000000000000000021 /* P2IntegrationCoordinator.swift in Sources */,
 				B200000000000000000023 /* RegionSelectionController.swift in Sources */,
@@ -659,6 +681,8 @@
 				B20000000000000000001B /* T12CancelTimeoutTests.swift in Sources */,
 				B20000000000000000001D /* T12HistoryTests.swift in Sources */,
 				B20000000000000000003B /* T10TTSTests.swift in Sources */,
+				D10000000000000000000004 /* T14DictionaryProviderTests.swift in Sources */,
+				D10000000000000000000006 /* T16WordCardStoreTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

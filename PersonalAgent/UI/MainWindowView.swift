@@ -259,9 +259,20 @@ struct MainWindowView: View {
     private var queryToolbarRow: some View {
         VStack(spacing: 0) {
             HStack(spacing: 16) {
-                // 直接翻译输入框文本（走免 key 翻译通道）。按 James
-                // 要求排第一位。与取词翻译同管线，sourceKind 记
-                // .manualInput 供溯源。
+                // 词典查询（最左第一个，James 决策）。独立通道：与翻译/LLM
+                // 完全分流，失败仅影响本通道，UI 可一键改用翻译。
+                iconButton("character.book.closed", "manualInput.dictionary") {
+                    viewModel.dispatch {
+                        await viewModel.runDictionaryLookup(
+                            viewModel.inputText,
+                            sourceKind: .manualInput)
+                    }
+                }
+                .disabled(isLoading || viewModel.inputText.trimmingCharacters(
+                    in: .whitespacesAndNewlines).isEmpty)
+
+                // 直接翻译输入框文本（走免 key 翻译通道）。
+                // 与取词翻译同管线，sourceKind 记 .manualInput 供溯源。
                 iconButton("character.bubble", "manualInput.translate") {
                     viewModel.dispatch {
                         await viewModel.runTranslate(
@@ -353,12 +364,19 @@ struct MainWindowView: View {
                     Text("query.loading").foregroundStyle(.secondary)
                 }
             case let .success(model):
-                resultHeader(text: resultText(model),
-                             sourceText: model.sourceText,
-                             resultID: model.id)
-                Text(resultText(model))
-                    .textSelection(.enabled)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                if case let .dictionary(entry) = model.content {
+                    // 词典专用卡片(完整渲染),不走通用 header+Text 路径。
+                    // 词头双击保存到 ~/knowledge/words/<word>.md。
+                    DictionaryCardView(entry: entry,
+                                       wordStore: controller.wordCardStore)
+                } else {
+                    resultHeader(text: resultText(model),
+                                 sourceText: model.sourceText,
+                                 resultID: model.id)
+                    Text(resultText(model))
+                        .textSelection(.enabled)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
             case let .failure(category):
                 Label {
                     Text(Self.messageKey(for: category))
@@ -366,11 +384,20 @@ struct MainWindowView: View {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundStyle(.orange)
                 }
-                if viewModel.canRetry {
-                    Button("query.retry") {
-                        viewModel.dispatch { await viewModel.retryLast() }
+                HStack(spacing: 8) {
+                    if viewModel.canRetry {
+                        Button("query.retry") {
+                            viewModel.dispatch { await viewModel.retryLast() }
+                        }
+                        .controlSize(.small)
                     }
-                    .controlSize(.small)
+                    // 词典失败专用：一键改用翻译通道(中文/句子/未收录词)。
+                    if viewModel.canFallbackToTranslate {
+                        Button("dictionary.fallback_to_translate") {
+                            viewModel.dispatch { await viewModel.fallbackToTranslate() }
+                        }
+                        .controlSize(.small)
+                    }
                 }
             }
         }
@@ -675,6 +702,13 @@ struct MainWindowView: View {
     private func resultText(_ model: ResultModel) -> String {
         if case let .text(value) = model.content { return value }
         if case let .translation(t, _, _) = model.content { return t }
+        if case let .dictionary(entry) = model.content {
+            // 历史/笔记预览用：词头 — 中译聚合(无释义则只词头)。
+            if let s = entry.summary, !s.isEmpty {
+                return "\(entry.headword) — \(s)"
+            }
+            return entry.headword
+        }
         return ""
     }
 

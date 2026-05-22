@@ -75,6 +75,9 @@ enum NotePackComposer {
             case let .text(t): text = t
             case let .translation(t, _, _): text = t
             case .audio: continue
+            // 词典条目不参与「原文→译文」原料包(语义不同：词头与释义不
+            // 是平行原/译文配对)。需要时另开一种配对策略。
+            case .dictionary: continue
             }
             guard text.isEmpty == false else { continue }
             // 无原文的历史条目(旧 jsonl 或非翻译查询)对「原文→译文」

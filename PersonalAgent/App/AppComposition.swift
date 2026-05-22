@@ -206,12 +206,17 @@ enum AppComposition {
         let provider = makeLLMProvider()
         // T09 免费翻译 provider 作主翻译通道（免 key、零配置；逆向公开
         // 端点隔离在可替换 provider 层，AGENTS 边界）。
-        let translate = FreeWebTranslateProvider(
-            client: URLSessionTranslateHTTPClient())
+        let translateHTTP = URLSessionTranslateHTTPClient()
+        let translate = FreeWebTranslateProvider(client: translateHTTP)
+        // 词典通道：与翻译并列、独立 provider；逆向 Web API 同样隔离在
+        // provider 层（AGENTS 边界），失败不波及翻译/LLM。共享 HTTP
+        // 客户端即可（同性质短请求）。
+        let dictionary = YoudaoDictProvider(client: translateHTTP)
         let clipboard = ClipboardTextGrabber(pasteboard: SystemPasteboard())
         return ContentQueryViewModel(
             provider: provider,
             translateProvider: translate,
+            dictionaryProvider: dictionary,
             clipboard: clipboard,
             store: store)
     }
@@ -226,5 +231,14 @@ enum AppComposition {
     /// 同一文件,只读。
     static func makeResultStoreForExport() -> JSONLResultStore {
         JSONLResultStore(fileURL: resultsFileURL())
+    }
+
+    /// 词卡 store:落在 ~/knowledge/words/ 下,与翻译/笔记并存。
+    /// 离线优先(MP3 异步落盘 _audio/),被 [[supervisor]] 双链命中。
+    static func makeWordCardStore() -> WordCardStore {
+        let home = FileManager.default.homeDirectoryForCurrentUser
+        let dir = home.appendingPathComponent("knowledge", isDirectory: true)
+            .appendingPathComponent("words", isDirectory: true)
+        return WordCardStore(rootDirectory: dir)
     }
 }

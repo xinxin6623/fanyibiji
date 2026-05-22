@@ -33,3 +33,7 @@ protocol TranslateProvider: ProviderAdapter {
 protocol TTSProvider: ProviderAdapter {
     func synthesize(_ text: String) async throws -> AudioResult
 }
+
+protocol DictionaryProvider: ProviderAdapter {
+    func lookup(_ context: QueryContext) async throws -> DictionaryEntry
+}

@@ -28,6 +28,9 @@ final class ContentQueryViewModel: ObservableObject {
     /// 否则一直报配置缺失。与 TTSPlaybackViewModel 同模式）。
     private var provider: LLMProvider
     private let translateProvider: TranslateProvider
+    /// 词典查询通道（YoudaoDictProvider 等）。与翻译通道并列，按钮独立
+    /// 触发：失败不影响 translate/LLM。
+    private let dictionaryProvider: DictionaryProvider?
     private let clipboard: ClipboardTextGrabber
     private let store: JSONLResultStore
 
@@ -36,6 +39,7 @@ final class ContentQueryViewModel: ObservableObject {
         enum Kind: Equatable {
             case llm(action: UserAction)
             case translate
+            case dictionary
         }
         let rawText: String
         let sourceKind: InputSourceKind
@@ -79,10 +83,12 @@ final class ContentQueryViewModel: ObservableObject {
 
     init(provider: LLMProvider,
          translateProvider: TranslateProvider,
+         dictionaryProvider: DictionaryProvider? = nil,
          clipboard: ClipboardTextGrabber,
          store: JSONLResultStore) {
         self.provider = provider
         self.translateProvider = translateProvider
+        self.dictionaryProvider = dictionaryProvider
         self.clipboard = clipboard
         self.store = store
     }
@@ -207,7 +213,23 @@ final class ContentQueryViewModel: ObservableObject {
                            sourceKind: a.sourceKind, action: action)
         case .translate:
             await runTranslate(a.rawText, sourceKind: a.sourceKind)
+        case .dictionary:
+            await runDictionaryLookup(a.rawText, sourceKind: a.sourceKind)
         }
+    }
+
+    /// 失败状态下「改用翻译」：把失败的词典查询切到翻译通道。仅当
+    /// `lastAttempt.kind == .dictionary` 时有意义。UI 据 `canFallbackToTranslate`
+    /// 决定是否暴露按钮。
+    var canFallbackToTranslate: Bool {
+        guard case .failure = state else { return false }
+        guard let a = lastAttempt, case .dictionary = a.kind else { return false }
+        return true
+    }
+
+    func fallbackToTranslate() async {
+        guard let a = lastAttempt, case .dictionary = a.kind else { return }
+        await runTranslate(a.rawText, sourceKind: a.sourceKind)
     }
 
     // MARK: - T12-D 历史读取
@@ -301,6 +323,58 @@ final class ContentQueryViewModel: ObservableObject {
                                diagnosticMessage: "non-AgentError")
             persistFailure(context: context,
                            provider: translateProvider.id, error: e)
+            state = .failure(.unknown)
+        }
+    }
+
+    /// 单词词典查询（YoudaoDictProvider 等）。与 `runTranslate` 并列：
+    /// 失败按 `.failure` 暴露错误，UI 可调 `fallbackToTranslate()` 改走
+    /// 翻译通道。未注入 dictionaryProvider 时直接 `.providerRejected`。
+    func runDictionaryLookup(_ text: String, sourceKind: InputSourceKind) async {
+        inputText = text
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            state = .failure(.invalidInput)
+            return
+        }
+        guard let provider = dictionaryProvider else {
+            state = .failure(.providerRejected)
+            return
+        }
+
+        state = .loading
+        let context = QueryContext(
+            sourceKind: sourceKind,
+            inputText: trimmed,
+            userAction: .query
+        )
+        lastAttempt = .init(rawText: text, sourceKind: sourceKind,
+                            kind: .dictionary)
+
+        do {
+            let entry = try await provider.lookup(context)
+            let model = ResultModel(
+                contextId: context.id,
+                provider: provider.id,
+                content: .dictionary(entry),
+                tags: ["kind:dictionary"],
+                sourceText: trimmed
+            )
+            try? store.append(model)
+            state = .success(model)
+        } catch let error as AgentError {
+            if error.category == .cancelled || Task.isCancelled { return }
+            persistFailure(context: context,
+                           provider: provider.id, error: error)
+            state = .failure(error.category)
+        } catch is CancellationError {
+            return
+        } catch {
+            if Task.isCancelled { return }
+            let e = AgentError(category: .unknown,
+                               diagnosticMessage: "non-AgentError")
+            persistFailure(context: context,
+                           provider: provider.id, error: e)
             state = .failure(.unknown)
         }
     }

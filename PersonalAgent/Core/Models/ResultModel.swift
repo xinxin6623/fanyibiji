@@ -4,15 +4,16 @@ enum ResultContent: Sendable, Equatable {
     case text(String)
     case translation(text: String, sourceLang: String?, targetLang: String?)
     case audio(ref: String, format: String, durationMs: Int?)
+    case dictionary(DictionaryEntry)
 }
 
 extension ResultContent: Codable {
     private enum CodingKeys: String, CodingKey {
-        case type, text, sourceLang, targetLang, ref, format, durationMs
+        case type, text, sourceLang, targetLang, ref, format, durationMs, entry
     }
 
     private enum Kind: String, Codable {
-        case text, translation, audio
+        case text, translation, audio, dictionary
     }
 
     func encode(to encoder: Encoder) throws {
@@ -31,6 +32,9 @@ extension ResultContent: Codable {
             try container.encode(ref, forKey: .ref)
             try container.encode(format, forKey: .format)
             try container.encodeIfPresent(durationMs, forKey: .durationMs)
+        case let .dictionary(entry):
+            try container.encode(Kind.dictionary, forKey: .type)
+            try container.encode(entry, forKey: .entry)
         }
     }
 
@@ -50,6 +54,10 @@ extension ResultContent: Codable {
                 ref: try container.decode(String.self, forKey: .ref),
                 format: try container.decode(String.self, forKey: .format),
                 durationMs: try container.decodeIfPresent(Int.self, forKey: .durationMs)
+            )
+        case .dictionary:
+            self = .dictionary(
+                try container.decode(DictionaryEntry.self, forKey: .entry)
             )
         }
     }

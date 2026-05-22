@@ -433,6 +433,54 @@
         }
       }
     },
+    "manualInput.dictionary": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Look up word"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "查词典"
+          }
+        }
+      }
+    },
+    "dictionary.save_hint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Double-click to save to ~/knowledge/words/"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "双击存入 ~/knowledge/words/"
+          }
+        }
+      }
+    },
+    "dictionary.fallback_to_translate": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try translate instead"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "改用翻译"
+          }
+        }
+      }
+    },
     "note.export": {
       "localizations": {
         "en": {
