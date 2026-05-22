@@ -15,28 +15,18 @@ struct TTSPanelView: View {
         self.viewModel = viewModel
     }
 
-    /// 讯飞 speed 0–100 → 展示倍率 0.5x–2.0x（线性，50→1.0x）。
-    /// 讯飞接口无"真实倍率"语义，这里只是给人看的友好映射；写回
-    /// viewModel.speed 仍是 0–100 整数（provider 用的就是它）。
+    /// 播放倍率范围（落到 `AVAudioPlayer.rate`，对正在播放的音频实时生效）。
+    /// 旧版误把 `<< / >>` 写在合成参数 `speed`（0–100）上，只下次合成生效；
+    /// 现切到 `playbackRate`，纯播放器侧变速，不变调。
     private static let minRate = 0.5
     private static let maxRate = 2.0
-
-    /// 每点一次 << / >> 的步进倍率。
     private static let rateStep = 0.1
 
-    private func rate(from speed: Double) -> Double {
-        Self.minRate + (speed / 100) * (Self.maxRate - Self.minRate)
-    }
-
-    private func speed(from rate: Double) -> Double {
-        ((rate - Self.minRate) / (Self.maxRate - Self.minRate)) * 100
-    }
-
-    /// 按步进增减倍率（夹在 0.5x–2x），写回 viewModel.speed。
+    /// 按步进增减播放倍率，夹在 0.5x–2x。
     private func bumpRate(by delta: Double) {
-        let cur = rate(from: viewModel.speed)
-        let next = min(max(cur + delta, Self.minRate), Self.maxRate)
-        viewModel.speed = speed(from: next)
+        let next = min(max(viewModel.playbackRate + delta, Self.minRate),
+                       Self.maxRate)
+        viewModel.playbackRate = next
     }
 
     var body: some View {
@@ -80,26 +70,50 @@ struct TTSPanelView: View {
 
                 ClaudeTheme.separator.frame(width: 1, height: 18)
 
-                // 速度：滑块删掉（James 决策），改 << / >> 步进按钮，
-                // 中间显示当前倍率。每点一次 ±0.1x，夹在 0.5x–2x。
-                HStack(spacing: 8) {
+                // 引擎切换：普通 / 超拟人。Menu 走 borderless 紧贴在
+                // 速度区左侧，文字随当前引擎变化。改了立即重建 provider，
+                // 下次合成生效（已就绪音频不重合成）。
+                Menu {
+                    ForEach(TTSEngine.allCases, id: \.self) { eng in
+                        Button {
+                            viewModel.engine = eng
+                        } label: {
+                            if viewModel.engine == eng {
+                                Label(Self.engineLabel(eng), systemImage: "checkmark")
+                            } else {
+                                Text(Self.engineLabel(eng))
+                            }
+                        }
+                    }
+                } label: {
+                    Text(Self.engineLabel(viewModel.engine))
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(ClaudeTheme.secondaryText)
+                }
+                .menuStyle(.borderlessButton)
+                .menuIndicator(.hidden)
+                .fixedSize()
+
+                // 速度：<< / >> 步进按钮调 playbackRate（对正在播放的
+                // 音频实时变速）。紧凑化：去掉外层 fixedSize 留白，缩小
+                // 间距 8→4 与倍率文本宽度 38→30。
+                HStack(spacing: 4) {
                     Button("<<") { bumpRate(by: -Self.rateStep) }
                         .buttonStyle(.plain)
                         .foregroundStyle(ClaudeTheme.accent)
-                        .disabled(rate(from: viewModel.speed)
+                        .disabled(viewModel.playbackRate
                                   <= Self.minRate + 0.001)
-                    Text(String(format: "%.1fx", rate(from: viewModel.speed)))
+                    Text(String(format: "%.1fx", viewModel.playbackRate))
                         .font(.caption.monospacedDigit())
                         .foregroundStyle(ClaudeTheme.secondaryText)
-                        .frame(width: 38)
+                        .frame(width: 30)
                     Button(">>") { bumpRate(by: Self.rateStep) }
                         .buttonStyle(.plain)
                         .foregroundStyle(ClaudeTheme.accent)
-                        .disabled(rate(from: viewModel.speed)
+                        .disabled(viewModel.playbackRate
                                   >= Self.maxRate - 0.001)
                 }
                 .font(.subheadline.weight(.semibold))
-                .fixedSize()
             }
 
             if case let .failure(category) = viewModel.state {
@@ -124,6 +138,14 @@ struct TTSPanelView: View {
     private var isSynthesizing: Bool {
         if case .synthesizing = viewModel.state { return true }
         return false
+    }
+
+    /// 引擎在播放条上的短标签（要紧凑，避免占太多顶栏宽度）。
+    private static func engineLabel(_ engine: TTSEngine) -> String {
+        switch engine {
+        case .standard:   return "普通"
+        case .superHuman: return "超拟人"
+        }
     }
 
     /// category → 本地化键（与 MainWindowView 保持一致）。

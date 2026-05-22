@@ -42,6 +42,13 @@ final class TTSPlaybackViewModel: NSObject, ObservableObject {
     @Published var speed: Double { didSet { settingsChanged() } }
     @Published var volume: Double { didSet { settingsChanged() } }
     @Published var pitch: Double { didSet { settingsChanged() } }
+
+    /// 播放倍率 0.5x–2.0x，独立于合成参数 `speed`：作用在 `AVAudioPlayer.rate`
+    /// 上，对**已合成、正在播放**的音频实时变速（AVFoundation 自动做时间
+    /// 拉伸，不变调）。设置不入盘、不重建 provider——纯本地播放偏好。
+    @Published var playbackRate: Double = 1.0 {
+        didSet { player?.rate = Float(playbackRate) }
+    }
     /// 口语化程度，仅 `superHuman` 引擎生效（standard 忽略）。
     @Published var oralLevel: TTSOralLevel { didSet { settingsChanged() } }
 
@@ -225,7 +232,11 @@ final class TTSPlaybackViewModel: NSObject, ObservableObject {
             return
         }
         player.delegate = self
+        // enableRate 必须在 prepareToPlay 之前打开，之后改 rate 才会
+        // 走 AVFoundation 的时间拉伸（不变调）。
+        player.enableRate = true
         player.prepareToPlay()
+        player.rate = Float(playbackRate)
         self.player = player
         durationSeconds = player.duration
         progress = 0
