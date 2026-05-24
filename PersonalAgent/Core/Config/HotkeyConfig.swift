@@ -50,6 +50,8 @@ struct KeyBinding: Codable, Sendable, Equatable {
             38: "J", 40: "K", 45: "N", 46: "M",
             18: "1", 19: "2", 20: "3", 21: "4", 23: "5", 22: "6",
             26: "7", 28: "8", 25: "9", 29: "0",
+            43: ",", 47: ".", 44: "/", 27: "-", 24: "=",
+            33: "[", 30: "]", 41: ";", 39: "'", 42: "\\", 50: "`",
             49: "Space", 36: "↩", 48: "⇥", 53: "⎋"
         ]
         return map[code] ?? "key\(code)"
@@ -114,8 +116,8 @@ extension KeyBinding {
         keyCode: 2,
         modifiers: NSEvent.ModifierFlags([.command, .shift]).rawValue)
 
-    /// ⌘⇧N —— keyCode 45 = 'N'（N = Note，不与上面两个默认冲突）。
+    /// ⌘⇧. —— keyCode 47 = '.'（与 ⌘⇧C/⌘⇧D 错开，避免冲突）。
     static let defaultSelectionToNote = KeyBinding(
-        keyCode: 45,
+        keyCode: 47,
         modifiers: NSEvent.ModifierFlags([.command, .shift]).rawValue)
 }
