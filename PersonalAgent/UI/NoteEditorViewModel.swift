@@ -5,15 +5,14 @@ import Foundation
 /// 设计要点：
 ///  - 翻译结果只读、随采集更新（保持现状）；这里是**独立**的笔记草稿，
 ///    用户手敲，与 `results.jsonl` 分离，单独归档到 note-draft.md。
-///  - 编辑/预览双模式：`mode` 切换；编辑态前端用 `TextEditor` 改 Markdown
-///    源码，预览态用 SwiftUI 原生 Markdown 渲染（视图层负责）。
+///  - 行内实时渲染：视图层挂 `MarkdownInlineEditorView`（WKWebView 内
+///    TOAST UI Editor WYSIWYG），无编辑/预览分栏；`text` 仍是真理源
+///    （Markdown 字符串），由编辑器经 JS 桥双向同步。
 ///  - 保存时机「两者都要」：手动 `save()` + 停止输入 1.5s 后防抖自动保存
 ///    （沿用本仓 TTS 设置的 `Task.sleep` 防抖模式，可取消重排）。
 ///  - 文本变更经 `text` 的 `didSet` 标脏并重排自动保存；保存后清脏。
 @MainActor
 final class NoteEditorViewModel: ObservableObject {
-
-    enum Mode: Equatable { case edit, preview }
 
     /// 归档保存的可见状态，供 UI 顶栏显示「未保存 / 保存中 / 已保存 / 失败」。
     enum SaveStatus: Equatable {
@@ -132,8 +131,17 @@ final class NoteEditorViewModel: ObservableObject {
         isApplyingHistory = false
     }
 
-    @Published var mode: Mode = .edit
     @Published private(set) var saveStatus: SaveStatus = .clean
+
+    /// 行内编辑器的协调器（弱引用，由 View 在 makeCoordinator 时回调注入）。
+    /// 程序化 `insert(_:)` 走它的 `insertAtCursor` 在光标处插入，避免覆盖
+    /// 整段 markdown 导致光标位置丢失。
+    private weak var editorCoordinator: MarkdownInlineEditorView.Coordinator?
+
+    /// SwiftUI 视图层在 makeCoordinator 完成时回调本方法注入引用。
+    func attachEditorCoordinator(_ coord: MarkdownInlineEditorView.Coordinator) {
+        self.editorCoordinator = coord
+    }
 
     private let store: NoteDraftStore
     /// 本草稿在 notes/ 下的 id(决定读写哪个文件 + sidecar)。
@@ -181,24 +189,39 @@ final class NoteEditorViewModel: ObservableObject {
         }
     }
 
-    /// 把给定文本插入到当前内容尾部（视图层无法回传光标位置时的兜底）。
-    /// 视图传 `at:` 时按字符偏移插入到光标处。插入算用户改动 → 触发
-    /// 防抖自动保存。返回插入后光标应落的字符偏移，供视图回设选区。
+    /// 把给定文本插入到笔记中。优先走 inline editor 的「光标处插入」
+    /// （保住光标位置 + 让用户能直接 ⌘Z 撤回这次插入）；编辑器未就绪
+    /// 或不可用时退回旧行为：追加到尾部、补空行衔接。
+    /// `at:` 参数仅在 fallback 路径用；编辑器路径下光标由 WYSIWYG 自管。
+    /// 返回值在 fallback 路径下表示插入后光标应落的字符偏移；编辑器路径
+    /// 下返回当前 text 的字符数（视图层用不上具体值，保留兼容签名）。
     @discardableResult
     func insert(_ snippet: String,
                 at offset: Int? = nil,
                 sourceResultID: UUID? = nil) -> Int {
-        // 记来源 id(原料包 A 源追)。即便 snippet 为空也先登记——
+        // 记来源 id（原料包 A 源追）。即便 snippet 为空也先登记——
         // 用户点了「插入」即视为引用该结果。集合变更立即写 sidecar。
         if let sid = sourceResultID, referencedResultIDs.contains(sid) == false {
             referencedResultIDs.insert(sid)
             try? store.saveSourceIDs(id: draftID, ids: referencedResultIDs)
         }
         guard !snippet.isEmpty else { return offset ?? text.count }
-        // 程序化插入是一次明确动作：插入**前**的内容立即落一个撤销点，
-        // 这样一次 ⌘Z 能整段撤掉刚插入的片段，不被随后的手敲防抖合并。
+
+        // 程序化插入是一次明确动作：插入**前**的内容立即落一个 ViewModel
+        // 撤销点，这样 UI 顶栏的 ← 按钮能一步撤掉刚插入的片段，不被随后
+        // 的手敲防抖合并。inline editor 自身的 ⌘Z 仍可分步退（更细粒度）。
         commitUndoSnapshot(text)
-        // 衔接处补换行：尾部插入且已有内容不以换行结尾时，前置空行。
+
+        // 优先走编辑器光标处插入：JS 内 `editor.insertText(text)` 会在
+        // 当前光标位置插入，保住用户的光标/选区；之后 change 事件回弹
+        // 同步回 `text`，不需要这里手动改 text。
+        if let coord = editorCoordinator {
+            coord.insertAtCursor(snippet)
+            return text.count
+        }
+
+        // Fallback：编辑器还没 ready（如刚开 App 首屏），按旧行为补换行
+        // 追加到尾部。下一帧编辑器 ready 后通过 setMarkdown 推回 JS。
         let chars = Array(text)
         let idx = min(max(offset ?? chars.count, 0), chars.count)
         var piece = snippet

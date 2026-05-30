@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="toastui-editor.min.css">
+<!-- 暗色覆盖样式：只有挂上 `.toastui-editor-dark` 类才生效，常驻加载安全 -->
+<link rel="stylesheet" href="toastui-editor-dark.min.css">
+<style>
+:root { color-scheme: light dark; }
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: transparent;
+  font-family: -apple-system, "SF Pro Text", "PingFang SC", sans-serif;
+  -webkit-text-size-adjust: 100%;
+}
+#editor {
+  position: absolute;
+  inset: 0;
+}
+
+/* —— TOAST UI 外壳：跟容器底色，不再画方形边框 —— */
+.toastui-editor-defaultUI {
+  border: none !important;
+  background: transparent !important;
+  height: 100% !important;
+}
+.toastui-editor-main-container,
+.toastui-editor-ww-container,
+.toastui-editor-ww-mode .toastui-editor-contents,
+.toastui-editor-md-container,
+.toastui-editor-md-container .CodeMirror {
+  background: transparent !important;
+}
+.toastui-editor-mode-switch { display: none !important; }
+
+/* —— 工具栏：紧凑化 + 扁平按钮 —— */
+.toastui-editor-defaultUI-toolbar {
+  background: rgba(127, 127, 127, .05);
+  border-bottom: 1px solid rgba(127, 127, 127, .15);
+  padding: 4px 8px !important;
+  height: auto !important;
+  min-height: 30px !important;
+}
+/* 默认按钮 36×36 太大，缩到 26×26；图标背景图也压缩 */
+.toastui-editor-defaultUI-toolbar .toastui-editor-toolbar-icons {
+  width: 26px !important;
+  height: 26px !important;
+  background-size: 18px 348px !important;
+  border: none !important;
+  border-radius: 4px !important;
+  margin: 1px !important;
+  opacity: .72;
+}
+.toastui-editor-defaultUI-toolbar .toastui-editor-toolbar-icons:hover {
+  background-color: rgba(127, 127, 127, .18) !important;
+  opacity: 1;
+}
+.toastui-editor-defaultUI-toolbar .toastui-editor-toolbar-icons.active,
+.toastui-editor-defaultUI-toolbar .toastui-editor-toolbar-icons:active {
+  background-color: rgba(127, 127, 127, .28) !important;
+  opacity: 1;
+}
+/* 分割线收紧 */
+.toastui-editor-toolbar-divider {
+  margin: 4px 6px !important;
+}
+.toastui-editor-toolbar-group {
+  gap: 0 !important;
+}
+
+/* 暗色下整体外观由 toastui-editor-dark.css 主导；这里把容器/分割线
+   再调和一下，避免 dark 模板里硬色覆盖透明背景 */
+.toastui-editor-dark .toastui-editor-defaultUI-toolbar {
+  background: rgba(255, 255, 255, .03) !important;
+  border-bottom-color: rgba(255, 255, 255, .08) !important;
+}
+.toastui-editor-dark .toastui-editor-main-container,
+.toastui-editor-dark .toastui-editor-ww-container,
+.toastui-editor-dark .toastui-editor-ww-mode .toastui-editor-contents {
+  background: transparent !important;
+}
+
+/* 内容区代码块等宽 */
+.toastui-editor-ww-mode .toastui-editor-contents pre code {
+  font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+
+/* 状态遮罩（init 失败时露出） */
+#status {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(127, 127, 127, .06);
+  color: #999;
+  font: 13px -apple-system, "SF Pro Text", sans-serif;
+  padding: 20px;
+  text-align: center;
+}
+#status.err { color: #c33; background: rgba(255, 200, 200, .4); }
+</style>
+</head>
+<body>
+<div id="status">加载中…</div>
+<div id="editor"></div>
+<script>
+'use strict';
+var statusEl = document.getElementById('status');
+function showStatus(text, isError) {
+  if (!statusEl) return;
+  statusEl.textContent = text;
+  statusEl.style.display = 'flex';
+  if (isError) statusEl.classList.add('err');
+}
+function hideStatus() {
+  if (statusEl) statusEl.style.display = 'none';
+}
+function reportError(msg) {
+  try {
+    window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.swift &&
+      window.webkit.messageHandlers.swift.postMessage({ type: 'error', msg: String(msg) });
+  } catch (_) {}
+  showStatus('JS 错误: ' + msg, true);
+}
+window.addEventListener('error', function (e) {
+  reportError((e && e.message) || 'unknown error');
+});
+showStatus('加载 TOAST UI…');
+</script>
+<script src="toastui-editor.min.js" onerror="reportError('toastui-editor.min.js 加载失败')"></script>
+<script>
+'use strict';
+
+function b64decode(s) {
+  return decodeURIComponent(escape(window.atob(s || '')));
+}
+
+if (typeof toastui === 'undefined') {
+  reportError('toastui 全局未定义 — JS 资源没加载');
+} else {
+  showStatus('初始化编辑器…');
+}
+
+// —— 暗色模式：初始化时读一次，监听系统变化实时切 —— //
+function currentTheme() {
+  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+}
+function applyTheme(theme) {
+  var ui = document.querySelector('.toastui-editor-defaultUI');
+  if (!ui) return;
+  if (theme === 'dark') ui.classList.add('toastui-editor-dark');
+  else ui.classList.remove('toastui-editor-dark');
+}
+
+var editor = null;
+try {
+  if (typeof toastui !== 'undefined') {
+    editor = new toastui.Editor({
+      el: document.querySelector('#editor'),
+      height: '100%',
+      initialEditType: 'wysiwyg',
+      hideModeSwitch: true,
+      theme: currentTheme(),
+      initialValue: '',
+      usageStatistics: false,
+      autofocus: true,
+      toolbarItems: [
+        ['heading', 'bold', 'italic', 'strike'],
+        ['hr', 'quote'],
+        ['ul', 'ol', 'task', 'indent', 'outdent'],
+        ['table', 'image', 'link'],
+        ['code', 'codeblock']
+      ],
+      events: {
+        change: function () {
+          var md;
+          try { md = editor.getMarkdown(); } catch (e) { reportError(e); return; }
+          if (md === window.__lastSyncedMd) return;
+          window.__lastSyncedMd = md;
+          try {
+            window.webkit.messageHandlers.swift.postMessage({
+              type: 'change',
+              md: md
+            });
+          } catch (_) {}
+        }
+      }
+    });
+    // TOAST 的 theme 选项只在 init 时生效，运行时变化需自挂/卸 class。
+    applyTheme(currentTheme());
+    hideStatus();
+  }
+} catch (e) {
+  reportError('init failed: ' + (e && e.message ? e.message : e));
+}
+
+// 系统外观切换实时跟随（无需重启 app）。
+try {
+  var mq = window.matchMedia('(prefers-color-scheme: dark)');
+  // Safari 14+ 支持 addEventListener，老浏览器用 addListener 兜底。
+  var listener = function () { applyTheme(currentTheme()); };
+  if (mq.addEventListener) mq.addEventListener('change', listener);
+  else if (mq.addListener) mq.addListener(listener);
+} catch (_) {}
+
+// —— Swift 调用接口 ——
+window.__setMarkdown = function (b64) {
+  if (!editor) { reportError('setMarkdown before init'); return; }
+  var md = b64decode(b64);
+  if (md === window.__lastSyncedMd) return;
+  window.__lastSyncedMd = md;
+  try { editor.setMarkdown(md); } catch (e) { reportError(e); }
+};
+window.__insertText = function (b64) {
+  if (!editor) return;
+  try { editor.insertText(b64decode(b64)); } catch (e) { reportError(e); }
+};
+window.__getMarkdown = function () {
+  if (!editor) return '';
+  try { return editor.getMarkdown(); } catch (e) { return ''; }
+};
+
+try {
+  window.webkit.messageHandlers.swift.postMessage({
+    type: 'ready',
+    hasEditor: !!editor
+  });
+} catch (_) {}
+</script>
+</body>
+</html>

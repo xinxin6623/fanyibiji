@@ -11,24 +11,31 @@ Agent 必须使用第一性原理和辩证法思考：先拆开需求的真实�
 架构冗余、GPL 风险、权限设计缺陷、敏感信息泄露风险，必须先提出批判性
 建议。
 
-当前项目阶段（截至 2026-05-16）：采用 P0→P4 执行策略（先定契约 →
-最薄垂直闭环 → 再扩重路径 → 收敛硬化）。**P0–P4 主体全部完成并真机
-验收**（契约层、垂直闭环、P2 截屏/OCR/取词整合、T08/T09 取词 UI、
-T12 收敛硬化 A/B/C/D 均已落地，单测全绿）。**唯一剩余 T10 TTS，
-BLOCKED 待 James 决策**（供应商/鉴权/格式/流式）。具体拆分、状态、
-接手指引以 `project-board.md` 和 `relay-task.md` 为准。
+当前项目阶段（截至 2026-05-30，HEAD=d3bafd2）：采用 P0→P4 执行策略
+（先定契约 → 最薄垂直闭环 → 再扩重路径 → 收敛硬化）。**P0–P4 主体
++ T13–T21 增量全部完成并真机验收**：契约层、垂直闭环、P2 截屏/OCR/
+取词整合、T08/T09 取词 UI、T10 讯飞 TTS（普通+超拟人双引擎）、T12
+收敛硬化 A/B/C/D、T13–T17 划词翻译/系统提示词/语言配置/笔记原料包/
+FileSecretStore；2026-05-19 之后又叠加 T18（Claude 配色 + TTS 顶栏）、
+T19（App 内划词朗读）、T20（有道词典 + 单词卡片）、T21（设置页四
+tab 化 + LLM 参数化 + 豆包 TTS 第三引擎）。当前**无 BLOCKED 任务**，
+单测全绿。具体拆分、状态、接手指引以 `project-board.md` 和
+`relay-task.md` 为准。
+
 目录中主要资产为：
 
 - `AGENTS.md`：Codex 默认入口，记录项目级 Agent 行为规则、架构边界和
   禁止事项。
 - `relay-task.md`：新会话接续入口，只记录当前状态、关键决策、风险和下一步。
 - `project-board.md`：项目规划进度看板，记录总体规划、任务拆分和状态。
-- `prd-mvp.md`：MVP PRD，记录需求、数据流、容灾设计和验收标准。
-- `T02-admin-plan.md`：SwiftUI App 骨架的推荐 Admin 执行规划。
-- `gemini-code-1778814575509.json`：已人工对齐的开发规范、模块边界和
-  Easydict 参考路径。
-- `想法.md`：原始需求与 Easydict 参考目标。
-- `gimini想法.md`：Gemini 侧想法记录。
+- `prd-mvp.md`：MVP PRD（2026-05-16 立项快照），记录需求、数据流、
+  容灾设计和验收标准。已实现项相对快照已有扩展，以代码与 board 为准。
+- `T02-admin-plan.md`：SwiftUI App 骨架的推荐 Admin 执行规划（历史档）。
+- `feasibility-review.md`：立项可行性分析（历史档）。
+- `design-note-export-pack.md`：笔记原料包导出设计稿（已实现，自带状态行）。
+- `知识库结构.md`：~/knowledge 知识体系整体架构与 App 侧边界。
+- `想法.md`：原始需求与 Easydict 参考目标（历史档）。
+- `gimini想法.md`：Gemini 侧想法记录（历史档）。
 
 ## 2. 当前项目目标
 
@@ -187,7 +194,9 @@ Worker 只能做 Admin 阶段确认过的范围。遇到边界变化，回到 Ad
 
 ## 7. 开发规范
 
-默认遵守 `gemini-code-1778814575509.json` 中已对齐的开发规范。
+默认遵守本文件「3 架构边界」与「10 禁止事项」中已对齐的开发规范
+（原 `gemini-code-1778814575509.json` 已不在仓库；关键规则已并入本
+文件，无外部参照文件需要追溯）。
 
 重点规则：
 
@@ -208,9 +217,8 @@ Worker 只能做 Admin 阶段确认过的范围。遇到边界变化，回到 Ad
 2. `relay-task.md`：确认当前阶段、关键决策、阻塞项和下一步。
 3. `project-board.md`：确认总体规划、任务拆分、状态和验收标准。
 4. `prd-mvp.md`：确认 MVP 需求、数据流、容灾设计和验收标准。
-5. `T02-admin-plan.md`：仅在进入 SwiftUI App 骨架任务时读取。
-6. `gemini-code-1778814575509.json`：仅在需要追溯 Easydict 对齐细节时读取。
-7. `想法.md`：仅在需要回看原始需求语义时读取。
+5. `T02-admin-plan.md`：仅在进入 SwiftUI App 骨架任务时读取（历史档）。
+6. `想法.md`：仅在需要回看原始需求语义时读取。
 
 文档维护规则：
 
@@ -220,7 +228,7 @@ Worker 只能做 Admin 阶段确认过的范围。遇到边界变化，回到 Ad
 - `T02-admin-plan.md` 只记录 SwiftUI App 骨架的执行规划，不替代看板。
 - 完成任务后同步更新交接文档和看板，避免新会话重新解析完整历史。
 - 如果文档内容冲突，优先级为 `AGENTS.md`、`relay-task.md`、`project-board.md`、
-  `prd-mvp.md`、任务专项计划、`gemini-code-1778814575509.json`、`想法.md`。
+  `prd-mvp.md`、任务专项计划、`想法.md`。
 
 ## 9. 验证与交付
 

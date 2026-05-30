@@ -148,7 +148,8 @@ final class T10TTSTests: XCTestCase {
             hostUrl: URL(string: engine.defaultHost)!,
             vcn: engine.defaultVcn, speed: 50, volume: 50, pitch: 50,
             oralLevel: .mid, timeoutSeconds: 5,
-            appId: "A", apiKey: "K", apiSecret: "S")
+            appId: "A", apiKey: "K", apiSecret: "S",
+            doubaoAppId: "", doubaoToken: "")
     }
 
     func testProviderReturnsMP3OnSuccess() async throws {
