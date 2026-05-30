@@ -42,3 +42,58 @@ struct DictionaryEntry: Codable, Sendable, Equatable {
     /// 数据源标识(provider id),供失败溯源。
     let source: String
 }
+
+extension DictionaryEntry {
+    /// 整张词典卡转 Markdown,末尾带「有道详解」外链。给「插入笔记」
+    /// 按钮用——让用户能把词典查询结果当一段引用直接落进笔记里。
+    /// 详见 [[project_2026-05-22_dictionary-channel]]。
+    func toMarkdownCard() -> String {
+        var lines: [String] = ["### \(headword)"]
+
+        let us = usIPA.flatMap { $0.isEmpty ? nil : $0 }
+        let uk = ukIPA.flatMap { $0.isEmpty ? nil : $0 }
+        switch (us, uk) {
+        case let (u?, k?):
+            lines.append("美 / \(u) /  ·  英 / \(k) /")
+        case let (u?, nil):
+            lines.append("/ \(u) /")
+        case let (nil, k?):
+            lines.append("/ \(k) /")
+        case (nil, nil):
+            break
+        }
+
+        if !senses.isEmpty {
+            for s in senses {
+                if let pos = s.partOfSpeech, !pos.isEmpty {
+                    lines.append("- **\(pos)** \(s.gloss)")
+                } else {
+                    lines.append("- \(s.gloss)")
+                }
+            }
+        } else if let summary, !summary.isEmpty {
+            lines.append(summary)
+        }
+
+        if !forms.isEmpty {
+            for f in forms {
+                lines.append("**\(f.name)：** \(f.words.joined(separator: ", "))")
+            }
+        }
+
+        let encoded = headword.addingPercentEncoding(
+            withAllowedCharacters: .urlQueryAllowed) ?? headword
+        lines.append("[有道详解 →](https://www.youdao.com/result?word=\(encoded)&lang=en)")
+
+        return lines.joined(separator: "\n")
+    }
+
+    /// TTS 朗读文本:词头 + 简要中译。避免把 markdown 标记和 URL
+    /// 一并念出来(纯朗读 toMarkdownCard() 会非常难听)。
+    func spokenSummary() -> String {
+        if let summary, !summary.isEmpty {
+            return "\(headword)。\(summary)"
+        }
+        return headword
+    }
+}

@@ -269,6 +269,54 @@ try {
   else if (mq.addListener) mq.addListener(onSchemeChange);
 } catch (_) {}
 
+// —— Cmd+Click 打开链接 ——
+// CM6 只语法着色 URL,DOM 里没有真正的 <a>,且 URL 常被切成多个高亮
+// span。所以:① mousedown capture 抢先(早于 CM6 自己的 click 处理),
+// ② caretRangeFromPoint 用点击坐标拿 Range, ③ 走到 .cm-line 用整行
+// textContent 跑 URL 正则, ④ TreeWalker 累加 text node 长度把命中
+// 位置算成行内绝对偏移。命中才 preventDefault,没命中放行不影响光标。
+function offsetWithinLine(line, node, offset) {
+  if (node === line) return offset;
+  var walker = document.createTreeWalker(line, NodeFilter.SHOW_TEXT, null);
+  var acc = 0;
+  var n;
+  while ((n = walker.nextNode())) {
+    if (n === node) return acc + offset;
+    acc += (n.nodeValue || '').length;
+  }
+  return -1;
+}
+
+document.addEventListener('mousedown', function (e) {
+  if (!e.metaKey || e.button !== 0) return;
+  if (typeof document.caretRangeFromPoint !== 'function') return;
+  var rng = document.caretRangeFromPoint(e.clientX, e.clientY);
+  if (!rng) return;
+  var node = rng.startContainer;
+  var line = (node.nodeType === Node.TEXT_NODE) ? node.parentElement : node;
+  while (line && !(line.classList && line.classList.contains('cm-line'))) {
+    line = line.parentElement;
+  }
+  if (!line) return;
+  var lineText = line.textContent || '';
+  var pos = offsetWithinLine(line, node, rng.startOffset);
+  if (pos < 0) return;
+  var re = /https?:\/\/[^\s)\]]+/g;
+  var m;
+  while ((m = re.exec(lineText)) !== null) {
+    if (pos >= m.index && pos <= m.index + m[0].length) {
+      try {
+        window.webkit.messageHandlers.swift.postMessage({
+          type: 'open-url', url: m[0]
+        });
+      } catch (_) {}
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+  }
+}, true);
+
 try {
   window.webkit.messageHandlers.swift.postMessage({
     type: 'ready',

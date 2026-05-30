@@ -366,8 +366,14 @@ struct MainWindowView: View {
                 }
             case let .success(model):
                 if case let .dictionary(entry) = model.content {
-                    // 词典专用卡片(完整渲染),不走通用 header+Text 路径。
-                    // 词头双击保存到 ~/knowledge/words/<word>.md。
+                    // 词典专用卡片(完整渲染)+ 顶部插入/朗读按钮:插入吐
+                    // markdown 整卡(含有道详解外链),TTS 只念词头+中译,
+                    // 规避朗读 markdown 标记。词头双击仍走保存到
+                    // ~/knowledge/words/<word>.md。
+                    resultHeader(text: entry.toMarkdownCard(),
+                                 sourceText: nil,
+                                 resultID: model.id,
+                                 speakText: entry.spokenSummary())
                     DictionaryCardView(entry: entry,
                                        wordStore: controller.wordCardStore)
                 } else {
@@ -550,7 +556,8 @@ struct MainWindowView: View {
 
     private func resultHeader(text: String,
                               sourceText: String? = nil,
-                              resultID: UUID? = nil) -> some View {
+                              resultID: UUID? = nil,
+                              speakText: String? = nil) -> some View {
         HStack {
             // 「翻译结果」标题+图标已按 James 要求删掉，只留右侧
             // 两个操作按钮（插入笔记 / 朗读结果），靠右浮在结果上方。
@@ -558,7 +565,7 @@ struct MainWindowView: View {
             // 插入到右侧**选中 Tab** 的笔记草稿;同时登记来源
             // result id(原料包 A 源追)。无选中 Tab 时按钮禁用。
             // 有原文则按「**原文:** … / **译文:** …」带标签排版一起带过去
-            // (James 决策);无原文(如纯问答)退化为只插结果文本。
+            // (James 决策);无原文(如纯问答/词典 md 卡)退化为只插结果文本。
             iconButton("text.append", "note.insert_result") {
                 noteDocs.selected?.editor.insert(
                     Self.noteSnippet(source: sourceText, result: text),
@@ -568,8 +575,10 @@ struct MainWindowView: View {
             .disabled(text.trimmingCharacters(
                 in: .whitespacesAndNewlines).isEmpty)
             // 朗读结果文本（TTS 文本框已移除，直接传结果）。
+            // speakText 给词典用——朗读纯净的「词头+中译」而不是整段 md。
             iconButton("speaker.wave.2", "tts.speak_result") {
-                controller.ttsViewModel.synthesizeAndPlay(text: text)
+                controller.ttsViewModel.synthesizeAndPlay(
+                    text: speakText ?? text)
             }
             .font(.subheadline)
             .disabled(text.trimmingCharacters(

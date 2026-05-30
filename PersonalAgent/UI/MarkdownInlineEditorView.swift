@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 import WebKit
 import os.log
@@ -130,6 +131,15 @@ struct MarkdownInlineEditorView: NSViewRepresentable {
                     DispatchQueue.main.async { [weak self] in
                         self?.text = md
                     }
+                }
+            case "open-url":
+                // Cmd+Click URL → 默认浏览器。仅放行 http/https,挡 file://
+                // 和自定义 scheme 兜底(避免 webview 内任意 URL 触发系统打开)。
+                if let s = dict["url"] as? String,
+                   let url = URL(string: s),
+                   let scheme = url.scheme?.lowercased(),
+                   scheme == "http" || scheme == "https" {
+                    NSWorkspace.shared.open(url)
                 }
             case "error":
                 let m = (dict["msg"] as? String) ?? "<no msg>"
