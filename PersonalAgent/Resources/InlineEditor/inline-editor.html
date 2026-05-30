@@ -3,92 +3,156 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="stylesheet" href="toastui-editor.min.css">
-<!-- 暗色覆盖样式：只有挂上 `.toastui-editor-dark` 类才生效，常驻加载安全 -->
-<link rel="stylesheet" href="toastui-editor-dark.min.css">
 <style>
-:root { color-scheme: light dark; }
+/*
+  CM6 live-preview 编辑器壳。
+  全部配色用 CSS 变量集中管理，明暗双套；bundle.mjs 里 EditorView.theme
+  和高亮 class 都通过 var(--md-*) 引用。
+  调色板取自 GitHub Markdown（Light/Dark）—— 兼顾读感、稳态对比度和长
+  时间写作不刺眼。
+*/
+:root {
+  color-scheme: light dark;
+
+  /* ===== Light（默认） ===== */
+  --md-fg:            #1f2328;  /* 正文 */
+  --md-fg-muted:      #57606a;  /* 二级文本（备注、标记淡化） */
+  --md-heading:       #1a1a1a;  /* 标题主色 */
+  --md-h1-border:     rgba(0,0,0,.08);
+  --md-h2-border:     rgba(0,0,0,.07);
+
+  --md-strong:        #111418;
+  --md-em:            #2f3640;
+
+  --md-link:          #0969da;
+  --md-wikilink:      #6f42c1;
+  --md-link-decoration: underline;
+
+  --md-code-fg:       #d73a49;
+  --md-code-bg:       rgba(175,184,193,.22);
+  --md-code-border:   rgba(175,184,193,.30);
+
+  --md-quote-fg:      #57606a;
+  --md-quote-bg:      rgba(208,215,222,.18);
+  --md-quote-border:  #d0d7de;
+
+  --md-hr:            #d0d7de;
+  --md-table-border:  rgba(208,215,222,.6);
+
+  --md-mark-soft:     rgba(0,0,0,.28);   /* 标记淡化（光标在节点内） */
+  --md-selection:     rgba(0,122,255,.22);
+  --md-active-line:   rgba(0,0,0,.025);
+
+  --cm-caret:         #007aff;
+
+  /* —— code block syntax 高亮（GitHub Light） —— */
+  --tok-keyword:      #cf222e;
+  --tok-string:       #0a3069;
+  --tok-number:       #0550ae;
+  --tok-atom:         #0550ae;
+  --tok-comment:      #6e7781;
+  --tok-variable:     #953800;
+  --tok-function:     #8250df;
+  --tok-type:         #0550ae;
+  --tok-url:          #0969da;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --md-fg:            #c9d1d9;
+    --md-fg-muted:      #8b949e;
+    --md-heading:       #e6edf3;
+    --md-h1-border:     rgba(255,255,255,.08);
+    --md-h2-border:     #30363d;
+
+    --md-strong:        #f0f6fc;
+    --md-em:            #c9d1d9;
+
+    --md-link:          #58a6ff;
+    --md-wikilink:      #bc8cff;
+
+    --md-code-fg:       #ffa198;
+    --md-code-bg:       rgba(110,118,129,.38);
+    --md-code-border:   rgba(110,118,129,.48);
+
+    --md-quote-fg:      #8b949e;
+    --md-quote-bg:      rgba(110,118,129,.10);
+    --md-quote-border:  #3b434b;
+
+    --md-hr:            #30363d;
+    --md-table-border:  rgba(110,118,129,.4);
+
+    --md-mark-soft:     rgba(255,255,255,.32);
+    --md-selection:     rgba(56,139,253,.35);
+    --md-active-line:   rgba(255,255,255,.04);
+
+    --cm-caret:         #58a6ff;
+
+    /* GitHub Dark Dimmed code colors */
+    --tok-keyword:      #ff7b72;
+    --tok-string:       #a5d6ff;
+    --tok-number:       #79c0ff;
+    --tok-atom:         #79c0ff;
+    --tok-comment:      #8b949e;
+    --tok-variable:     #ffa657;
+    --tok-function:     #d2a8ff;
+    --tok-type:         #79c0ff;
+    --tok-url:          #58a6ff;
+  }
+}
+
 html, body {
   margin: 0;
   padding: 0;
   height: 100%;
   background: transparent;
-  font-family: -apple-system, "SF Pro Text", "PingFang SC", sans-serif;
+  color: var(--md-fg);
+  font-family: -apple-system, "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif;
   -webkit-text-size-adjust: 100%;
 }
+
 #editor {
   position: absolute;
   inset: 0;
 }
-
-/* —— TOAST UI 外壳：跟容器底色，不再画方形边框 —— */
-.toastui-editor-defaultUI {
-  border: none !important;
+.cm-editor {
+  height: 100%;
   background: transparent !important;
-  height: 100% !important;
+  color: var(--md-fg);
 }
-.toastui-editor-main-container,
-.toastui-editor-ww-container,
-.toastui-editor-ww-mode .toastui-editor-contents,
-.toastui-editor-md-container,
-.toastui-editor-md-container .CodeMirror {
-  background: transparent !important;
+.cm-editor.cm-focused {
+  outline: none !important;
 }
-.toastui-editor-mode-switch { display: none !important; }
-
-/* —— 工具栏：紧凑化 + 扁平按钮 —— */
-.toastui-editor-defaultUI-toolbar {
-  background: rgba(127, 127, 127, .05);
-  border-bottom: 1px solid rgba(127, 127, 127, .15);
-  padding: 4px 8px !important;
-  height: auto !important;
-  min-height: 30px !important;
-}
-/* 默认按钮 36×36 太大，缩到 26×26；图标背景图也压缩 */
-.toastui-editor-defaultUI-toolbar .toastui-editor-toolbar-icons {
-  width: 26px !important;
-  height: 26px !important;
-  background-size: 18px 348px !important;
-  border: none !important;
-  border-radius: 4px !important;
-  margin: 1px !important;
-  opacity: .72;
-}
-.toastui-editor-defaultUI-toolbar .toastui-editor-toolbar-icons:hover {
-  background-color: rgba(127, 127, 127, .18) !important;
-  opacity: 1;
-}
-.toastui-editor-defaultUI-toolbar .toastui-editor-toolbar-icons.active,
-.toastui-editor-defaultUI-toolbar .toastui-editor-toolbar-icons:active {
-  background-color: rgba(127, 127, 127, .28) !important;
-  opacity: 1;
-}
-/* 分割线收紧 */
-.toastui-editor-toolbar-divider {
-  margin: 4px 6px !important;
-}
-.toastui-editor-toolbar-group {
-  gap: 0 !important;
+.cm-editor .cm-gutters {
+  display: none !important;           /* 不要行号沟槽，纯写作视图 */
 }
 
-/* 暗色下整体外观由 toastui-editor-dark.css 主导；这里把容器/分割线
-   再调和一下，避免 dark 模板里硬色覆盖透明背景 */
-.toastui-editor-dark .toastui-editor-defaultUI-toolbar {
-  background: rgba(255, 255, 255, .03) !important;
-  border-bottom-color: rgba(255, 255, 255, .08) !important;
+/* —— 选区配色：覆盖 CM6 默认 —— */
+.cm-editor .cm-selectionBackground,
+.cm-editor ::selection {
+  background: var(--md-selection) !important;
 }
-.toastui-editor-dark .toastui-editor-main-container,
-.toastui-editor-dark .toastui-editor-ww-container,
-.toastui-editor-dark .toastui-editor-ww-mode .toastui-editor-contents {
-  background: transparent !important;
+.cm-editor.cm-focused .cm-selectionBackground {
+  background: var(--md-selection) !important;
 }
 
-/* 内容区代码块等宽 */
-.toastui-editor-ww-mode .toastui-editor-contents pre code {
-  font-family: "SF Mono", ui-monospace, Menlo, Consolas, monospace;
+/* —— 当前活动行底色 —— */
+.cm-editor .cm-activeLine {
+  background-color: var(--md-active-line) !important;
 }
 
-/* 状态遮罩（init 失败时露出） */
+/* —— code block 内 syntax token class（HighlightStyle 用 class 模式） —— */
+.tok-keyword  { color: var(--tok-keyword);  font-weight: 600; }
+.tok-string   { color: var(--tok-string);   }
+.tok-number   { color: var(--tok-number);   }
+.tok-atom     { color: var(--tok-atom);     }
+.tok-comment  { color: var(--tok-comment);  font-style: italic; }
+.tok-variable { color: var(--tok-variable); }
+.tok-function { color: var(--tok-function); font-weight: 500; }
+.tok-type     { color: var(--tok-type);     }
+.tok-url      { color: var(--tok-url); text-decoration: underline; }
+
+/* —— 状态遮罩（init 失败时露出） —— */
 #status {
   position: fixed;
   inset: 0;
@@ -106,8 +170,10 @@ html, body {
 <body>
 <div id="status">加载中…</div>
 <div id="editor"></div>
+
 <script>
 'use strict';
+// —— 统一错误回报通道：JS 任何阶段挂掉都丢给 Swift os.Logger ——
 var statusEl = document.getElementById('status');
 function showStatus(text, isError) {
   if (!statusEl) return;
@@ -128,105 +194,85 @@ function reportError(msg) {
 window.addEventListener('error', function (e) {
   reportError((e && e.message) || 'unknown error');
 });
-showStatus('加载 TOAST UI…');
-</script>
-<script src="toastui-editor.min.js" onerror="reportError('toastui-editor.min.js 加载失败')"></script>
-<script>
-'use strict';
+window.addEventListener('unhandledrejection', function (e) {
+  reportError('promise: ' + ((e && e.reason && e.reason.message) || e.reason || 'unknown'));
+});
+showStatus('加载 CodeMirror…');
 
 function b64decode(s) {
   return decodeURIComponent(escape(window.atob(s || '')));
 }
+</script>
 
-if (typeof toastui === 'undefined') {
-  reportError('toastui 全局未定义 — JS 资源没加载');
+<script src="cm6.bundle.js" onerror="reportError('cm6.bundle.js 加载失败')"></script>
+
+<script>
+'use strict';
+
+if (typeof CM6 === 'undefined') {
+  reportError('CM6 全局未定义 — bundle 没加载');
 } else {
   showStatus('初始化编辑器…');
 }
 
-// —— 暗色模式：初始化时读一次，监听系统变化实时切 —— //
-function currentTheme() {
-  return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-}
-function applyTheme(theme) {
-  var ui = document.querySelector('.toastui-editor-defaultUI');
-  if (!ui) return;
-  if (theme === 'dark') ui.classList.add('toastui-editor-dark');
-  else ui.classList.remove('toastui-editor-dark');
-}
+var view = null;
+window.__lastSyncedDoc = '';
 
-var editor = null;
 try {
-  if (typeof toastui !== 'undefined') {
-    editor = new toastui.Editor({
-      el: document.querySelector('#editor'),
-      height: '100%',
-      initialEditType: 'wysiwyg',
-      hideModeSwitch: true,
-      theme: currentTheme(),
-      initialValue: '',
-      usageStatistics: false,
-      autofocus: true,
-      toolbarItems: [
-        ['heading', 'bold', 'italic', 'strike'],
-        ['hr', 'quote'],
-        ['ul', 'ol', 'task', 'indent', 'outdent'],
-        ['table', 'image', 'link'],
-        ['code', 'codeblock']
-      ],
-      events: {
-        change: function () {
-          var md;
-          try { md = editor.getMarkdown(); } catch (e) { reportError(e); return; }
-          if (md === window.__lastSyncedMd) return;
-          window.__lastSyncedMd = md;
-          try {
-            window.webkit.messageHandlers.swift.postMessage({
-              type: 'change',
-              md: md
-            });
-          } catch (_) {}
-        }
+  if (typeof CM6 !== 'undefined') {
+    view = CM6.create({
+      parent: document.querySelector('#editor'),
+      doc: '',
+      onChange: function (doc) {
+        if (doc === window.__lastSyncedDoc) return;
+        window.__lastSyncedDoc = doc;
+        try {
+          window.webkit.messageHandlers.swift.postMessage({
+            type: 'change',
+            md: doc
+          });
+        } catch (_) {}
       }
     });
-    // TOAST 的 theme 选项只在 init 时生效，运行时变化需自挂/卸 class。
-    applyTheme(currentTheme());
     hideStatus();
   }
 } catch (e) {
   reportError('init failed: ' + (e && e.message ? e.message : e));
 }
 
-// 系统外观切换实时跟随（无需重启 app）。
-try {
-  var mq = window.matchMedia('(prefers-color-scheme: dark)');
-  // Safari 14+ 支持 addEventListener，老浏览器用 addListener 兜底。
-  var listener = function () { applyTheme(currentTheme()); };
-  if (mq.addEventListener) mq.addEventListener('change', listener);
-  else if (mq.addListener) mq.addListener(listener);
-} catch (_) {}
-
-// —— Swift 调用接口 ——
+// —— Swift 调用接口（桥协议不变） ——
 window.__setMarkdown = function (b64) {
-  if (!editor) { reportError('setMarkdown before init'); return; }
+  if (!view) { reportError('setMarkdown before init'); return; }
   var md = b64decode(b64);
-  if (md === window.__lastSyncedMd) return;
-  window.__lastSyncedMd = md;
-  try { editor.setMarkdown(md); } catch (e) { reportError(e); }
+  if (md === window.__lastSyncedDoc) return;
+  window.__lastSyncedDoc = md;
+  try { CM6.setDoc(view, md); } catch (e) { reportError(e); }
 };
 window.__insertText = function (b64) {
-  if (!editor) return;
-  try { editor.insertText(b64decode(b64)); } catch (e) { reportError(e); }
+  if (!view) return;
+  try { CM6.insertAtCursor(view, b64decode(b64)); } catch (e) { reportError(e); }
 };
 window.__getMarkdown = function () {
-  if (!editor) return '';
-  try { return editor.getMarkdown(); } catch (e) { return ''; }
+  if (!view) return '';
+  try { return CM6.getDoc(view); } catch (e) { return ''; }
 };
+window.__undo = function () { try { CM6.undo(view); } catch (e) {} };
+window.__redo = function () { try { CM6.redo(view); } catch (e) {} };
+
+// —— 暗色实时跟随 ——
+try {
+  var mq = window.matchMedia('(prefers-color-scheme: dark)');
+  var onSchemeChange = function () {
+    if (view) try { CM6.setTheme(view, mq.matches ? 'dark' : 'light'); } catch (_) {}
+  };
+  if (mq.addEventListener) mq.addEventListener('change', onSchemeChange);
+  else if (mq.addListener) mq.addListener(onSchemeChange);
+} catch (_) {}
 
 try {
   window.webkit.messageHandlers.swift.postMessage({
     type: 'ready',
-    hasEditor: !!editor
+    hasEditor: !!view
   });
 } catch (_) {}
 </script>
