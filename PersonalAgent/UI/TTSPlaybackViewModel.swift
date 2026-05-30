@@ -73,6 +73,28 @@ final class TTSPlaybackViewModel: NSObject, ObservableObject {
                 ("聪玉昭·女声", "x5_lingyuzhao_flow"),
                 ("聪玉言·女声", "x5_lingyuyan_flow")
             ]
+        case .doubao:
+            // 大模型 TTS service 10007「字符版」正式开通后默认授权的
+            // moon_bigtts 系（共 348 款，这里挑 10 款覆盖三类典型场景）。
+            // 命名 `zh_<gender>_<name>_moon_bigtts`，与 mars/jupiter 系
+            // 不通用——若哪天切到不同服务需要重写。默认 `少年梓辛`
+            // （中英双语，最适合翻译朗读）。
+            // 顺序按用途分组：通用 → 角色扮演 → 趣味方言。
+            return [
+                // —— 通用场景 ——
+                ("少年梓辛·中英男声", "zh_male_shaonianzixin_moon_bigtts"),
+                // —— 角色扮演 ——
+                ("魅力女友", "zh_female_meilinvyou_moon_bigtts"),
+                ("柔美女友", "zh_female_sajiaonvyou_moon_bigtts"),
+                ("撒娇学妹", "zh_female_yuanqinvyou_moon_bigtts"),
+                ("深夜播客·男声", "zh_male_shenyeboke_moon_bigtts"),
+                // —— 趣味方言 ——
+                ("湾区大叔·粤语", "zh_female_wanqudashu_moon_bigtts"),
+                ("呆萌川妹·四川话", "zh_female_daimengchuanmei_moon_bigtts"),
+                ("广州德哥·粤语", "zh_male_guozhoudege_moon_bigtts"),
+                ("北京小爷·京腔", "zh_male_beijingxiaoye_moon_bigtts"),
+                ("浩宇小哥·东北话", "zh_male_haoyuxiaoge_moon_bigtts")
+            ]
         }
     }
 

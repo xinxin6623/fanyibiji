@@ -64,7 +64,8 @@ struct MainWindowView: View {
         .tint(ClaudeTheme.accent)
         .sheet(isPresented: $showingHotkeySettings) {
             HotkeySettingsView(config: controller.hotkeyConfig,
-                               promptConfig: controller.promptConfig)
+                               promptConfig: controller.promptConfig,
+                               llmConfig: controller.llmConfig)
                 .environmentObject(controller)
         }
         .onAppear {

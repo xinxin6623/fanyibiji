@@ -145,6 +145,7 @@ struct TTSPanelView: View {
         switch engine {
         case .standard:   return "普通"
         case .superHuman: return "超拟人"
+        case .doubao:     return "豆包"
         }
     }
 

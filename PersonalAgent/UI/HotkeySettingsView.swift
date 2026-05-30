@@ -64,29 +64,28 @@ struct KeyRecorderField: NSViewRepresentable {
 }
 
 /// 设置面板：macOS 标准顶部 Tab + 每页分组列表（对齐 Easydict 设置）。
-/// 四个 Tab：通用(语言) / 快捷键 / 密钥 / 提示词。底部统一保存。
+/// 四个 Tab：通用(语言) / 快捷键 / 模型(LLM key+baseUrl+model+提示词) /
+/// 转语音(TTS 三件套+语音设置)。底部统一保存。
 struct HotkeySettingsView: View {
     @EnvironmentObject private var controller: AppController
     @Environment(\.dismiss) private var dismiss
 
     private enum Tab: String, CaseIterable {
-        case general, hotkey, secret, prompt, tts
+        case general, hotkey, model, voice
         var titleKey: String {
             switch self {
             case .general: return "settings.tab.general"
             case .hotkey:  return "settings.tab.hotkey"
-            case .secret:  return "settings.tab.secret"
-            case .prompt:  return "settings.tab.prompt"
-            case .tts:     return "settings.tab.tts"
+            case .model:   return "settings.tab.model"
+            case .voice:   return "settings.tab.voice"
             }
         }
         var icon: String {
             switch self {
             case .general: return "gearshape"
             case .hotkey:  return "command"
-            case .secret:  return "key"
-            case .prompt:  return "text.bubble"
-            case .tts:     return "speaker.wave.2"
+            case .model:   return "brain"
+            case .voice:   return "speaker.wave.2"
             }
         }
     }
@@ -104,13 +103,19 @@ struct HotkeySettingsView: View {
     @State private var secretStatus: [AppController.SecretField] = []
     @State private var systemPrompt: String
     @State private var targetLanguage: TargetLanguage
+    @State private var llmBaseUrl: String
+    @State private var llmModel: String
 
-    init(config: HotkeyConfig, promptConfig: PromptConfig) {
+    init(config: HotkeyConfig,
+         promptConfig: PromptConfig,
+         llmConfig: ProviderConfig) {
         _translateSelection = State(initialValue: config.translateSelection)
         _captureOCR = State(initialValue: config.captureOCR)
         _selectionToNote = State(initialValue: config.selectionToNote)
         _systemPrompt = State(initialValue: promptConfig.systemPrompt)
         _targetLanguage = State(initialValue: .chinese)
+        _llmBaseUrl = State(initialValue: llmConfig.baseUrl)
+        _llmModel = State(initialValue: llmConfig.model)
     }
 
     /// 三组绑定两两不可相同（任一对撞键即冲突，禁用保存）。
@@ -132,9 +137,8 @@ struct HotkeySettingsView: View {
                     switch tab {
                     case .general: generalPage
                     case .hotkey:  hotkeyPage
-                    case .secret:  secretPage
-                    case .prompt:  promptPage
-                    case .tts:     ttsPage
+                    case .model:   modelPage
+                    case .voice:   voicePage
                     }
                 }
                 .padding(24)
@@ -237,63 +241,114 @@ struct HotkeySettingsView: View {
         }
     }
 
-    // MARK: - 密钥页
+    // MARK: - 模型页（LLM baseUrl / model / api key / 系统提示词）
 
-    private var secretPage: some View {
-        settingsGroup("settings.secret.title", hint: "settings.secret.hint") {
-            ForEach(Array(secretStatus.enumerated()), id: \.element.id) { idx, field in
-                if idx > 0 { Divider() }
+    /// 模型设置统一页：上半部分是 baseUrl + model + LLM API Key
+    /// （非密钥字段走 controller.llmConfig 持久化，密钥走 SecretStore），
+    /// 下半部分是系统提示词。底部统一保存按钮里一次写盘 + 重建 provider。
+    private var modelPage: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            settingsGroup("settings.model.title",
+                          hint: "settings.model.hint") {
                 VStack(alignment: .leading, spacing: 4) {
-                    HStack {
-                        Text(LocalizedStringKey(field.titleKey))
-                            .font(.subheadline)
-                        if field.isSet {
-                            Text("settings.secret.configured")
-                                .font(.caption2).foregroundStyle(.green)
-                        } else {
-                            Text("settings.secret.not_configured")
-                                .font(.caption2).foregroundStyle(.orange)
-                        }
-                    }
-                    SecureField(
-                        field.isSet
-                            ? String(localized: "settings.secret.placeholder_set")
-                            : String(localized: "settings.secret.placeholder_empty"),
-                        text: Binding(
-                            get: { secretDrafts[field.id] ?? "" },
-                            set: { secretDrafts[field.id] = $0 }))
+                    Text("settings.llm.base_url").font(.subheadline)
+                    TextField(
+                        "settings.llm.base_url_placeholder",
+                        text: $llmBaseUrl)
                         .textFieldStyle(.roundedBorder)
+                        .autocorrectionDisabled()
+                }
+                Divider()
+                VStack(alignment: .leading, spacing: 4) {
+                    Text("settings.llm.model").font(.subheadline)
+                    TextField(
+                        "settings.llm.model_placeholder",
+                        text: $llmModel)
+                        .textFieldStyle(.roundedBorder)
+                        .autocorrectionDisabled()
+                }
+                Divider()
+                secretRow(forKey: "llm.apiKey",
+                          titleKey: "settings.secret.llm_api_key")
+            }
+            settingsGroup("settings.prompt.title",
+                          hint: "settings.prompt.hint") {
+                TextEditor(text: $systemPrompt)
+                    .font(.body)
+                    .scrollContentBackground(.hidden)
+                    .frame(minHeight: 200)
+                    .overlay(RoundedRectangle(cornerRadius: 6)
+                        .stroke(Color.secondary.opacity(0.3)))
+                Divider()
+                Button("settings.prompt.reset") {
+                    systemPrompt = PromptConfig.defaultSystemPrompt
+                }
+                .controlSize(.small)
+            }
+        }
+    }
+
+    // MARK: - 转语音页（TTS 三件套密钥 + 语音合成设置）
+
+    /// 上半部分是讯飞 TTS 三件套密钥（同走 SecretStore，底部统一保存）；
+    /// 下半部分引擎/发音人/口语化/语速/音量/音调（绑定 ttsViewModel，
+    /// didSet 即时重建 provider + debounce 存盘，独立于底部保存）。
+    private var voicePage: some View {
+        VStack(alignment: .leading, spacing: 20) {
+            // 两套引擎密钥**同时显示**：用户可两边都预先配好，再用下方「引擎」
+            // picker 切换实际使用哪个，无需为了配置一方先牺牲另一方。
+            settingsGroup("settings.voice.secret.title",
+                          hint: "settings.voice.secret.hint") {
+                secretRow(forKey: "tts.appId",
+                          titleKey: "settings.secret.tts_app_id")
+                Divider()
+                secretRow(forKey: "tts.apiKey",
+                          titleKey: "settings.secret.tts_api_key")
+                Divider()
+                secretRow(forKey: "tts.apiSecret",
+                          titleKey: "settings.secret.tts_api_secret")
+            }
+            settingsGroup("settings.voice.doubao.secret.title",
+                          hint: "settings.voice.doubao.secret.hint") {
+                secretRow(forKey: "tts.doubao.appId",
+                          titleKey: "settings.secret.doubao_app_id")
+                Divider()
+                secretRow(forKey: "tts.doubao.token",
+                          titleKey: "settings.secret.doubao_token")
+            }
+            ttsControlsGroup
+        }
+    }
+
+    /// 单条密钥行（标题 + 已配置/未配置标 + 输入框）。模型页/转语音页共用。
+    @ViewBuilder
+    private func secretRow(forKey key: String,
+                           titleKey: String) -> some View {
+        let field = secretStatus.first(where: { $0.id == key })
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Text(LocalizedStringKey(titleKey)).font(.subheadline)
+                if field?.isSet == true {
+                    Text("settings.secret.configured")
+                        .font(.caption2).foregroundStyle(.green)
+                } else {
+                    Text("settings.secret.not_configured")
+                        .font(.caption2).foregroundStyle(.orange)
                 }
             }
-            Divider()
-            Text("settings.secret.save_note")
-                .font(.caption2).foregroundStyle(.secondary)
+            SecureField(
+                (field?.isSet ?? false)
+                    ? String(localized: "settings.secret.placeholder_set")
+                    : String(localized: "settings.secret.placeholder_empty"),
+                text: Binding(
+                    get: { secretDrafts[key] ?? "" },
+                    set: { secretDrafts[key] = $0 }))
+                .textFieldStyle(.roundedBorder)
         }
     }
 
-    // MARK: - 提示词页
-
-    private var promptPage: some View {
-        settingsGroup("settings.prompt.title", hint: "settings.prompt.hint") {
-            TextEditor(text: $systemPrompt)
-                .font(.body)
-                .scrollContentBackground(.hidden)
-                .frame(minHeight: 200)
-                .overlay(RoundedRectangle(cornerRadius: 6)
-                    .stroke(Color.secondary.opacity(0.3)))
-            Divider()
-            Button("settings.prompt.reset") {
-                systemPrompt = PromptConfig.defaultSystemPrompt
-            }
-            .controlSize(.small)
-        }
-    }
-
-    // MARK: - TTS 页（语音合成设置，实时生效）
-
-    /// 引擎/发音人/口语化/语速/音量/音调。绑定 controller.ttsViewModel，
-    /// didSet 即时重建 provider + debounce 存盘，故不走底部统一保存。
-    private var ttsPage: some View {
+    /// 语音合成参数分组（引擎/发音人/口语化/三个滑杆）。从原 ttsPage 抽出。
+    private var ttsControlsGroup: some View {
         let tts = controller.ttsViewModel
         return settingsGroup("settings.tab.tts", hint: "settings.tts.hint") {
             HStack {
@@ -304,6 +359,7 @@ struct HotkeySettingsView: View {
                     set: { tts.engine = $0 })) {
                     Text("tts.engine.super").tag(TTSEngine.superHuman)
                     Text("tts.engine.standard").tag(TTSEngine.standard)
+                    Text("tts.engine.doubao").tag(TTSEngine.doubao)
                 }
                 .labelsHidden().fixedSize()
             }
@@ -376,6 +432,13 @@ struct HotkeySettingsView: View {
                     captureOCR: captureOCR,
                     selectionToNote: selectionToNote))
                 saveSecrets()
+                // 先存 LLM baseUrl/model，再存提示词；后者也会重建
+                // provider，等同于一次合并写盘。
+                controller.updateLLMConfig(ProviderConfig(
+                    baseUrl: llmBaseUrl
+                        .trimmingCharacters(in: .whitespacesAndNewlines),
+                    model: llmModel
+                        .trimmingCharacters(in: .whitespacesAndNewlines)))
                 controller.updatePromptConfig(
                     PromptConfig(systemPrompt: systemPrompt))
                 controller.updateLanguageConfig(

@@ -21,6 +21,7 @@
 		B200000000000000000033 /* TTSWebSocketClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000032 /* TTSWebSocketClient.swift */; };
 		B20000000000000000003F /* SuperTTSWebSocketClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = B20000000000000000003E /* SuperTTSWebSocketClient.swift */; };
 		B200000000000000000035 /* XunfeiTTSProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000034 /* XunfeiTTSProvider.swift */; };
+		B20000000000000000010A /* DoubaoTTSProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000109 /* DoubaoTTSProvider.swift */; };
 		B200000000000000000037 /* TTSPlaybackViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000036 /* TTSPlaybackViewModel.swift */; };
 		B200000000000000000039 /* TTSPanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B200000000000000000038 /* TTSPanelView.swift */; };
 		B2000000000000000000F1 /* ClaudeTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2000000000000000000F0 /* ClaudeTheme.swift */; };
@@ -120,6 +121,7 @@
 		B200000000000000000032 /* TTSWebSocketClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TTSWebSocketClient.swift; sourceTree = "<group>"; };
 		B20000000000000000003E /* SuperTTSWebSocketClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SuperTTSWebSocketClient.swift; sourceTree = "<group>"; };
 		B200000000000000000034 /* XunfeiTTSProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XunfeiTTSProvider.swift; sourceTree = "<group>"; };
+		B200000000000000000109 /* DoubaoTTSProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DoubaoTTSProvider.swift; sourceTree = "<group>"; };
 		B200000000000000000036 /* TTSPlaybackViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TTSPlaybackViewModel.swift; sourceTree = "<group>"; };
 		B200000000000000000038 /* TTSPanelView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TTSPanelView.swift; sourceTree = "<group>"; };
 		B2000000000000000000F0 /* ClaudeTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeTheme.swift; sourceTree = "<group>"; };
@@ -413,6 +415,7 @@
 			isa = PBXGroup;
 			children = (
 				B200000000000000000034 /* XunfeiTTSProvider.swift */,
+				B200000000000000000109 /* DoubaoTTSProvider.swift */,
 				B200000000000000000000FF /* OpenAICompatibleLLMProvider.swift */,
 				B200000000000000000000A7 /* FreeWebTranslateProvider.swift */,
 				B200000000000000000000A9 /* RetryingLLMProvider.swift */,
@@ -609,6 +612,7 @@
 				B200000000000000000033 /* TTSWebSocketClient.swift in Sources */,
 				B20000000000000000003F /* SuperTTSWebSocketClient.swift in Sources */,
 				B200000000000000000035 /* XunfeiTTSProvider.swift in Sources */,
+				B20000000000000000010A /* DoubaoTTSProvider.swift in Sources */,
 				B200000000000000000037 /* TTSPlaybackViewModel.swift in Sources */,
 				B200000000000000000039 /* TTSPanelView.swift in Sources */,
 				B2000000000000000000F1 /* ClaudeTheme.swift in Sources */,

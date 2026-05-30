@@ -1601,6 +1601,246 @@
         }
       }
     },
+    "settings.tab.model": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模型"
+          }
+        }
+      }
+    },
+    "settings.tab.voice": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voice"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "转语音"
+          }
+        }
+      }
+    },
+    "settings.model.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "LLM"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "大模型"
+          }
+        }
+      }
+    },
+    "settings.model.hint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenAI-compatible endpoint. baseUrl/model are plain text; the API key is stored in macOS Keychain."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "OpenAI 兼容端点。baseUrl/model 为明文配置，API Key 存入 macOS 钥匙串。"
+          }
+        }
+      }
+    },
+    "settings.llm.base_url": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Base URL"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Base URL"
+          }
+        }
+      }
+    },
+    "settings.llm.base_url_placeholder": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "https://ark.cn-beijing.volces.com/api/v3"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "如：https://ark.cn-beijing.volces.com/api/v3"
+          }
+        }
+      }
+    },
+    "settings.llm.model": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Model"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "模型 / 接入点 ID"
+          }
+        }
+      }
+    },
+    "settings.llm.model_placeholder": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "e.g. doubao-1-5-pro-32k-250115 or ep-xxx"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "如：doubao-1-5-pro-32k-250115 或 ep-xxx"
+          }
+        }
+      }
+    },
+    "settings.voice.secret.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Xunfei TTS API Keys"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "讯飞 TTS 密钥"
+          }
+        }
+      }
+    },
+    "settings.voice.secret.hint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stored in macOS Keychain. Empty fields are not changed."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "保存到 macOS 钥匙串。留空则不修改。"
+          }
+        }
+      }
+    },
+    "settings.voice.doubao.secret.title": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doubao TTS Credentials"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "豆包 TTS 密钥"
+          }
+        }
+      }
+    },
+    "settings.voice.doubao.secret.hint": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volcano Engine speech, HTTP one-shot service (cluster volcano_tts)."
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "火山引擎语音 HTTP 一句话服务（cluster 写死 volcano_tts）。"
+          }
+        }
+      }
+    },
+    "settings.secret.doubao_app_id": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doubao App ID"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "豆包 App ID"
+          }
+        }
+      }
+    },
+    "settings.secret.doubao_token": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doubao Access Token"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "豆包 Access Token"
+          }
+        }
+      }
+    },
+    "tts.engine.doubao": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Doubao (Volcano)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "豆包"
+          }
+        }
+      }
+    },
     "settings.tab.tts": {
       "localizations": {
         "en": {

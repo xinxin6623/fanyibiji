@@ -15,13 +15,25 @@ struct FailingLLMProvider: LLMProvider {
 /// 不在仓库放 key；缺 key 时降级而非崩溃。
 enum AppComposition {
 
-    /// 默认 provider 配置（OpenAI-compatible）。真实可配置 UI 属后续任务。
-    /// 经 James 确认：走 OpenRouter，模型 `baidu/qianfan-ocr-fast`。
+    /// 默认 provider 配置（OpenAI-compatible）。baseUrl/model 两端皆空：
+    /// 留给设置页「模型」tab 填写，首次启动 `makeLLMProvider` 会因为
+    /// baseUrl 校验失败而降级到 FailingLLMProvider，UI 上可见、不静默。
     static let defaultConfig = ProviderConfig(
-        baseUrl: "https://openrouter.ai/api/v1",
-        model: "baidu/qianfan-ocr-fast"
+        baseUrl: "",
+        model: ""
     )
     static let apiKeyRef = "llm.apiKey"
+
+    /// LLM baseUrl/model 持久化文件，与其它 config 同目录。
+    static func llmSettingsFileURL() -> URL {
+        let base = (try? FileManager.default.url(
+            for: .applicationSupportDirectory,
+            in: .userDomainMask, appropriateFor: nil, create: true))
+            ?? FileManager.default.temporaryDirectory
+        return base
+            .appendingPathComponent("com.james.personalagent", isDirectory: true)
+            .appendingPathComponent("llm-config.json")
+    }
 
     /// TTS 偏好（发音人/语速/音量/音调）持久化文件，与 results.jsonl
     /// 同目录。UI 改动写这里，启动读回；缺失/损坏回 `TTSConfig()` 默认。
@@ -67,6 +79,9 @@ enum AppComposition {
             case .superHuman:
                 return SuperTTSProvider(
                     config: resolved, client: URLSessionSuperTTSWebSocketClient())
+            case .doubao:
+                return DoubaoTTSProvider(
+                    config: resolved, client: URLSessionLLMHTTPClient())
             }
         } catch let error as AgentError {
             return FailingTTSProvider(error: error)
@@ -124,7 +139,8 @@ enum AppComposition {
         // （那边是 UI 展示单一事实源；迁移只需 id，复制 4 个字面量
         // 并加此注释，避免 Composition 反向依赖 Controller）。
         store.migrateFromKeychainIfNeeded(
-            keys: ["llm.apiKey", "tts.appId", "tts.apiKey", "tts.apiSecret"],
+            keys: ["llm.apiKey", "tts.appId", "tts.apiKey", "tts.apiSecret",
+                   "tts.doubao.appId", "tts.doubao.token"],
             legacy: KeychainSecretStore())
         return store
     }()
@@ -176,17 +192,20 @@ enum AppComposition {
             .appendingPathComponent("results.jsonl")
     }
 
-    /// 按当前 Keychain 里的 LLM key 解析造 provider。缺 key/非法
-    /// → `FailingLLMProvider` 降级（UI 可见，不崩）。供启动组装
-    /// 与"设置里填完 key 后重建"两处共用（单一事实源）。
+    /// 按当前持久化的 baseUrl/model + SecretStore 里的 LLM key 解析造
+    /// provider。缺 key/缺 baseUrl/缺 model → `FailingLLMProvider` 降级
+    /// （UI 可见，不崩）。供启动组装与"设置里改完后重建"两处共用
+    /// （单一事实源）。
     static func makeLLMProvider() -> LLMProvider {
-        // 系统提示词从持久化读（缺失/损坏回默认，不让 LLM 失约束）。
+        // 系统提示词 + LLM baseUrl/model 都从持久化读（缺失回默认）。
         let prompt = PromptSettingsStore(
             fileURL: promptSettingsFileURL()).load().systemPrompt
+        let llmConfig = LLMSettingsStore(
+            fileURL: llmSettingsFileURL()).load(fallback: defaultConfig)
         let configStore = ConfigStore(secrets: makeSecretStore())
         do {
             let resolved = try configStore.resolve(
-                defaultConfig, apiKeyRef: apiKeyRef)
+                llmConfig, apiKeyRef: apiKeyRef)
             return OpenAICompatibleLLMProvider(
                 config: resolved,
                 client: URLSessionLLMHTTPClient(),

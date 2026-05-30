@@ -62,3 +62,55 @@ final class PromptSettingsStore: @unchecked Sendable {
                 ? PromptConfig.defaultSystemPrompt : trimmed)
     }
 }
+
+/// `ProviderConfig` 的单文件 JSON 持久化（用户在设置里改的 LLM
+/// baseUrl/model，下次开 App 保留）。
+///
+/// 与 `PromptSettingsStore` 同构：显式 JSON 字段、无 key 转换策略；
+/// 文件缺失/损坏 → 回退到注入的 `defaultConfig`（首次启动 = 空值，
+/// 让 `makeLLMProvider` 走 FailingLLMProvider，UI 提示去配置）。
+/// API key 不在此处（继续在 SecretStore，账号 `llm.apiKey`）。
+final class LLMSettingsStore: @unchecked Sendable {
+    private let fileURL: URL
+    private let lock = NSLock()
+
+    init(fileURL: URL) {
+        self.fileURL = fileURL
+    }
+
+    private static func makeEncoder() -> JSONEncoder {
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.prettyPrinted, .sortedKeys]
+        return encoder
+    }
+
+    /// 读取已保存配置；文件缺失/损坏一律回 `fallback`（通常是
+    /// `AppComposition.defaultLLMConfig`，留空让 UI 引导首次配置）。
+    func load(fallback: ProviderConfig) -> ProviderConfig {
+        lock.lock(); defer { lock.unlock() }
+        guard let data = try? Data(contentsOf: fileURL),
+              !data.isEmpty,
+              let decoded = try? JSONDecoder()
+                .decode(ProviderConfig.self, from: data) else {
+            return fallback
+        }
+        return decoded
+    }
+
+    /// 覆盖写入。失败抛 `AgentError(.persistence)`（调用方可忽略：
+    /// 存盘失败只丢失本次偏好持久化，不中断当前会话）。
+    func save(_ config: ProviderConfig) throws {
+        lock.lock(); defer { lock.unlock() }
+        do {
+            let data = try LLMSettingsStore.makeEncoder().encode(config)
+            let dir = fileURL.deletingLastPathComponent()
+            try FileManager.default.createDirectory(
+                at: dir, withIntermediateDirectories: true)
+            try data.write(to: fileURL, options: .atomic)
+        } catch {
+            throw AgentError(category: .persistence,
+                             isRetriable: true,
+                             diagnosticMessage: "llm settings write failed")
+        }
+    }
+}

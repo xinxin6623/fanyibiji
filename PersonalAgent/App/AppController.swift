@@ -37,12 +37,15 @@ final class AppController: ObservableObject {
     private let hotkeyStore: HotkeySettingsStore
     private let promptStore: PromptSettingsStore
     private let languageStore: LanguageSettingsStore
+    private let llmStore: LLMSettingsStore
     private let secrets: SecretStore
 
     /// 当前系统提示词配置（设置界面读这个回显，保存后重建 LLM）。
     @Published private(set) var promptConfig: PromptConfig
     /// 当前语言配置（设置/语言方向条读这个回显）。
     @Published private(set) var languageConfig: LanguageConfig
+    /// 当前 LLM baseUrl/model 配置（设置界面读这个回显，保存后重建 LLM）。
+    @Published private(set) var llmConfig: ProviderConfig
     private var captureTask: Task<Void, Never>?
     private var selectionTask: Task<Void, Never>?
 
@@ -86,6 +89,10 @@ final class AppController: ObservableObject {
         let lConfig = lStore.load()
         self.languageStore = lStore
         self.languageConfig = lConfig
+        let llmS = LLMSettingsStore(
+            fileURL: AppComposition.llmSettingsFileURL())
+        self.llmStore = llmS
+        self.llmConfig = llmS.load(fallback: AppComposition.defaultConfig)
         self.secrets = AppComposition.makeSecretStore()
         self.hotkeyConfig = config
         self.hotkey = GlobalHotkeyMonitor(
@@ -252,10 +259,12 @@ final class AppController: ObservableObject {
     /// LLM + 讯飞 TTS 三件套的 Keychain account 名（与 AppComposition /
     /// TTSConfigStore 的引用常量保持一致，单一事实源在那边定义）。
     static let secretRefs: [(id: String, titleKey: String)] = [
-        ("llm.apiKey",    "settings.secret.llm_api_key"),
-        ("tts.appId",     "settings.secret.tts_app_id"),
-        ("tts.apiKey",    "settings.secret.tts_api_key"),
-        ("tts.apiSecret", "settings.secret.tts_api_secret")
+        ("llm.apiKey",        "settings.secret.llm_api_key"),
+        ("tts.appId",         "settings.secret.tts_app_id"),
+        ("tts.apiKey",        "settings.secret.tts_api_key"),
+        ("tts.apiSecret",     "settings.secret.tts_api_secret"),
+        ("tts.doubao.appId",  "settings.secret.doubao_app_id"),
+        ("tts.doubao.token",  "settings.secret.doubao_token")
     ]
 
     /// 当前各密钥是否已配置（不返回明文，UI 只显示"已配置/未配置"）。
@@ -305,6 +314,14 @@ final class AppController: ObservableObject {
         promptConfig = config
         try? promptStore.save(config)
         // provider 持有 systemPrompt 的快照，必须重建才生效。
+        queryViewModel.replaceProvider(AppComposition.makeLLMProvider())
+    }
+
+    /// 保存 LLM 的 baseUrl/model（非密钥部分）：写盘 + 重建 provider。
+    /// 写盘失败不阻断重建（偏好持久化失败只损失"下次保留"）。
+    func updateLLMConfig(_ config: ProviderConfig) {
+        llmConfig = config
+        try? llmStore.save(config)
         queryViewModel.replaceProvider(AppComposition.makeLLMProvider())
     }
 

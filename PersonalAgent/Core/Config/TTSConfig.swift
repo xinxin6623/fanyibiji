@@ -1,28 +1,35 @@
 import Foundation
 
-/// TTS 引擎：两套讯飞接口，**同一套三件套密钥**（鉴权完全相同：
-/// HMAC-SHA256 over host+date+request-line），仅 host/path 与请求/返回
-/// JSON 结构不同。UI 可下拉切换，选择持久化。
+/// TTS 引擎：两套讯飞接口（同一套三件套密钥，HMAC-SHA256 over
+/// host+date+request-line），加一套豆包/火山 HTTP 一句话（AppID+Token+
+/// 写死 cluster=`volcano_tts`，base64 返回 mp3）。UI 下拉切换，选择持久化。
+/// 豆包跟讯飞**密钥完全独立**，切引擎需要分别配置。
 enum TTSEngine: String, Codable, Sendable, CaseIterable {
     /// 普通在线语音合成 `wss://tts-api.xfyun.cn/v2/tts`（common/business/data）。
     case standard
     /// 超拟人语音合成 `wss://cbm01.cn-huabei-1.xf-yun.com/v1/private/mcd9m97e6`
     /// （header/parameter/payload，支持口语化）。
     case superHuman = "super"
+    /// 豆包/火山 HTTP 一句话 `https://openspeech.bytedance.com/api/v1/tts`。
+    case doubao
 
-    /// 该引擎的默认 WebSocket 地址。
+    /// 该引擎的默认接口地址（讯飞是 WSS，豆包是 HTTPS）。
     var defaultHost: String {
         switch self {
-        case .standard:  return "wss://tts-api.xfyun.cn/v2/tts"
+        case .standard:   return "wss://tts-api.xfyun.cn/v2/tts"
         case .superHuman: return "wss://cbm01.cn-huabei-1.xf-yun.com/v1/private/mcd9m97e6"
+        case .doubao:     return "https://openspeech.bytedance.com/api/v1/tts"
         }
     }
 
-    /// 该引擎的默认发音人。
+    /// 该引擎的默认发音人。豆包默认走「少年梓辛·中英男声」（moon_bigtts
+    /// 系，service 10007「字符版」正式版自动授权 348 款中的一款，适合
+    /// 翻译朗读的中英双语场景）。
     var defaultVcn: String {
         switch self {
         case .standard:   return "xiaoyan"
         case .superHuman: return "x5_lingxiaoxuan_flow"
+        case .doubao:     return "zh_male_shaonianzixin_moon_bigtts"
         }
     }
 }
@@ -101,11 +108,13 @@ struct TTSConfig: Codable, Sendable, Equatable {
     }
 }
 
-/// 校验通过、可直接交给讯飞 provider 的配置。
+/// 校验通过、可直接交给 TTS provider 的配置。
 ///
-/// 故意**不实现 `Codable`**：内含三件套密钥，不允许被误序列化落盘
-/// （与 `ResolvedProviderConfig` 同策略）。`engine`/`oralLevel` 一并
-/// 携带，供组合根按引擎选择对应 provider。
+/// 故意**不实现 `Codable`**：内含密钥，不允许被误序列化落盘
+/// （与 `ResolvedProviderConfig` 同策略）。两套引擎密钥独立：
+///  - 讯飞用 `appId` / `apiKey` / `apiSecret`（豆包侧三个为空）
+///  - 豆包用 `doubaoAppId` / `doubaoToken`（讯飞侧两个为空）
+/// `engine`/`oralLevel` 一并携带，供组合根按引擎选 provider。
 struct ResolvedTTSConfig: Sendable, Equatable {
     let engine: TTSEngine
     let hostUrl: URL
@@ -118,22 +127,29 @@ struct ResolvedTTSConfig: Sendable, Equatable {
     let appId: String
     let apiKey: String
     let apiSecret: String
+    /// 豆包 App ID（控制台「应用管理」处）。
+    let doubaoAppId: String
+    /// 豆包 Access Token（控制台「Access Token」处）。
+    let doubaoToken: String
 }
 
-/// TTS 配置与三件套密钥的边界：把非敏感 `TTSConfig` 与 `SecretStore`
-/// 中的 appId/apiKey/apiSecret 组合成 `ResolvedTTSConfig`，对缺失/非法
-/// 配置统一给出 `AgentError(.invalidInput)`（UI 只按 category 分支）。
+/// TTS 配置与密钥的边界：把非敏感 `TTSConfig` 与 `SecretStore` 中的
+/// 凭证（按引擎不同）组合成 `ResolvedTTSConfig`，对缺失/非法配置统一
+/// 给出 `AgentError(.invalidInput)`（UI 只按 category 分支）。
 ///
-/// **两个引擎共用同一套 Keychain key**（鉴权完全相同），切引擎无需
-/// 重写密钥。
+/// **讯飞两个引擎共用同一套三件套**（鉴权完全相同），豆包独立另一组
+/// 两件套；当前选哪个引擎就只校验对应那组密钥。
 struct TTSConfigStore: Sendable {
     let secrets: SecretStore
 
-    /// Keychain 中三件套的键名（account）。service 仍是
-    /// `com.james.personalagent`，三个独立项，写入用 `-A` 宽松 ACL。
+    /// 讯飞三件套（standard/superHuman 共用）。
     static let appIdRef = "tts.appId"
     static let apiKeyRef = "tts.apiKey"
     static let apiSecretRef = "tts.apiSecret"
+
+    /// 豆包两件套（doubao 专用）。
+    static let doubaoAppIdRef = "tts.doubao.appId"
+    static let doubaoTokenRef = "tts.doubao.token"
 
     init(secrets: SecretStore) {
         self.secrets = secrets
@@ -148,9 +164,19 @@ struct TTSConfigStore: Sendable {
         }
         guard let url = URL(string: hostString),
               let scheme = url.scheme?.lowercased(),
-              scheme == "ws" || scheme == "wss",
               url.host != nil else {
             throw TTSConfigStore.invalidInput("invalid host_url")
+        }
+        // 讯飞 WSS、豆包 HTTPS；scheme 必须匹配引擎类型，否则贴错地址。
+        switch config.engine {
+        case .standard, .superHuman:
+            guard scheme == "ws" || scheme == "wss" else {
+                throw TTSConfigStore.invalidInput("invalid host_url scheme for xunfei")
+            }
+        case .doubao:
+            guard scheme == "http" || scheme == "https" else {
+                throw TTSConfigStore.invalidInput("invalid host_url scheme for doubao")
+            }
         }
 
         let vcn = config.vcn.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -170,23 +196,31 @@ struct TTSConfigStore: Sendable {
             throw TTSConfigStore.invalidInput("invalid timeout_seconds")
         }
 
-        let appId = try requireSecret(Self.appIdRef, "app_id")
-        let apiKey = try requireSecret(Self.apiKeyRef, "api_key")
-        let apiSecret = try requireSecret(Self.apiSecretRef, "api_secret")
-
-        return ResolvedTTSConfig(
-            engine: config.engine,
-            hostUrl: url,
-            vcn: vcn,
-            speed: config.speed,
-            volume: config.volume,
-            pitch: config.pitch,
-            oralLevel: config.oralLevel,
-            timeoutSeconds: config.timeoutSeconds,
-            appId: appId,
-            apiKey: apiKey,
-            apiSecret: apiSecret
-        )
+        // 只校验当前引擎需要的密钥，另一组留空（豆包不要求讯飞三件套，
+        // 反之亦然），避免用户切到一个引擎就被另一引擎的"未配置"挡住。
+        switch config.engine {
+        case .standard, .superHuman:
+            let appId = try requireSecret(Self.appIdRef, "app_id")
+            let apiKey = try requireSecret(Self.apiKeyRef, "api_key")
+            let apiSecret = try requireSecret(Self.apiSecretRef, "api_secret")
+            return ResolvedTTSConfig(
+                engine: config.engine, hostUrl: url, vcn: vcn,
+                speed: config.speed, volume: config.volume, pitch: config.pitch,
+                oralLevel: config.oralLevel,
+                timeoutSeconds: config.timeoutSeconds,
+                appId: appId, apiKey: apiKey, apiSecret: apiSecret,
+                doubaoAppId: "", doubaoToken: "")
+        case .doubao:
+            let dAppId = try requireSecret(Self.doubaoAppIdRef, "doubao_app_id")
+            let dToken = try requireSecret(Self.doubaoTokenRef, "doubao_token")
+            return ResolvedTTSConfig(
+                engine: config.engine, hostUrl: url, vcn: vcn,
+                speed: config.speed, volume: config.volume, pitch: config.pitch,
+                oralLevel: config.oralLevel,
+                timeoutSeconds: config.timeoutSeconds,
+                appId: "", apiKey: "", apiSecret: "",
+                doubaoAppId: dAppId, doubaoToken: dToken)
+        }
     }
 
     private func requireSecret(_ ref: String, _ label: String) throws -> String {
