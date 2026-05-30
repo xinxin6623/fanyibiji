@@ -2,8 +2,6 @@ import Foundation
 
 /// 词卡 Markdown 写入与合并：
 ///   ~/knowledge/words/<word>.md       — 单词卡(frontmatter + 渲染正文)
-///   ~/knowledge/words/_audio/<word>-us.mp3
-///   ~/knowledge/words/_audio/<word>-uk.mp3
 ///
 /// 设计：
 /// - 文件名小写归一(Supervisor → supervisor.md)避免重复建条;
@@ -11,21 +9,19 @@ import Foundation
 ///   的 lookup_count/last_saved/source 等"机器字段"——以正文里的
 ///   `<!-- agent:meta -->`...`<!-- /agent:meta -->` 标记包裹,合并仅
 ///   动这一块;
-/// - 音频落盘 fire-and-forget,失败不影响 md 写入。
+/// - 音频不再落盘,frontmatter 和正文里保留远程 MP3 链接即可
+///   (2026-05-30 改:用户决定只存链接,避免大量小 mp3 散落)。
 ///
 /// AGENTS 边界：与 JSONLResultStore 平行,只负责"用户主动归档"的快照,
 /// 不替代 results.jsonl 完整时间线。失败上抛 AgentError 供 UI 友好提示。
 struct WordCardStore: Sendable {
     let rootDirectory: URL
     private let fileManager: FileManager
-    private let downloader: AudioDownloading
 
     init(rootDirectory: URL,
-         fileManager: FileManager = .default,
-         downloader: AudioDownloading = URLSessionAudioDownloader()) {
+         fileManager: FileManager = .default) {
         self.rootDirectory = rootDirectory
         self.fileManager = fileManager
-        self.downloader = downloader
     }
 
     /// 写入(或合并)一个 DictionaryEntry。返回最终落盘的 md 文件 URL,
@@ -61,11 +57,6 @@ struct WordCardStore: Sendable {
             throw AgentError(category: .persistence,
                              diagnosticMessage: "word card write failed: \(error)")
         }
-
-        // 音频下载:异步,失败仅日志,不抛错。
-        Task.detached(priority: .utility) {
-            await downloadAudio(entry: entry, slug: slug)
-        }
         return mdURL
     }
 
@@ -75,9 +66,6 @@ struct WordCardStore: Sendable {
         do {
             try fileManager.createDirectory(at: rootDirectory,
                                             withIntermediateDirectories: true)
-            try fileManager.createDirectory(
-                at: rootDirectory.appendingPathComponent("_audio"),
-                withIntermediateDirectories: true)
         } catch {
             throw AgentError(category: .persistence,
                              diagnosticMessage: "words dir create failed: \(error)")
@@ -182,7 +170,6 @@ struct WordCardStore: Sendable {
     // MARK: - 渲染
 
     private func render(entry: DictionaryEntry, meta: Meta, bodyOnly: Bool) -> String {
-        let slug = Self.slug(entry.headword)
         var out = ""
 
         // frontmatter
@@ -213,14 +200,12 @@ struct WordCardStore: Sendable {
         var phLines: [String] = []
         if let us = entry.usIPA {
             let line = "- 美 /\(us)/" +
-                (entry.usAudioURL != nil
-                 ? " [🔊](_audio/\(slug)-us.mp3)" : "")
+                (entry.usAudioURL.map { " [🔊](\($0))" } ?? "")
             phLines.append(line)
         }
         if let uk = entry.ukIPA {
             let line = "- 英 /\(uk)/" +
-                (entry.ukAudioURL != nil
-                 ? " [🔊](_audio/\(slug)-uk.mp3)" : "")
+                (entry.ukAudioURL.map { " [🔊](\($0))" } ?? "")
             phLines.append(line)
         }
         if !phLines.isEmpty {
@@ -272,44 +257,6 @@ struct WordCardStore: Sendable {
         return f
     }()
 
-    // MARK: - 音频下载
-
-    private func downloadAudio(entry: DictionaryEntry, slug: String) async {
-        let audioDir = rootDirectory.appendingPathComponent("_audio")
-        if let u = entry.usAudioURL, let url = URL(string: u) {
-            let dst = audioDir.appendingPathComponent("\(slug)-us.mp3")
-            try? await downloader.download(from: url, to: dst)
-        }
-        if let u = entry.ukAudioURL, let url = URL(string: u) {
-            let dst = audioDir.appendingPathComponent("\(slug)-uk.mp3")
-            try? await downloader.download(from: url, to: dst)
-        }
-        if entry.usAudioURL == nil, entry.ukAudioURL == nil,
-           let u = entry.audioURL, let url = URL(string: u) {
-            let dst = audioDir.appendingPathComponent("\(slug).mp3")
-            try? await downloader.download(from: url, to: dst)
-        }
-    }
-}
-
-// MARK: - 音频下载抽象(便于单测)
-
-protocol AudioDownloading: Sendable {
-    func download(from url: URL, to destination: URL) async throws
-}
-
-struct URLSessionAudioDownloader: AudioDownloading {
-    func download(from url: URL, to destination: URL) async throws {
-        let (data, response) = try await URLSession.shared.data(from: url)
-        guard let http = response as? HTTPURLResponse,
-              (200..<300).contains(http.statusCode) else {
-            throw AgentError(category: .network,
-                             diagnosticMessage: "audio http failure")
-        }
-        // 已存在则不覆盖(同一发音稳定,二次保存无需再写)。
-        if FileManager.default.fileExists(atPath: destination.path) { return }
-        try data.write(to: destination, options: .atomic)
-    }
 }
 
 private extension String {

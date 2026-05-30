@@ -1,10 +1,29 @@
 # Relay Task
 
-_updated: 2026-05-30 13:40_
+_updated: 2026-05-30 19:38_
 _project: /Users/macmini/Documents/fanyibiji (PersonalAgent macOS App)_
-_branch: main @ d3bafd2（远端最新）_
-_工作树: 已合并入下一 commit（见下方 §B）_
+_branch: main @ 3e70b15（远端最新）_
+_工作树: 词卡只存链接（见 §0）+ 已合并入下一 commit（见下方 §B）_
 _remote: github.com/xinxin6623/fanyibiji_
+
+## §0. 本轮小改：词卡不再下载 MP3（2026-05-30 19:38）
+
+用户决定：词典双击保存的词卡只在 md 里保留远程音频链接，不再把 mp3 落盘到 `~/knowledge/words/_audio/`。
+
+改动文件：
+- `PersonalAgent/Core/Persistence/WordCardStore.swift`
+  - 删 `AudioDownloading` 协议、`URLSessionAudioDownloader` 实现、`downloadAudio()`、`Task.detached` 触发
+  - `init` 去掉 `downloader:` 参数
+  - 不再创建 `_audio/` 子目录
+  - body 渲染：`[🔊](_audio/<slug>-us.mp3)` → `[🔊](<usAudioURL>)` 直指远端
+  - frontmatter 里的 `us_audio` / `uk_audio` / `audio` 字段仍写远程链接（不变）
+- `PersonalAgent/App/AppComposition.swift` — `makeWordCardStore` 文档注释更新（删"MP3 异步落盘"句）
+- `PersonalAgentTests/T16WordCardStoreTests.swift` — 删 `StubAudioDownloader`、替换 `testAudioFilesScheduledNextToCard` → `testAudioURLsInlinedAsLinksNotDownloaded`
+- `临时位置.md` — §2 词卡说明更新
+
+验证：`xcodebuild build` 通过；`T16WordCardStoreTests` 5/5 pass。
+
+盘上残留：旧 `~/knowledge/words/_audio/` 目录若还在，用户可手删，不影响新词卡。
 
 ## 本会话本轮做了什么
 

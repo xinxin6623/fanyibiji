@@ -1,13 +1,6 @@
 import XCTest
 @testable import PersonalAgent
 
-private struct StubAudioDownloader: AudioDownloading {
-    func download(from url: URL, to destination: URL) async throws {
-        // 单测里不走网络;写一个空文件证明被调用即可。
-        try Data().write(to: destination)
-    }
-}
-
 final class T16WordCardStoreTests: XCTestCase {
 
     private var tempRoot: URL!
@@ -17,8 +10,7 @@ final class T16WordCardStoreTests: XCTestCase {
         let base = FileManager.default.temporaryDirectory
             .appendingPathComponent("word-card-tests-\(UUID().uuidString)")
         tempRoot = base
-        store = WordCardStore(rootDirectory: base,
-                              downloader: StubAudioDownloader())
+        store = WordCardStore(rootDirectory: base)
     }
 
     override func tearDownWithError() throws {
@@ -93,26 +85,22 @@ final class T16WordCardStoreTests: XCTestCase {
                       "用户在 body 区间的改动应保留")
     }
 
-    // MARK: - 音频路径
+    // MARK: - 音频链接
 
-    func testAudioFilesScheduledNextToCard() throws {
-        _ = try store.save(entry("good"))
-        // 等 detached 任务跑完(轮询 1 秒上限)。
+    func testAudioURLsInlinedAsLinksNotDownloaded() throws {
+        let url = try store.save(entry("good",
+                                       usAudio: "https://x/u.mp3",
+                                       ukAudio: "https://x/k.mp3"))
+        let raw = try String(contentsOf: url, encoding: .utf8)
+        // frontmatter 里 yamlString 会把含 ":" 的 URL 加引号
+        XCTAssertTrue(raw.contains("us_audio: \"https://x/u.mp3\""))
+        XCTAssertTrue(raw.contains("uk_audio: \"https://x/k.mp3\""))
+        // body 里直接铺远程链接,而不是 _audio/...mp3
+        XCTAssertTrue(raw.contains("[🔊](https://x/u.mp3)"))
+        XCTAssertTrue(raw.contains("[🔊](https://x/k.mp3)"))
+        XCTAssertFalse(raw.contains("_audio/"))
+        // 不再创建 _audio/ 目录
         let audioDir = tempRoot.appendingPathComponent("_audio")
-        let us = audioDir.appendingPathComponent("good-us.mp3")
-        let uk = audioDir.appendingPathComponent("good-uk.mp3")
-        let expectation = XCTestExpectation(description: "audio created")
-        Task {
-            for _ in 0..<20 {
-                if FileManager.default.fileExists(atPath: us.path)
-                    && FileManager.default.fileExists(atPath: uk.path) {
-                    expectation.fulfill(); return
-                }
-                try? await Task.sleep(nanoseconds: 50_000_000)
-            }
-        }
-        wait(for: [expectation], timeout: 2.0)
-        XCTAssertTrue(FileManager.default.fileExists(atPath: us.path))
-        XCTAssertTrue(FileManager.default.fileExists(atPath: uk.path))
+        XCTAssertFalse(FileManager.default.fileExists(atPath: audioDir.path))
     }
 }

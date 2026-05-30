@@ -253,7 +253,7 @@ enum AppComposition {
     }
 
     /// 词卡 store:落在 ~/knowledge/words/ 下,与翻译/笔记并存。
-    /// 离线优先(MP3 异步落盘 _audio/),被 [[supervisor]] 双链命中。
+    /// 只写 md(frontmatter 含远程 MP3 链接),不再下载音频文件。
     static func makeWordCardStore() -> WordCardStore {
         let home = FileManager.default.homeDirectoryForCurrentUser
         let dir = home.appendingPathComponent("knowledge", isDirectory: true)
