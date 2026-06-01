@@ -64,6 +64,11 @@ grep "scope:sync" CHANGELOG.md                             # 同步基础设施�
 
 ---
 
+## 2026-06-01 #infra scope:sync - Syncthing 接入 mac mini，3 端 mesh 拓扑成型
+
+- Why: mac mini M4 到家，要加入既有 MacBook↔ECS 同步网；走 REST API 避免开浏览器
+- 详见: ~/Documents/my_huoshan_web/ADMIN.md §6.2（mini Device ID + 当前拓扑声明 + 变更日志 2026-06-01）
+
 ## 2026-06-01 #docs scope:init - 三件套入口文档落地
 
 - Why: 项目历经 T00–T17 + 多轮 P5 增量已成熟，需 agent 入口、人类导航、可 grep 的演绎记录
