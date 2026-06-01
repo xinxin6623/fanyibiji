@@ -64,6 +64,16 @@ grep "scope:sync" CHANGELOG.md                             # 同步基础设施�
 
 ---
 
+## 2026-06-01 #feat scope:note-editor scope:sync - 笔记顶栏 ⟳ 刷新按钮 + ⌘R，跨机同步无需重启 app
+
+- Why: Syncthing 推过来的 manifest / 新 draft 在运行中的 app 里看不到，原来要重启 app 才刷新
+- 详见: `NoteDocumentsViewModel.reload()`（diff manifest，新增 entry 入 tab、消失 entry 仅 clean 时关，selectedID 保留）/ `NoteEditorViewModel.reloadFromDisk()`（dirty/saving/failed 时跳过，保护用户内存内容）/ `MainWindowView.noteTabBar`（plus 旁的 `arrow.clockwise` 按钮 + `keyboardShortcut("r", modifiers: .command)`）
+
+## 2026-06-01 #infra scope:sync - Syncthing mini 端接入 + manifest conflict 合并恢复
+
+- Why: relay-task §-1 写"三端 P2P 上线"但 mini 端实际未接入；接入过程因启动验证 app 触发 manifest 重写而导致 mini 旧 3-entry 覆盖 MacBook 8-entry 成 winner，需手动合并恢复
+- 详见: `brew install syncthing` + `brew services start syncthing`；REST API 加 MacBook device(no autoAccept) + 配两个 folder + 写 .stignore（按 ADMIN §6.3）；mini 沙盒 `notes/manifest.sync-conflict-*-P733ZOD.json` 8-entry 合 winner 3-entry → 11 entries 写回 manifest.json，备份 `notes/manifest.before-merge-20260601-230341.bak`；secrets/tts-config/results conflict 副本按用户决策原样保留
+
 ## 2026-06-01 #infra scope:sync - Syncthing 接入 mac mini，3 端 mesh 拓扑成型
 
 - Why: mac mini M4 到家，要加入既有 MacBook↔ECS 同步网；走 REST API 避免开浏览器

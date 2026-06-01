@@ -451,6 +451,16 @@ struct MainWindowView: View {
             .help("note.tab.new")
             .nativeTooltip(String(localized: "note.tab.new"))
 
+            Button {
+                noteDocs.reload()
+            } label: {
+                Image(systemName: "arrow.clockwise")
+            }
+            .buttonStyle(.borderless)
+            .keyboardShortcut("r", modifiers: .command)
+            .help("note.tab.reload")
+            .nativeTooltip(String(localized: "note.tab.reload"))
+
             historyMenu
 
             notePackExportButton

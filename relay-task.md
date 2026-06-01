@@ -1,10 +1,46 @@
 # Relay Task
 
-_updated: 2026-06-01_
-_project: /Users/qoragufimo390gmail.com/Documents/fanyibiji (PersonalAgent macOS App，MacBook 端；Mac mini 工作树为 /Users/macmini/Documents/fanyibiji)_
-_branch: main @ b6af2ac（远端最新）_
-_工作树: 干净（最近一次小改"词卡只存音频链接"已 commit b6af2ac）_
+_updated: 2026-06-01（mini 端 23:xx 接力一轮）_
+_project: /Users/qoragufimo390gmail.com/Documents/fanyibiji (MacBook) / /Users/macmini/Documents/fanyibiji (Mac mini)_
+_branch: main @ <本次 push 后 hash>_
+_工作树: 干净（本次 push 后）_
 _remote: github.com/xinxin6623/fanyibiji_
+
+## §-2. mini 端 Syncthing 接入 + 笔记 ⟳ 刷新功能（2026-06-01 mini 端）
+
+### 1. Syncthing mini 端正式上线
+- relay-task §-1 写"三端 P2P 上线"，但 mini 端实际还没装；本次补上：`brew install syncthing` + `brew services start syncthing`
+- mini Device ID: `P733ZOD-4XDNFZC-MJNBFPR-6NAAI2L-WHW5H7G-KG4LOJ4-6P4LEZO-UGT6ZQW`
+- 双向 pairing 完成：mini ↔ MacBook（LAN TCP 直连 192.168.1.90）
+- 两个 folder 已接受 + `.stignore` 按 ADMIN §6.3 写好
+- **ECS 端还没加 mini**：三端拓扑还差一步，James 后续 SSH tunnel 进 ECS Web UI 配（步骤见 ADMIN §6.5 第 3 步）
+
+### 2. manifest conflict 事故与修复（**重要教训**）
+- 流程坑：mini 配 syncthing folder 前，先启动了 PersonalAgent.app 做"验证"，app 启动时改写了 mini 沙盒 manifest.json（mtime 22:05），导致 mini 旧 3-entry 版在 syncthing 同步时成为 winner，覆盖了 MacBook 8-entry 版
+- 已恢复：从 `notes/manifest.sync-conflict-*-P733ZOD.json` 取 8 entries + 当前 winner 3 entries → 合并 11 entries 写回，selectedID 回到 `公司门户`
+- 备份保留：`notes/manifest.before-merge-20260601-230341.bak`
+- **教训给下个 agent**：**接入 Syncthing 之前不要启动 app**！app 启动会重写 manifest 触发 mtime 漂移；先配同步、等 idle 再启动验证
+- 其余 conflict 文件（secrets.enc / tts-config.json / results.jsonl ×2）按 James 决策原样保留，需手动 diff 决定
+
+### 3. 笔记顶栏 ⟳ 刷新按钮 + ⌘R
+- 解决"对端改了笔记 / 新增 tab，本端要重启 app 才看到"的痛点
+- `NoteEditorViewModel.reloadFromDisk()` —— 仅 clean/saved/exported 时重读，dirty/saving/failed 保护用户内存内容
+- `NoteDocumentsViewModel.reload()` —— diff manifest：新 entry 加 tab、消失 entry 仅 clean 时关、现有 tab 各自 reload；selectedID 保留；**不回写 manifest** 避免反向覆盖对端
+- `MainWindowView.noteTabBar` 加 `arrow.clockwise` 按钮（plus 紧邻右侧）+ `keyboardShortcut("r", modifiers: .command)`
+- Localizable.xcstrings 加 `note.tab.reload` 双语
+- 进阶可选（James 未决）：app 切前台时自动 reload / FSEventStream 监听 notes/ 自动 reload
+
+### 4. MacBook 端拉取步骤
+```bash
+cd ~/Documents/fanyibiji
+git pull
+osascript -e 'tell application "PersonalAgent" to quit'
+# MacBook 有签名证书,直接 build:
+xcodebuild -project PersonalAgent.xcodeproj -scheme PersonalAgent -configuration Debug build
+# 或 Xcode 打开按 ⌘R
+```
+
+---
 
 ## §-1. 基础设施 / 文档骨架（2026-06-01 MacBook 端）
 

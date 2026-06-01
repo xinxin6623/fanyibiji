@@ -169,6 +169,18 @@ final class NoteEditorViewModel: ObservableObject {
         loadDraft()
     }
 
+    /// 外部刷新触发（顶栏 ⟳ / Cmd-R / 同步层换了 notes/ 后想拉新内容）。
+    /// 保护用户正在编辑或正在保存的内存内容：仅 clean / saved / exported
+    /// 时才重读磁盘；dirty/saving/failed 状态下原样保留。
+    func reloadFromDisk() {
+        switch saveStatus {
+        case .dirty, .saving, .failed:
+            return
+        case .clean, .saved, .exported, .exportFailed:
+            loadDraft()
+        }
+    }
+
     /// 启动读回草稿。读失败不清空已有内容、只反馈状态（避免覆盖用户
     /// 可能仍在内存里的文字）；缺失/空文件按 store 语义返回空串。
     func loadDraft() {

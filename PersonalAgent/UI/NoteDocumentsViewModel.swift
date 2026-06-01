@@ -87,6 +87,43 @@ final class NoteDocumentsViewModel: ObservableObject {
         persistManifest()
     }
 
+    /// 外部刷新触发（顶栏 ⟳ / Cmd-R）：磁盘 manifest 可能被同步层换过，
+    /// 重新对齐 Tab 列表 + 让每个 Tab 重读自己的 draft。
+    /// 保守策略——
+    /// 1. **本地新增**：manifest 多的 id 创建新 Tab（追加到末尾）
+    /// 2. **本地消失**：manifest 少的 id 仅当对应 Tab `clean` 时关掉，
+    ///    `dirty/saving` 保留（用户可能正在改，关了会丢数据）
+    /// 3. **现存 Tab**：调 `editor.reloadFromDisk()` 让正文跟磁盘对齐
+    /// 4. 不动 selectedID（保留用户焦点），落空就退到第一个 Tab
+    /// 5. **不**回写 manifest——刷新只读不写，避免反向覆盖对端
+    func reload() {
+        let manifest = store.loadManifest()
+        let diskIDs = manifest.entries.map(\.id)
+        let openIDs = Set(tabs.map(\.id))
+        let diskSet = Set(diskIDs)
+
+        // 1. 现存 Tab 各自重读正文
+        for tab in tabs {
+            tab.editor.reloadFromDisk()
+        }
+
+        // 2. 磁盘有、本地没有 → 新增 Tab（按 manifest 顺序追加）
+        for id in diskIDs where openIDs.contains(id) == false {
+            tabs.append(makeTab(id: id))
+        }
+
+        // 3. 本地有、磁盘没有 + 该 Tab 已 clean → 关掉
+        tabs.removeAll { tab in
+            guard diskSet.contains(tab.id) == false else { return false }
+            return tab.editor.saveStatus == .clean
+        }
+
+        // 4. selectedID 若已关掉,落到第一个 Tab
+        if let cur = selectedID, tabs.contains(where: { $0.id == cur }) == false {
+            selectedID = tabs.first?.id
+        }
+    }
+
     /// 历史草稿 = 磁盘有、但当前未在 Tab 打开的草稿。
     func history() -> [HistoryItem] {
         let open = Set(tabs.map(\.id))

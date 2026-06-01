@@ -817,6 +817,22 @@
         }
       }
     },
+    "note.tab.reload": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reload from disk (⌘R)"
+          }
+        },
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "从磁盘刷新（⌘R）"
+          }
+        }
+      }
+    },
     "note.title": {
       "localizations": {
         "en": {
