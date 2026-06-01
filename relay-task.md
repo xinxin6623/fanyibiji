@@ -1,10 +1,31 @@
 # Relay Task
 
-_updated: 2026-05-30 19:38_
-_project: /Users/macmini/Documents/fanyibiji (PersonalAgent macOS App)_
-_branch: main @ 3e70b15（远端最新）_
-_工作树: 词卡只存链接（见 §0）+ 已合并入下一 commit（见下方 §B）_
+_updated: 2026-06-01_
+_project: /Users/qoragufimo390gmail.com/Documents/fanyibiji (PersonalAgent macOS App，MacBook 端；Mac mini 工作树为 /Users/macmini/Documents/fanyibiji)_
+_branch: main @ b6af2ac（远端最新）_
+_工作树: 干净（最近一次小改"词卡只存音频链接"已 commit b6af2ac）_
 _remote: github.com/xinxin6623/fanyibiji_
+
+## §-1. 基础设施 / 文档骨架（2026-06-01 MacBook 端）
+
+### 1. 三件套入口文档落地
+- 新增 `INDEX.md`（项目说明 + 子模块导航 + 常用操作）
+- 新增 `CHANGELOG.md`（**强标签化**演绎记录，含 scope 字典 + grep 检索示例 + 12 条历史 seed，含 Syncthing 上线条目）
+- `CLAUDE.md → AGENTS.md` 相对软链（单一真相源，Claude Code / Codex / Gemini 共用）
+- 已有 `AGENTS.md` 追加 §11–§14（文档维护节奏 / 子项目嵌套预留 / 目录命名 / 语言规则），与原 §1–§10 项目特定约束互补
+- 触发：`/project-init --complete` 协议（James 授权"已有合并"）
+
+### 2. Syncthing 跨机同步已上线（2026-05-30，**重要信息同步**）
+- folder `pa-appsupport` ↔ `~/Library/Application Support/com.james.personalagent/`（含 `notes/` 草稿、`secrets.enc`、`results.jsonl`、所有配置 JSON）
+- folder `pa-words` ↔ `~/knowledge/words/`（词卡）
+- 三端 P2P：MacBook ↔ Mac mini M4 ↔ 火山云 ECS `volcano`（115.190.215.222）
+- ECS 端：native apt + `systemctl syncthing@james.service`，开机自启
+- `.stignore` 排除：`tts-audio/`、`_audio/`、`.DS_Store`
+- **接手 agent 注意**：跨机改同一文件可能产生 `.sync-conflict-*`，syncthing 不自动合并；高频追加写大文件（如 `results.jsonl`）到 MB 级要考虑按日切
+- 当前同步状态（2026-06-01 抽查）：`pa-appsupport` localFiles=28 / globalFiles=28 / needFiles=0 / errors=0，notes/ 14 个文件 ECS 端 1:1 一致
+- 运维入口（**唯一来源**）：`~/Documents/my_huoshan_web/ADMIN.md §6`（端口/安全/Device ID/常用命令/冲突处理/故障排查/红线）
+
+---
 
 ## §0. 本轮小改：词卡不再下载 MP3（2026-05-30 19:38）
 
