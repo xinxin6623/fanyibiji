@@ -81,6 +81,29 @@ Easydict 使用 GPL-3.0。Agent 必须区分“参考架构和行为”和“复
 - 不自动改写 `.env`、签名配置、个人 Apple Team ID 或 API key 文件。
 - 私有知识库和敏感计算优先本地私有化部署。
 
+**Syncthing 跨机同步注意事项**（2026-06-04 落地）：
+
+App 数据目录 `~/Library/Application Support/com.james.personalagent/`
+被 Syncthing 实时同步到三端（mac mini / MacBook / 火山云 ECS）。但
+**`secrets.enc` 不能跨机同步**——T17 的 `FileSecretStore` 用本机硬件
+UUID 派生 AES-GCM 根密钥，别机解不开后按 `SecretStore.swift:150-154`
+静默返回 `nil`，UI 体感是所有 LLM/TTS key「失效」。
+
+规则：
+
+- **每台机器的 `.stignore` 必须包含**：`secrets.enc`、
+  `secrets.sync-conflict-*.enc`。`.stignore` **不跨机同步**（Syncthing
+  本身就忽略它的同步），改一台不影响其它机器，新接入机器要单独配。
+- 每台机器各自维护本机 `secrets.enc`，**key 在每台机器各填一次**。
+- 永久方案见 `project-board.md` T22（passphrase-based 根密钥 + verifier
+  + UnlockView），实施后 `secrets.enc` 可重新加入同步并去掉 .stignore
+  排除项。
+- 其它配置（`llm-config.json` / `tts-config.json` / `prompt-config.json`
+  / `language-config.json` / `hotkey-config.json` / `notes/` /
+  `results.jsonl`）**继续跨机同步**——它们没有机器绑定加密。
+- 不要把 `tts-audio/` 纳入同步（已在 `.stignore` 中）——划词朗读
+  MP3 缓存，可重生，省带宽。
+
 ### 3.3 MCP 与工具边界
 
 所有自动化操作优先通过当前环境提供的标准工具接口执行，例如文件读取、

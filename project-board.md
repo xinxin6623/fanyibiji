@@ -534,6 +534,69 @@ T00 文档骨架、T01 MVP PRD、T02 SwiftUI 骨架均已 DONE 并通过构建�
 - KeyRecorder 录 ⌘ 组合走 `performKeyEquivalent`，需重写截获。
 - ViewModel provider 为 let 致配置变更不生效 → 改 var + 重建。
 
+### T22 跨机同步密钥库（passphrase-based，P6 增量，PLANNED）
+
+- 阶段：MVP 后增量（2026-06-04 立项）。
+- 动机：T17 的 FileSecretStore 用本机硬件 UUID 派生根密钥，
+  `secrets.enc` 无法跨机解密。用 Syncthing 同步 Application Support
+  目录后，其它机器接收到的 `secrets.enc` 全部 `AES.GCM.open` 失败 →
+  按现行 `secret(forKey:)` 第 150-154 行设计静默返回 `nil` → 所有
+  LLM/TTS key 在 UI 上显示「未配置」，体感是「key 失效」。
+- 目标：去掉硬件 UUID 绑定，改用用户主密码派生根密钥，让
+  `secrets.enc` 可随 Syncthing 跨机同步，每台机器输入同一主密码
+  即可解锁。
+- 状态：PLANNED（设计已对齐 2026-06-04，未动代码；临时方案见下方
+  「当前临时缓解」）。
+- 设计要点：
+  - KDF：PBKDF2-SHA256（CryptoKit 原生，无外部依赖），
+    iterations ≥ 600,000（OWASP 2023 推荐），salt 固定（写代码），
+    输出 32 bytes → AES-GCM key。
+  - 文件格式 v2：新增 verifier 项（用 rootKey 加密已知明文
+    `"pa-verify-v2"`），启动时先解 verifier 判断密码对错；加
+    `_meta: {version: 2}` 标识。
+  - 启动流程：构造 store → 弹 UnlockView（首次=设置主密码、两次
+    输入一致；后续=输入主密码、可重试 3 次，第 3 次提示「忘记 →
+    删 secrets.enc 重设，所有 key 失效」）→ unlock 成功后 rootKey
+    留内存，AppController 才继续初始化 LLM/TTS。
+  - SecretStore 协议升级：加 `unlock(passphrase:) throws -> Bool`、
+    `isUnlocked: Bool`；locked 状态调 `secret(forKey:)` 抛
+    `AgentError(.authRequired)`。
+  - 「记住密码到本机 Keychain」勾选项：勾上 rootKey 存本机 Keychain，
+    启动无感（本机 Keychain 首次会弹一次系统密码框，James 已接受）；
+    不勾每次启动都输。**James 拍板支持**。
+  - **不允许空密码**（James 拍板）。
+  - 旧 hw-UUID 加密的 `secrets.enc` 解不开 → 当首次设置流程，用户重录。
+  - InMemorySecretStore 默认 unlocked，单测不影响；FileSecretStore
+    单测需传 passphrase 初始化。
+- 受影响文件：
+  - `Core/Config/SecretStore.swift`（协议 + FileSecretStore 重写）
+  - `App/AppComposition.swift`（sharedSecretStore 不能再同步构造）
+  - `App/AppController.swift`（启动序列加 unlock gate）
+  - 新增 `UI/UnlockView.swift`
+  - `PersonalAgentTests/` 相关测试新增/更新
+  - pbxproj 4 处显式引用（新文件按 §13 规则补）
+  - AGENTS.md / CHANGELOG.md / relay-task.md 同步
+- 验收标准：
+  - 两台机器跑同一份 `secrets.enc`，输入同一主密码均解锁成功。
+  - 首次启动「设置主密码」流程跑通，两次输入不一致正确报错重试。
+  - 错密码不崩，可重试 3 次。
+  - 「记住密码」勾选项工作：勾上后下次启动免输；取消勾选回到每次输。
+  - 现有单测全绿，新增 unlock 流程单测覆盖：错密码、空密码拒、
+    verifier 校验、记忆开关。
+- 依赖：无。
+- 风险：
+  - 用户忘主密码 → `secrets.enc` 不可逆，只能删后重录所有 key。UI
+    必须明确提示。
+  - 实施期间用户仍可走「当前临时缓解」继续干活。
+- 当前临时缓解（2026-06-04 已落地）：
+  - 每台机器各自维护本机 `secrets.enc`，重录 key（mac mini 已重录
+    并验证可用）。
+  - Syncthing 加 `.stignore`：`secrets.enc` +
+    `secrets.sync-conflict-*.enc` 排除跨机同步（mac mini 已加，
+    笔记本待 James 自助）。
+  - 历史 `*.sync-conflict-*` 残留文件清理（mac mini 端 4 个已移
+    废纸篓）。
+
 ## 看板维护规则
 
 - 每次任务完成后更新状态、备注和下一推荐任务。

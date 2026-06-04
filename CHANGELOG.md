@@ -64,6 +64,11 @@ grep "scope:sync" CHANGELOG.md                             # 同步基础设施�
 
 ---
 
+## 2026-06-04 #infra scope:sync scope:secret - secrets.enc 排出 Syncthing 防跨机解不开 + T22 立项
+
+- Why: T17 FileSecretStore 用本机硬件 UUID 派生根密钥，secrets.enc 同步到别机 GCM 解不开 → key 全静默失效
+- 详见: 两台机各自 `.stignore` 加 `secrets.enc` + `secrets.sync-conflict-*.enc` 排除（`.stignore` 不跨机同步，要逐机配）；mac mini 端清 4 个历史 sync-conflict 残留（secrets/tts-config/results）入废纸篓；mac mini 本机重录 LLM/讯飞/豆包 key 验证可用，笔记本本机 key 本来 work；永久方案 `project-board.md` T22（PBKDF2-SHA256 + verifier 文件格式 v2 + UnlockView 启动 gate + 记住到本机 Keychain 勾选 + 不允许空密码，PLANNED）；AGENTS.md §3.2 加 Syncthing 跨机同步注意事项段
+
 ## 2026-06-01 #feat scope:note-editor scope:sync - 笔记顶栏 ⟳ 刷新按钮 + ⌘R，跨机同步无需重启 app
 
 - Why: Syncthing 推过来的 manifest / 新 draft 在运行中的 app 里看不到，原来要重启 app 才刷新

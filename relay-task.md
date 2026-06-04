@@ -210,3 +210,4 @@ Untracked files:
 6. 豆包 TTS 诊断日志命令见 §C
 7. 设置页结构：4 tab（通用/快捷键/模型/转语音），不要回到 5 tab 老结构
 8. TOAST UI Editor 用 `-all` 全打包 UMD 文件，不要换回 jsdelivr 的「外置依赖」版
+9. **`secrets.enc` 不能跨机同步**——hw UUID 派生根密钥，别机解不开后 UI 显示「key 未配置」。每台机 `.stignore` 必须含 `secrets.enc` + `secrets.sync-conflict-*.enc`；其它 config/notes/results 继续同步。永久方案见 `project-board.md` T22（passphrase + verifier，PLANNED）。详见 AGENTS.md §3.2
